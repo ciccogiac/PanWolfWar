@@ -11,6 +11,10 @@
 #include "EnhancedInputSubsystems.h"
 #include "InputActionValue.h"
 
+#include "Components/ClimbingComponent.h"
+
+#include "DebugHelper.h"
+
 DEFINE_LOG_CATEGORY(LogTemplateCharacter);
 
 //////////////////////////////////////////////////////////////////////////
@@ -50,8 +54,7 @@ APanWolfWarCharacter::APanWolfWarCharacter()
 	FollowCamera->SetupAttachment(CameraBoom, USpringArmComponent::SocketName); // Attach the camera to the end of the boom and let the boom adjust to match the controller orientation
 	FollowCamera->bUsePawnControlRotation = false; // Camera does not rotate relative to arm
 
-	// Note: The skeletal mesh and anim blueprint references on the Mesh component (inherited from Character) 
-	// are set in the derived blueprint asset named ThirdPersonCharacter (to avoid direct content references in C++)
+	ClimbingComponent = CreateDefaultSubobject<UClimbingComponent>(TEXT("ClimbingComponent"));
 }
 
 void APanWolfWarCharacter::BeginPlay()
@@ -59,18 +62,44 @@ void APanWolfWarCharacter::BeginPlay()
 	// Call the base class  
 	Super::BeginPlay();
 
+	AddMappingContext(DefaultMappingContext, 0);
+	
+}
+
+
+//////////////////////////////////////////////////////////////////////////
+// Input
+
+#pragma region Input
+
+void APanWolfWarCharacter::AddMappingContext(UInputMappingContext* MappingContextToAdd, int32 Priority)
+{
+	if (!MappingContextToAdd) return;
+
 	//Add Input Mapping Context
 	if (APlayerController* PlayerController = Cast<APlayerController>(Controller))
 	{
 		if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PlayerController->GetLocalPlayer()))
 		{
-			Subsystem->AddMappingContext(DefaultMappingContext, 0);
+			Subsystem->AddMappingContext(MappingContextToAdd, Priority);
+		}
+	}
+
+}
+
+void APanWolfWarCharacter::RemoveMappingContext(UInputMappingContext* MappingContextToRemove)
+{
+	if (!MappingContextToRemove) return;
+
+	//Add Input Mapping Context
+	if (APlayerController* PlayerController = Cast<APlayerController>(Controller))
+	{
+		if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PlayerController->GetLocalPlayer()))
+		{
+			Subsystem->RemoveMappingContext(MappingContextToRemove);
 		}
 	}
 }
-
-//////////////////////////////////////////////////////////////////////////
-// Input
 
 void APanWolfWarCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
@@ -83,15 +112,23 @@ void APanWolfWarCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInpu
 
 		// Moving
 		EnhancedInputComponent->BindAction(MoveAction, ETriggerEvent::Triggered, this, &APanWolfWarCharacter::Move);
+		EnhancedInputComponent->BindAction(ClimbMoveAction, ETriggerEvent::Triggered, this, &APanWolfWarCharacter::ClimbMove);
 
 		// Looking
 		EnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &APanWolfWarCharacter::Look);
+
+		// Climb
+		EnhancedInputComponent->BindAction(ClimbAction, ETriggerEvent::Started, this, &APanWolfWarCharacter::Climb);
 	}
 	else
 	{
 		UE_LOG(LogTemplateCharacter, Error, TEXT("'%s' Failed to find an Enhanced Input component! This template is built to use the Enhanced Input system. If you intend to use the legacy system, then you will need to update this C++ file."), *GetNameSafe(this));
 	}
 }
+#pragma endregion
+
+
+#pragma region InputCallback
 
 void APanWolfWarCharacter::Move(const FInputActionValue& Value)
 {
@@ -128,3 +165,30 @@ void APanWolfWarCharacter::Look(const FInputActionValue& Value)
 		AddControllerPitchInput(LookAxisVector.Y);
 	}
 }
+
+void APanWolfWarCharacter::Climb()
+{
+	if (ClimbingComponent->ToggleClimbing()) { AddMappingContext(ClimbingMappingContext, 1); }
+	else { RemoveMappingContext(ClimbingMappingContext); }
+	
+}
+
+void APanWolfWarCharacter::ClimbMove(const FInputActionValue& Value)
+{
+	const FVector2D MovementVector = Value.Get<FVector2D>() * 50.f;
+
+	//DrawDebugSphere(GetWorld(), GetActorLocation() + FVector(50.f ,MovementVector.X, MovementVector.Y), 10.f, 12, FColor::Emerald, false, 3.f);
+
+	const FVector ForwardDirection = FVector::CrossProduct(-ClimbingComponent->GetClimbableSurfaceNormal(), GetActorRightVector());
+	const FVector RightDirection = FVector::CrossProduct(-ClimbingComponent->GetClimbableSurfaceNormal(), -GetActorUpVector());
+
+	//DrawDebugSphere(GetWorld(), GetActorLocation() + RightDirection * MovementVector.X , 10.f, 12, FColor::Emerald, false, 3.f);
+
+	// add movement 
+	//AddMovementInput(ForwardDirection, MovementVector.Y);
+	//AddMovementInput(RightDirection, MovementVector.X);
+}
+
+#pragma endregion
+
+
