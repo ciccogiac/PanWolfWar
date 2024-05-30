@@ -6,13 +6,23 @@
 #include "Components/ActorComponent.h"
 #include "ClimbingComponent.generated.h"
 
+DECLARE_DELEGATE(FOnEnterClimbState)
+DECLARE_DELEGATE(FOnExitClimbState)
+
 class UCharacterMovementComponent;
+class UCapsuleComponent;
+class UAnimMontage;
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class PANWOLFWAR_API UClimbingComponent : public UActorComponent
 {
 	GENERATED_BODY()
 
+public:
+
+	//Delegates
+	FOnEnterClimbState OnEnterClimbStateDelegate;
+	FOnExitClimbState OnExitClimbStateDelegate;
 
 #pragma region PublicFunctions
 
@@ -21,7 +31,9 @@ public:
 	UClimbingComponent();
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
-	bool ToggleClimbing();
+	void ToggleClimbing();
+	bool TryClimbing();
+
 
 #pragma endregion
 
@@ -41,44 +53,40 @@ private:
 	void StartClimbing();
 	void StopClimbing();
 
-	bool TryClimbing();
-	void ClimbCapsuleTrace(FHitResult &outHit);
-	bool CheckNormalContact(FVector_NetQuantizeNormal ImpactNormal);
-	bool FindClimbablePoint(FHitResult hit);
 
-	void SnapMovementToClimbableSurface(float DeltaTime);
+	// Sphere Traces to Find PointLocation Climbable
+	bool FindCLimbableObjectLocation();
+	bool FindCLimbablePointLocation(FHitResult ClimbableObjectHit);
+	bool CheckClimbableCondition(FHitResult CLimbablePointHit);
+
+	//Set Climbing State and Move to Climbing Point
+	void GrabLedge();
+	void MoveToLedgeLocation();
+
+	void PlayClimbMontage(UAnimMontage* MontageToPlay);
+	UFUNCTION()
+	void OnClimbMontageStartedHanging(FName NotifyName, const FBranchingPointNotifyPayload& BranchingPointPayload);
+
+	UFUNCTION()
+	void OnClimbMontageEnded(UAnimMontage* Montage, bool bInterrupted);
+
+
 
 #pragma endregion
 
 #pragma region PrivateVariables
 
 private:
+
+	#pragma region Components
+
 	AActor* ActorOwner;
 	ACharacter* CharacterOwner;
 	UCharacterMovementComponent* MovementComponent;
+	UCapsuleComponent* CapsuleComponent;
 
-	#pragma region ClimbBPVariables
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Character Movement: Climbing", meta = (AllowPrivateAccess = "true"))
-	TArray<TEnumAsByte<EObjectTypeQuery> > ClimbableObjectTypes;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Climb Params", meta = (AllowPrivateAccess = "true"))
-	bool ShowDebugTrace = false;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Climb Params", meta = (AllowPrivateAccess = "true"))
-	float Radius = 50.f;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Climb Params", meta = (AllowPrivateAccess = "true"))
-	float HalfHeight = 75.f;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Climb Params", meta = (AllowPrivateAccess = "true"))
-	float ForwardOffset = 100.f;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Climb Params", meta = (AllowPrivateAccess = "true"))
-	float MaxClimbSpeed = 100.f;
-
-
-
+	UPROPERTY()
+	UAnimInstance* OwningPlayerAnimInstance;
 
 	#pragma endregion
 
@@ -87,8 +95,73 @@ private:
 	bool bIsClimbing;
 	FVector CurrentClimbableSurfaceLocation;
 	FVector CurrentClimbableSurfaceNormal;
+	FRotator ClimbRotation;
+	FVector LedgeLocation;
+	bool bCanClimb = true;
 
 	#pragma endregion
+
+	#pragma region ClimbBPVariables
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Climb Params", meta = (AllowPrivateAccess = "true"))
+	bool ShowDebugTrace = false;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Climb Params", meta = (AllowPrivateAccess = "true"))
+	TArray<TEnumAsByte<EObjectTypeQuery> > ClimbableObjectTypes;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Climb Params", meta = (AllowPrivateAccess = "true"))
+	float LedgeHeightLocationXY = 40.f;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Climb Params", meta = (AllowPrivateAccess = "true"))
+	float LedgeHeightLocationZ = 110.f;
+
+	#pragma region TraceVariables
+
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Climb Params | First Trace", meta = (AllowPrivateAccess = "true"))
+	float BaseEyeHeightOffset = 1.5f;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Climb Params | First Trace", meta = (AllowPrivateAccess = "true"))
+	float ForwardOffset = 100.f;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Climb Params | First Trace", meta = (AllowPrivateAccess = "true"))
+	float Radius_FirstTrace = 10.f;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Climb Params | Second Trace", meta = (AllowPrivateAccess = "true"))
+	float ClimbingTraceHeight = 150.f;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Climb Params | Second Trace", meta = (AllowPrivateAccess = "true"))
+	float Radius_SecondTrace = 10.f;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Climb Params | Third Trace", meta = (AllowPrivateAccess = "true"))
+	float CheckingClimbable_Z_Offset = 10.f;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Climb Params | Third Trace", meta = (AllowPrivateAccess = "true"))
+	float CheckingClimbable_Forward_Offset = 20.f;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Climb Params | Third Trace", meta = (AllowPrivateAccess = "true"))
+	float Radius_ThirdTrace = 5.f;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Climb Params | Third Trace", meta = (AllowPrivateAccess = "true"))
+	TEnumAsByte<ETraceTypeQuery> TraceType;
+
+	#pragma endregion
+
+
+	#pragma endregion
+
+	#pragma region ClimbMontages
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Climb Montages", meta = (AllowPrivateAccess = "true"))
+	UAnimMontage* IdleToHang;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Climb Montages", meta = (AllowPrivateAccess = "true"))
+	UAnimMontage* JumpToHang;
+
+
+	#pragma endregion
+
+
 
 #pragma endregion
 

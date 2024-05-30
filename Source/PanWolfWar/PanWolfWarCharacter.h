@@ -89,6 +89,9 @@ private:
 #pragma region PrivateFunctions
 private:
 
+	void OnPlayerEnterClimbState();
+	void OnPlayerExitClimbState();
+
 	void AddMappingContext(UInputMappingContext* MappingContextToAdd, int32 Priority);
 	void RemoveMappingContext(UInputMappingContext* MappingContextToRemove);
 
@@ -96,6 +99,8 @@ private:
 
 	void Move(const FInputActionValue& Value);
 	void Look(const FInputActionValue& Value);
+
+	void JumpClimbTrace();
 
 	void Climb();
 	void ClimbMove(const FInputActionValue& Value);

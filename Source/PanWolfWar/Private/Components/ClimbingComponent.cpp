@@ -4,6 +4,7 @@
 #include "Components/ClimbingComponent.h"
 
 #include "Kismet/KismetSystemLibrary.h"
+#include "Kismet/KismetMathLibrary.h"
 #include "GameFramework/Character.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Components/CapsuleComponent.h"
@@ -19,7 +20,6 @@ UClimbingComponent::UClimbingComponent()
 
 	ActorOwner = GetOwner();
 	CharacterOwner = Cast<ACharacter>(ActorOwner);
-
 }
 
 void UClimbingComponent::BeginPlay()
@@ -27,6 +27,16 @@ void UClimbingComponent::BeginPlay()
 	Super::BeginPlay();
 
 	MovementComponent = CharacterOwner->GetCharacterMovement();
+	CapsuleComponent = CharacterOwner->GetCapsuleComponent();
+
+	OwningPlayerAnimInstance = CharacterOwner->GetMesh()->GetAnimInstance();
+
+	if (OwningPlayerAnimInstance)
+	{
+		OwningPlayerAnimInstance->OnPlayMontageNotifyBegin.AddDynamic(this, &UClimbingComponent::OnClimbMontageStartedHanging);
+		OwningPlayerAnimInstance->OnMontageEnded.AddDynamic(this, &UClimbingComponent::OnClimbMontageEnded);
+	}
+
 	
 }
 
@@ -34,150 +44,187 @@ void UClimbingComponent::TickComponent(float DeltaTime, ELevelTick TickType, FAc
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
-	if (bIsClimbing) { SnapMovementToClimbableSurface(DeltaTime); }
+	if (!bIsClimbing && bCanClimb && MovementComponent->IsFalling()) { TryClimbing(); }
+
 }
+
+
 
 #pragma endregion
 
-
 #pragma region SetClimbState
 
-bool UClimbingComponent::ToggleClimbing()
+void UClimbingComponent::ToggleClimbing()
 {
-	if (bIsClimbing) { StopClimbing(); return false; }
-	else if (TryClimbing()) { StartClimbing(); return true; }
+	if (bIsClimbing) { StopClimbing(); bCanClimb = false; }
+	else { bCanClimb = true; }
 	
-	return false;
 }
 
 void UClimbingComponent::StartClimbing()
 {
 	bIsClimbing = true;
 
+
 	MovementComponent->StopMovementImmediately();
+
+	CapsuleComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	MovementComponent->MaxFlySpeed = 0.f;
 	MovementComponent->SetMovementMode(EMovementMode::MOVE_Flying, 0);
 
-
-	MovementComponent->bOrientRotationToMovement = false;
-	CharacterOwner->GetCapsuleComponent()->SetCapsuleHalfHeight(48.f);
+	OnEnterClimbStateDelegate.ExecuteIfBound();
 
 	MovementComponent->StopMovementImmediately();
 }
 
 void UClimbingComponent::StopClimbing()
 {
-
+	CapsuleComponent->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
 	MovementComponent->SetMovementMode(EMovementMode::MOVE_Falling);
+	OnExitClimbStateDelegate.ExecuteIfBound();
 
-	MovementComponent->bOrientRotationToMovement = true;
-	CharacterOwner->GetCapsuleComponent()->SetCapsuleHalfHeight(96.f);
-
-	const FRotator DirtyRotation = MovementComponent->UpdatedComponent->GetComponentRotation();
-	const FRotator CleanStandRotation = FRotator(0.f, DirtyRotation.Yaw, 0.f);
-	MovementComponent->UpdatedComponent->SetRelativeRotation(CleanStandRotation);
-
-	MovementComponent->StopMovementImmediately();
 	bIsClimbing = false;
 
 }
 
-#pragma endregion
 
+
+#pragma endregion
 
 #pragma region CalculateClimbingCondition
 
 bool UClimbingComponent::TryClimbing()
 {
-	FHitResult hit;
-	ClimbCapsuleTrace(hit);
-
-	if (hit.bBlockingHit && CheckNormalContact(hit.ImpactNormal))
+	bool bClimbableSurface = FindCLimbableObjectLocation();
+	if (bClimbableSurface)
 	{
-			//Debug::Print(TEXT("Hit A climbable surface with Normal:") + hit.ImpactNormal.ToString());
-
-			return FindClimbablePoint(hit);
-		
-	}
-
-	return false;
+		Debug::Print(TEXT("Can Climb"), FColor::Emerald, 1);
+		//DrawDebugSphere(GetWorld(), LedgeLocation, 8.f, 12, FColor::Emerald, false, 20.f);
+		//DrawDebugLine(GetWorld(),   FVector(CurrentClimbableSurfaceLocation.X, CurrentClimbableSurfaceLocation.Y,LedgeLocation.Z), LedgeLocation, FColor::Blue, false, 3.f);
+		GrabLedge();
+	}	
+	return bClimbableSurface;
 }
 
-bool UClimbingComponent::FindClimbablePoint(FHitResult hit)
-{
-	FVector Start = hit.ImpactPoint;
-	FHitResult PreviousSphereHit;
-	FHitResult SphereHit;
-
-	FVector ImpactPoint;
-	FVector ImpactNormal;
-
-	for (size_t i = 0; i < 4; i++)
-	{
-
-		EDrawDebugTrace::Type DebugTraceType = ShowDebugTrace ? EDrawDebugTrace::ForDuration : EDrawDebugTrace::None;
-
-		UKismetSystemLibrary::SphereTraceSingleForObjects(this, Start, Start, 10.f, ClimbableObjectTypes, false, TArray<AActor*>(), EDrawDebugTrace::ForDuration, SphereHit, true);
-
-
-		if (!SphereHit.bBlockingHit && i>0 && CheckNormalContact(ImpactNormal))
-		{
-			Debug::Print(TEXT("Goood"));
-
-			DrawDebugSphere(GetWorld(), ImpactPoint, 10.f, 12, FColor::Emerald, false , 3.f);
-			DrawDebugLine(GetWorld(), ImpactPoint, ImpactPoint + ImpactNormal * 10.f, FColor::Blue, false, 3.f);
-
-			CurrentClimbableSurfaceLocation = ImpactPoint;
-			CurrentClimbableSurfaceNormal = ImpactNormal;
-
-			return true;
-		}
-
-		ImpactPoint  = SphereHit.ImpactPoint;
-		ImpactNormal = SphereHit.ImpactNormal;
-
-		Start = Start + FVector(0.f, 0.f, 20.f);
-	}
-
-
-	return false;
-}
-
-void UClimbingComponent::ClimbCapsuleTrace(FHitResult& outHit)
+bool UClimbingComponent::FindCLimbableObjectLocation()
 {
 	const FVector CharacterLocation = ActorOwner->GetActorLocation();
-	const FVector ForwardVector = ActorOwner->GetActorForwardVector() * ForwardOffset;
-	const FVector UpVector = ActorOwner->GetActorUpVector() * CharacterOwner->BaseEyeHeight;
+	const FVector ForwardVector = ActorOwner->GetActorForwardVector();
+	const FVector UpVector = ActorOwner->GetActorUpVector() * CharacterOwner->BaseEyeHeight * BaseEyeHeightOffset;
 
-	const FVector Start = CharacterLocation + UpVector + ForwardVector;
-	const FVector End = CharacterLocation + ForwardVector;
+	const FVector Start = CharacterLocation + UpVector;
+	const FVector End = Start + ForwardVector * ForwardOffset;
 
-	EDrawDebugTrace::Type DebugTraceType = ShowDebugTrace ? EDrawDebugTrace::ForDuration : EDrawDebugTrace::None;
+	EDrawDebugTrace::Type DebugTraceType = ShowDebugTrace ? EDrawDebugTrace::ForOneFrame : EDrawDebugTrace::None;
 
-	UKismetSystemLibrary::CapsuleTraceSingleForObjects(this, Start, End, Radius, HalfHeight, ClimbableObjectTypes, false, TArray<AActor*>(), DebugTraceType, outHit, true);
+	FHitResult outClimbableObjectHit;
+
+	UKismetSystemLibrary::SphereTraceSingleForObjects(this, Start, End, Radius_FirstTrace, ClimbableObjectTypes, false, TArray<AActor*>(), DebugTraceType, outClimbableObjectHit, true);
+
+	if (outClimbableObjectHit.bBlockingHit)
+	{
+		CurrentClimbableSurfaceLocation = outClimbableObjectHit.ImpactPoint;
+		CurrentClimbableSurfaceNormal = outClimbableObjectHit.ImpactNormal;
+		ClimbRotation = UKismetMathLibrary::NormalizedDeltaRotator(UKismetMathLibrary::MakeRotFromX(CurrentClimbableSurfaceNormal), FRotator(0.f,  180.f , 0.f));
+
+		return FindCLimbablePointLocation(outClimbableObjectHit);
+	}
+
+	return false;
 
 }
 
-bool UClimbingComponent::CheckNormalContact(FVector_NetQuantizeNormal ImpactNormal)
+bool UClimbingComponent::FindCLimbablePointLocation(FHitResult ClimbableObjectHit)
 {
-	if (ImpactNormal.Z < -0.1f) return false;
-	if (ImpactNormal.Z > 0.3f) return false;
-	return true;
+	const FVector Start = ClimbableObjectHit.ImpactPoint + FVector(0.f, 0.f, ClimbingTraceHeight);
+	const FVector End = ClimbableObjectHit.ImpactPoint;
+
+	FHitResult outClimbingPointHit;
+	EDrawDebugTrace::Type DebugTraceType = ShowDebugTrace ? EDrawDebugTrace::ForOneFrame : EDrawDebugTrace::None;
+
+	UKismetSystemLibrary::SphereTraceSingleForObjects(this, Start, End, Radius_SecondTrace, ClimbableObjectTypes, false, TArray<AActor*>(), DebugTraceType, outClimbingPointHit, true);
+
+	if (outClimbingPointHit.bBlockingHit )
+	{
+
+		FVector LedgeLocationXY = CurrentClimbableSurfaceLocation - UKismetMathLibrary::GetForwardVector(ClimbRotation) * LedgeHeightLocationXY;
+		float heightLedgeLocation = outClimbingPointHit.ImpactPoint.Z - LedgeHeightLocationZ;
+		LedgeLocation = FVector(LedgeLocationXY.X, LedgeLocationXY.Y, heightLedgeLocation);
+
+		return !CheckClimbableCondition(outClimbingPointHit);
+	}
+
+	return false;
+
 }
 
-void UClimbingComponent::SnapMovementToClimbableSurface(float DeltaTime)
+bool UClimbingComponent::CheckClimbableCondition(FHitResult ClimbablePointHit)
 {
-	const FVector ComponentForward = MovementComponent->UpdatedComponent->GetForwardVector();
-	const FVector ComponentLocation = MovementComponent->UpdatedComponent->GetComponentLocation();
+	const FVector Start = ClimbablePointHit.ImpactPoint + FVector(0.f, 0.f, CheckingClimbable_Z_Offset);
+	const FVector End = Start + ActorOwner->GetActorForwardVector() * CheckingClimbable_Forward_Offset;
 
-	const FVector ProjectedCharacterToSurface = (CurrentClimbableSurfaceLocation - ComponentLocation).ProjectOnTo(ComponentForward);
+	FHitResult outClimbableConditionHit;
+	EDrawDebugTrace::Type DebugTraceType = ShowDebugTrace ? EDrawDebugTrace::ForOneFrame : EDrawDebugTrace::None;
 
-	const FVector SnapVector = -CurrentClimbableSurfaceNormal * ProjectedCharacterToSurface.Length();
+	UKismetSystemLibrary::SphereTraceSingle(this, Start, End, Radius_ThirdTrace, TraceType, false , TArray<AActor*>() , DebugTraceType, outClimbableConditionHit , true,FLinearColor::Yellow);
+	
+	return outClimbableConditionHit.bBlockingHit;
 
-	MovementComponent->UpdatedComponent->MoveComponent(SnapVector * DeltaTime * MaxClimbSpeed, MovementComponent->UpdatedComponent->GetComponentQuat(), true);
+}
+
+void UClimbingComponent::GrabLedge()
+{
+
+	PlayClimbMontage(MovementComponent->IsFalling() ? JumpToHang : IdleToHang);
+	
+}
+
+void UClimbingComponent::MoveToLedgeLocation()
+{
+	FLatentActionInfo LatentInfo;
+	LatentInfo.CallbackTarget = this;
+	FRotator Rotator = FRotator(0.f, ClimbRotation.Yaw, 0.f);
+	float OverTime = FVector::Distance(LedgeLocation, ActorOwner->GetActorLocation()) / 250.f;
+	UKismetSystemLibrary::MoveComponentTo(CapsuleComponent, LedgeLocation, Rotator, true, false, OverTime, true, EMoveComponentAction::Move, LatentInfo);
 }
 
 #pragma endregion
+
+#pragma region MontageSection
+
+void UClimbingComponent::OnClimbMontageStartedHanging(FName NotifyName, const FBranchingPointNotifyPayload& BranchingPointPayload)
+{
+	if (NotifyName == FName("StartHanging"))
+	{
+
+		CharacterOwner->Jump();
+
+		StartClimbing();
+		MoveToLedgeLocation();
+	}
+
+}
+
+void UClimbingComponent::OnClimbMontageEnded(UAnimMontage* Montage, bool bInterrupted)
+{
+	MovementComponent->StopMovementImmediately();
+}
+
+void UClimbingComponent::PlayClimbMontage(UAnimMontage* MontageToPlay)
+{
+	if (!MontageToPlay) return;
+	if (!OwningPlayerAnimInstance) return;
+	if (OwningPlayerAnimInstance->IsAnyMontagePlaying()) return;
+
+	OwningPlayerAnimInstance->Montage_Play(MontageToPlay);
+}
+
+#pragma endregion
+
+
+
+
+
 
 
 

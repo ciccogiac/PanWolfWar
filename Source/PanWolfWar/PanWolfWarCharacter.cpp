@@ -63,6 +63,12 @@ void APanWolfWarCharacter::BeginPlay()
 	Super::BeginPlay();
 
 	AddMappingContext(DefaultMappingContext, 0);
+
+	if (ClimbingComponent)
+	{
+		ClimbingComponent->OnEnterClimbStateDelegate.BindUObject(this, &ThisClass::OnPlayerEnterClimbState);
+		ClimbingComponent->OnExitClimbStateDelegate.BindUObject(this, &ThisClass::OnPlayerExitClimbState);
+	}
 	
 }
 
@@ -107,7 +113,7 @@ void APanWolfWarCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInpu
 	if (UEnhancedInputComponent* EnhancedInputComponent = Cast<UEnhancedInputComponent>(PlayerInputComponent)) {
 		
 		// Jumping
-		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Started, this, &ACharacter::Jump);
+		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Started, this, &APanWolfWarCharacter::JumpClimbTrace);
 		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Completed, this, &ACharacter::StopJumping);
 
 		// Moving
@@ -126,7 +132,6 @@ void APanWolfWarCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInpu
 	}
 }
 #pragma endregion
-
 
 #pragma region InputCallback
 
@@ -166,10 +171,14 @@ void APanWolfWarCharacter::Look(const FInputActionValue& Value)
 	}
 }
 
+void APanWolfWarCharacter::JumpClimbTrace()
+{
+	//ClimbingComponent->ToggleClimbing();
+	if (!ClimbingComponent->IsClimbing() && !ClimbingComponent->TryClimbing()) { ClimbingComponent->ToggleClimbing();  ACharacter::Jump(); }
+}
 void APanWolfWarCharacter::Climb()
 {
-	if (ClimbingComponent->ToggleClimbing()) { AddMappingContext(ClimbingMappingContext, 1); }
-	else { RemoveMappingContext(ClimbingMappingContext); }
+	ClimbingComponent->ToggleClimbing();
 	
 }
 
@@ -189,6 +198,22 @@ void APanWolfWarCharacter::ClimbMove(const FInputActionValue& Value)
 	//AddMovementInput(RightDirection, MovementVector.X);
 }
 
+
+
 #pragma endregion
 
+//////////////////////////////////////////////////////////////////////////
+// Climbing Component Delegates
+
+void APanWolfWarCharacter::OnPlayerEnterClimbState()
+{
+	AddMappingContext(ClimbingMappingContext, 1);
+	GetCharacterMovement()->bOrientRotationToMovement = false;
+}
+
+void APanWolfWarCharacter::OnPlayerExitClimbState()
+{
+	RemoveMappingContext(ClimbingMappingContext);
+	GetCharacterMovement()->bOrientRotationToMovement = true;
+}
 
