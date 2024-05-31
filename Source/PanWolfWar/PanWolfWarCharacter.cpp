@@ -11,6 +11,7 @@
 #include "EnhancedInputSubsystems.h"
 #include "InputActionValue.h"
 
+
 #include "Components/ClimbingComponent.h"
 
 #include "DebugHelper.h"
@@ -55,6 +56,8 @@ APanWolfWarCharacter::APanWolfWarCharacter()
 	FollowCamera->bUsePawnControlRotation = false; // Camera does not rotate relative to arm
 
 	ClimbingComponent = CreateDefaultSubobject<UClimbingComponent>(TEXT("ClimbingComponent"));
+
+
 }
 
 void APanWolfWarCharacter::BeginPlay()
@@ -118,7 +121,9 @@ void APanWolfWarCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInpu
 
 		// Moving
 		EnhancedInputComponent->BindAction(MoveAction, ETriggerEvent::Triggered, this, &APanWolfWarCharacter::Move);
+
 		EnhancedInputComponent->BindAction(ClimbMoveAction, ETriggerEvent::Triggered, this, &APanWolfWarCharacter::ClimbMove);
+		EnhancedInputComponent->BindAction(ClimbMoveAction, ETriggerEvent::Completed, this, &APanWolfWarCharacter::ClimbMoveEnd);
 
 		// Looking
 		EnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &APanWolfWarCharacter::Look);
@@ -158,6 +163,21 @@ void APanWolfWarCharacter::Move(const FInputActionValue& Value)
 	}
 }
 
+void APanWolfWarCharacter::ClimbMove(const FInputActionValue& Value)
+{
+	const FVector2D MovementVector = Value.Get<FVector2D>() * 50.f;
+
+	if(MovementVector.X != 0)
+		ClimbingComponent->LedgeMoveRight(MovementVector.X);
+
+
+}
+
+void APanWolfWarCharacter::ClimbMoveEnd(const FInputActionValue& Value)
+{
+	ClimbingComponent->SetClimbDirection(0.f);
+}
+
 void APanWolfWarCharacter::Look(const FInputActionValue& Value)
 {
 	// input is a Vector2D
@@ -176,27 +196,14 @@ void APanWolfWarCharacter::JumpClimbTrace()
 	//ClimbingComponent->ToggleClimbing();
 	if (!ClimbingComponent->IsClimbing() && !ClimbingComponent->TryClimbing()) { ClimbingComponent->ToggleClimbing();  ACharacter::Jump(); }
 }
+
 void APanWolfWarCharacter::Climb()
 {
 	ClimbingComponent->ToggleClimbing();
 	
 }
 
-void APanWolfWarCharacter::ClimbMove(const FInputActionValue& Value)
-{
-	const FVector2D MovementVector = Value.Get<FVector2D>() * 50.f;
 
-	//DrawDebugSphere(GetWorld(), GetActorLocation() + FVector(50.f ,MovementVector.X, MovementVector.Y), 10.f, 12, FColor::Emerald, false, 3.f);
-
-	const FVector ForwardDirection = FVector::CrossProduct(-ClimbingComponent->GetClimbableSurfaceNormal(), GetActorRightVector());
-	const FVector RightDirection = FVector::CrossProduct(-ClimbingComponent->GetClimbableSurfaceNormal(), -GetActorUpVector());
-
-	//DrawDebugSphere(GetWorld(), GetActorLocation() + RightDirection * MovementVector.X , 10.f, 12, FColor::Emerald, false, 3.f);
-
-	// add movement 
-	//AddMovementInput(ForwardDirection, MovementVector.Y);
-	//AddMovementInput(RightDirection, MovementVector.X);
-}
 
 
 

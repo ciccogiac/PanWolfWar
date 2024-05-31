@@ -55,6 +55,8 @@ private:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Movement, meta = (AllowPrivateAccess = "true"))
 	UClimbingComponent* ClimbingComponent;
 
+
+
 	#pragma endregion
 
 	#pragma region InputAction
@@ -104,6 +106,7 @@ private:
 
 	void Climb();
 	void ClimbMove(const FInputActionValue& Value);
+	void ClimbMoveEnd(const FInputActionValue& Value);
 
 	#pragma endregion
 

@@ -9,6 +9,7 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Components/CapsuleComponent.h"
 
+
 #include "PanWolfWar/DebugHelper.h"
 
 
@@ -20,6 +21,7 @@ UClimbingComponent::UClimbingComponent()
 
 	ActorOwner = GetOwner();
 	CharacterOwner = Cast<ACharacter>(ActorOwner);
+
 }
 
 void UClimbingComponent::BeginPlay()
@@ -64,7 +66,7 @@ void UClimbingComponent::ToggleClimbing()
 void UClimbingComponent::StartClimbing()
 {
 	bIsClimbing = true;
-
+	ClimbDirection = 0.f;
 
 	MovementComponent->StopMovementImmediately();
 
@@ -79,6 +81,8 @@ void UClimbingComponent::StartClimbing()
 
 void UClimbingComponent::StopClimbing()
 {
+	ClimbDirection = 0.f;
+
 	CapsuleComponent->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
 	MovementComponent->SetMovementMode(EMovementMode::MOVE_Falling);
 	OnExitClimbStateDelegate.ExecuteIfBound();
@@ -188,6 +192,84 @@ void UClimbingComponent::MoveToLedgeLocation()
 	UKismetSystemLibrary::MoveComponentTo(CapsuleComponent, LedgeLocation, Rotator, true, false, OverTime, true, EMoveComponentAction::Move, LatentInfo);
 }
 
+void UClimbingComponent::LedgeMoveRight(float Direction)
+{
+
+
+	
+		const FVector CharacterLocation = ActorOwner->GetActorLocation();
+		const FVector ForwardVector = ActorOwner->GetActorForwardVector();
+		const FVector UpVector = ActorOwner->GetActorUpVector() * CharacterOwner->BaseEyeHeight * MoveUPOffset;
+		const FVector RightVector = (Direction > 0.f ? ActorOwner->GetActorRightVector() : -ActorOwner->GetActorRightVector()) * MoveRightOffset;
+
+		const FVector Start = CharacterLocation + UpVector + RightVector;
+		const FVector End = Start + ForwardVector * ForwardOffset;
+
+		EDrawDebugTrace::Type DebugTraceType = ShowDebugTrace ? EDrawDebugTrace::ForOneFrame : EDrawDebugTrace::None;
+
+		FHitResult outClimbableObjectHit1;
+
+		UKismetSystemLibrary::SphereTraceSingleForObjects(this, Start, End, Radius_FirstTrace, ClimbableObjectTypes, false, TArray<AActor*>(), DebugTraceType, outClimbableObjectHit1, true);
+
+		if (outClimbableObjectHit1.bBlockingHit)
+		{
+			const FVector Start2 = outClimbableObjectHit1.ImpactPoint + FVector(0.f, 0.f, 20.f);
+			const FVector End2 = Start2 + FVector(0.f, 0.f, -20.f);
+
+			FHitResult outClimbableObjectHit2;
+
+			UKismetSystemLibrary::SphereTraceSingleForObjects(this, Start2, End2, Radius_FirstTrace, ClimbableObjectTypes, false, TArray<AActor*>(), DebugTraceType, outClimbableObjectHit2, true);
+
+			if (outClimbableObjectHit2.bBlockingHit)
+			{
+				const FVector Start3 = outClimbableObjectHit2.ImpactPoint;
+				const FVector End3 = Start3 + (Direction > 0.f ? ActorOwner->GetActorRightVector() : -ActorOwner->GetActorRightVector()) * 28.f;
+
+				FHitResult outClimbableObjectHit3;
+
+				UKismetSystemLibrary::SphereTraceSingleForObjects(this, End3, End3, Radius_FirstTrace, ClimbableObjectTypes, false, TArray<AActor*>(), DebugTraceType, outClimbableObjectHit3, true);
+
+				if (outClimbableObjectHit3.bBlockingHit)
+				{
+					MoveOnLedge(outClimbableObjectHit1.ImpactPoint, outClimbableObjectHit2.ImpactPoint, UKismetMathLibrary::MakeRotFromX(outClimbableObjectHit1.ImpactNormal));
+					ClimbDirection = Direction;
+				}
+				else
+				{
+					ClimbDirection = 0.f;
+				}
+
+			}
+		}
+	
+
+
+	//return false;
+}
+
+void UClimbingComponent::MoveOnLedge(FVector Trace1ImpactPoint, FVector Trace2ImpactPoint, FRotator Rotation)
+{
+	FVector a = Trace1ImpactPoint + UKismetMathLibrary::GetForwardVector(Rotation) * LedgeHeightLocationXY;
+	float b = Trace2ImpactPoint.Z - LedgeHeightLocationZ;
+	FVector Location = FVector(a.X,a.Y,b);
+
+
+
+	/*FLatentActionInfo LatentInfo;
+	LatentInfo.CallbackTarget = this;
+	float OverTime = FVector::Distance(Location, ActorOwner->GetActorLocation()) / 250.f;
+	UKismetSystemLibrary::MoveComponentTo(CapsuleComponent, Location, FRotator(0.f, UKismetMathLibrary::NormalizedDeltaRotator(Rotation, FRotator(0.f, 180.f, 0.f)).Yaw, 0.f), true, false, OverTime, true, EMoveComponentAction::Move, LatentInfo);*/
+	
+
+	FRotator Rotator = FRotator(Rotation.Roll, Rotation.Yaw - 180 , Rotation.Roll);
+	FVector NewLocation = UKismetMathLibrary::VInterpTo(CharacterOwner->GetActorLocation(), Location, GetWorld()->GetDeltaSeconds(), 2.f);
+	FRotator NewRotation = UKismetMathLibrary::RInterpTo(CharacterOwner->GetActorRotation(), Rotator, GetWorld()->GetDeltaSeconds(), 5.f);
+
+
+	CharacterOwner->SetActorLocationAndRotation(NewLocation,NewRotation);
+}
+
+
 #pragma endregion
 
 #pragma region MontageSection
@@ -197,10 +279,10 @@ void UClimbingComponent::OnClimbMontageStartedHanging(FName NotifyName, const FB
 	if (NotifyName == FName("StartHanging"))
 	{
 
-		CharacterOwner->Jump();
-
 		StartClimbing();
+		CharacterOwner->Jump();
 		MoveToLedgeLocation();
+
 	}
 
 }

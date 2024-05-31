@@ -13,6 +13,7 @@ class UCharacterMovementComponent;
 class UCapsuleComponent;
 class UAnimMontage;
 
+
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class PANWOLFWAR_API UClimbingComponent : public UActorComponent
 {
@@ -33,6 +34,8 @@ public:
 
 	void ToggleClimbing();
 	bool TryClimbing();
+
+	void LedgeMoveRight(float Direction);
 
 
 #pragma endregion
@@ -63,6 +66,8 @@ private:
 	void GrabLedge();
 	void MoveToLedgeLocation();
 
+	void MoveOnLedge(FVector Trace1ImpactPoint, FVector Trac2ImpactPoint, FRotator Rotation);
+
 	void PlayClimbMontage(UAnimMontage* MontageToPlay);
 	UFUNCTION()
 	void OnClimbMontageStartedHanging(FName NotifyName, const FBranchingPointNotifyPayload& BranchingPointPayload);
@@ -85,6 +90,7 @@ private:
 	UCharacterMovementComponent* MovementComponent;
 	UCapsuleComponent* CapsuleComponent;
 
+
 	UPROPERTY()
 	UAnimInstance* OwningPlayerAnimInstance;
 
@@ -98,6 +104,9 @@ private:
 	FRotator ClimbRotation;
 	FVector LedgeLocation;
 	bool bCanClimb = true;
+
+
+	float ClimbDirection = 0;
 
 	#pragma endregion
 
@@ -115,11 +124,19 @@ private:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Climb Params", meta = (AllowPrivateAccess = "true"))
 	float LedgeHeightLocationZ = 110.f;
 
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Climb Params | First Trace", meta = (AllowPrivateAccess = "true"))
+	float MoveRightOffset = 1.5f;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Climb Params | First Trace", meta = (AllowPrivateAccess = "true"))
+	float MoveUPOffset = 1.5f;
+
 	#pragma region TraceVariables
 
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Climb Params | First Trace", meta = (AllowPrivateAccess = "true"))
 	float BaseEyeHeightOffset = 1.5f;
+
+
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Climb Params | First Trace", meta = (AllowPrivateAccess = "true"))
 	float ForwardOffset = 100.f;
@@ -171,6 +188,11 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category = "Climbing")
 	FORCEINLINE bool IsClimbing() const { return bIsClimbing; }
+
+	UFUNCTION(BlueprintCallable, Category = "Climbing")
+	FORCEINLINE float GetClimbDirection() const { return ClimbDirection; }
+
+	FORCEINLINE void SetClimbDirection(float Value)  { ClimbDirection = Value; }
 
 	FORCEINLINE FVector GetClimbableSurfaceNormal() const { return CurrentClimbableSurfaceNormal; }
 
