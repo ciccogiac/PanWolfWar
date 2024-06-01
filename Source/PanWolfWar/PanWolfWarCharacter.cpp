@@ -11,7 +11,6 @@
 #include "EnhancedInputSubsystems.h"
 #include "InputActionValue.h"
 
-
 #include "Components/ClimbingComponent.h"
 
 #include "DebugHelper.h"
@@ -66,6 +65,8 @@ void APanWolfWarCharacter::BeginPlay()
 	Super::BeginPlay();
 
 	AddMappingContext(DefaultMappingContext, 0);
+
+	// Delegates Binding 
 
 	if (ClimbingComponent)
 	{
@@ -122,20 +123,24 @@ void APanWolfWarCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInpu
 		// Moving
 		EnhancedInputComponent->BindAction(MoveAction, ETriggerEvent::Triggered, this, &APanWolfWarCharacter::Move);
 
-		EnhancedInputComponent->BindAction(ClimbMoveAction, ETriggerEvent::Triggered, this, &APanWolfWarCharacter::ClimbMove);
-		EnhancedInputComponent->BindAction(ClimbMoveAction, ETriggerEvent::Completed, this, &APanWolfWarCharacter::ClimbMoveEnd);
-
 		// Looking
 		EnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &APanWolfWarCharacter::Look);
 
-		// Climb
+		// Climbing
+
+		EnhancedInputComponent->BindAction(ClimbMoveAction, ETriggerEvent::Triggered, this, &APanWolfWarCharacter::ClimbMove);
+		EnhancedInputComponent->BindAction(ClimbMoveAction, ETriggerEvent::Completed, this, &APanWolfWarCharacter::ClimbMoveEnd);
+
 		EnhancedInputComponent->BindAction(ClimbAction, ETriggerEvent::Started, this, &APanWolfWarCharacter::Climb);
+
+		EnhancedInputComponent->BindAction(ClimbJumpAction, ETriggerEvent::Started, this, &APanWolfWarCharacter::ClimbJump);
 	}
 	else
 	{
 		UE_LOG(LogTemplateCharacter, Error, TEXT("'%s' Failed to find an Enhanced Input component! This template is built to use the Enhanced Input system. If you intend to use the legacy system, then you will need to update this C++ file."), *GetNameSafe(this));
 	}
 }
+
 #pragma endregion
 
 #pragma region InputCallback
@@ -163,21 +168,6 @@ void APanWolfWarCharacter::Move(const FInputActionValue& Value)
 	}
 }
 
-void APanWolfWarCharacter::ClimbMove(const FInputActionValue& Value)
-{
-	const FVector2D MovementVector = Value.Get<FVector2D>() * 50.f;
-
-	if(MovementVector.X != 0)
-		ClimbingComponent->LedgeMoveRight(MovementVector.X);
-
-
-}
-
-void APanWolfWarCharacter::ClimbMoveEnd(const FInputActionValue& Value)
-{
-	ClimbingComponent->SetClimbDirection(0.f);
-}
-
 void APanWolfWarCharacter::Look(const FInputActionValue& Value)
 {
 	// input is a Vector2D
@@ -197,20 +187,47 @@ void APanWolfWarCharacter::JumpClimbTrace()
 	if (!ClimbingComponent->IsClimbing() && !ClimbingComponent->TryClimbing()) { ClimbingComponent->ToggleClimbing();  ACharacter::Jump(); }
 }
 
-void APanWolfWarCharacter::Climb()
+void APanWolfWarCharacter::ClimbMove(const FInputActionValue& Value)
 {
-	ClimbingComponent->ToggleClimbing();
-	
+	const FVector2D MovementVector = Value.Get<FVector2D>() * 50.f;
+
+	if (Controller != nullptr)
+	{
+		if (MovementVector.Y != 0)
+			ClimbingComponent->LedgeUpMove(MovementVector.Y);
+			//ClimbingComponent->TryClimbing();
+		else if (MovementVector.X != 0)
+			ClimbingComponent->LedgeRightMove(MovementVector.X);
+		
+		else
+			ClimbingComponent->SetClimbDirection(0.f);
+	}
+
+
 }
 
+void APanWolfWarCharacter::ClimbMoveEnd(const FInputActionValue& Value)
+{
+	ClimbingComponent->SetClimbDirection(0.f);
+}
 
+void APanWolfWarCharacter::ClimbJump()
+{
+	ClimbingComponent->TryClimbUpon();
+}
 
+void APanWolfWarCharacter::Climb()
+{
+	ClimbingComponent->ToggleClimbing();	
+}
 
 
 #pragma endregion
 
 //////////////////////////////////////////////////////////////////////////
-// Climbing Component Delegates
+// Components Delegates
+
+#pragma region Climbing Delegates
 
 void APanWolfWarCharacter::OnPlayerEnterClimbState()
 {
@@ -223,4 +240,8 @@ void APanWolfWarCharacter::OnPlayerExitClimbState()
 	RemoveMappingContext(ClimbingMappingContext);
 	GetCharacterMovement()->bOrientRotationToMovement = true;
 }
+
+#pragma endregion
+
+
 

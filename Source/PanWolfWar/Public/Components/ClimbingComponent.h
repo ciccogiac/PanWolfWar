@@ -35,7 +35,10 @@ public:
 	void ToggleClimbing();
 	bool TryClimbing();
 
-	void LedgeMoveRight(float Direction);
+	void LedgeRightMove(float Direction);
+	void LedgeUpMove(float Direction);
+
+	void TryClimbUpon();
 
 
 #pragma endregion
@@ -58,15 +61,26 @@ private:
 
 
 	// Sphere Traces to Find PointLocation Climbable
-	bool FindCLimbableObjectLocation();
-	bool FindCLimbablePointLocation(FHitResult ClimbableObjectHit);
-	bool CheckClimbableCondition(FHitResult CLimbablePointHit);
+	const FHitResult DoSphereTraceSingleForObjects(const FVector& Start, const FVector& End, float Radius);
+	const FHitResult DoSphereTraceSingleForChannel(const FVector& Start, const FVector& End, float Radius);
+
+	bool FindClimbableObject(const float BaseEyeHeightOffset_UP = 0.f);
+	bool CheckClimbableObjectTrace(const FHitResult& outClimbableObjectHit);
+	bool FindClimbablePoint(const FHitResult& ClimbableObjectHit);
+	bool CheckClimbableSpaceCondition(const FHitResult& CLimbablePointHit, const FHitResult& ClimbableObjectHit);
+
+	bool CheckCanClimbUpon();
+
+	void ProcessClimbableSurfaceInfo(const FHitResult& ClimbableObjectHit);
+	FVector CalculateLedgeLocation(const FVector& ImpactObjectPoint, const FVector& ClimbablePoint, const FRotator& Rotation, int ForwardDirectionAdjusted);
 
 	//Set Climbing State and Move to Climbing Point
 	void GrabLedge();
 	void MoveToLedgeLocation();
 
-	void MoveOnLedge(FVector Trace1ImpactPoint, FVector Trac2ImpactPoint, FRotator Rotation);
+
+	void MoveOnLedge(const FVector& ImpactObjectPoint, const FVector& ClimbablePoint, const FRotator& Rotation);
+	void HandleRightMove(const FHitResult& outClimbableObjectHit,const FHitResult& outClimbablePointHit, float Direction);
 
 	void PlayClimbMontage(UAnimMontage* MontageToPlay);
 	UFUNCTION()
@@ -105,7 +119,6 @@ private:
 	FVector LedgeLocation;
 	bool bCanClimb = true;
 
-
 	float ClimbDirection = 0;
 
 	#pragma endregion
@@ -124,19 +137,27 @@ private:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Climb Params", meta = (AllowPrivateAccess = "true"))
 	float LedgeHeightLocationZ = 110.f;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Climb Params | First Trace", meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Climb Params ", meta = (AllowPrivateAccess = "true"))
 	float MoveRightOffset = 1.5f;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Climb Params | First Trace", meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Climb Params ", meta = (AllowPrivateAccess = "true"))
 	float MoveUPOffset = 1.5f;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Climb Params ", meta = (AllowPrivateAccess = "true"))
+	float MaxImpactNormal_Z_value = 0.2f;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Climb Params ", meta = (AllowPrivateAccess = "true"))
+	float MaxImpactNormalToForwardVector_Cos_value = 0.3f;
 
 	#pragma region TraceVariables
 
+	#pragma region First Trace
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Climb Params | First Trace", meta = (AllowPrivateAccess = "true"))
-	float BaseEyeHeightOffset = 1.5f;
+	float BaseEyeHeightOffset_Idle = 1.5f;
 
-
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Climb Params | First Trace", meta = (AllowPrivateAccess = "true"))
+	float BaseEyeHeightOffset_Jumping = 1.f;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Climb Params | First Trace", meta = (AllowPrivateAccess = "true"))
 	float ForwardOffset = 100.f;
@@ -144,11 +165,22 @@ private:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Climb Params | First Trace", meta = (AllowPrivateAccess = "true"))
 	float Radius_FirstTrace = 10.f;
 
+	#pragma endregion
+
+	#pragma region Second Trace
+
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Climb Params | Second Trace", meta = (AllowPrivateAccess = "true"))
-	float ClimbingTraceHeight = 150.f;
+	float ClimbingTraceHeight_Idle = 120.f;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Climb Params | Second Trace", meta = (AllowPrivateAccess = "true"))
+	float ClimbingTraceHeight_Jumping = 50.f;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Climb Params | Second Trace", meta = (AllowPrivateAccess = "true"))
 	float Radius_SecondTrace = 10.f;
+
+	#pragma endregion
+
+	#pragma region Third Trace
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Climb Params | Third Trace", meta = (AllowPrivateAccess = "true"))
 	float CheckingClimbable_Z_Offset = 10.f;
@@ -164,6 +196,8 @@ private:
 
 	#pragma endregion
 
+	#pragma endregion
+
 
 	#pragma endregion
 
@@ -174,6 +208,15 @@ private:
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Climb Montages", meta = (AllowPrivateAccess = "true"))
 	UAnimMontage* JumpToHang;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Climb Montages", meta = (AllowPrivateAccess = "true"))
+	UAnimMontage* HangToHang_UP;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Climb Montages", meta = (AllowPrivateAccess = "true"))
+	UAnimMontage* HangToHang_DOWN;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Climb Montages", meta = (AllowPrivateAccess = "true"))
+	UAnimMontage* ClimbToTopMontage;
 
 
 	#pragma endregion
@@ -194,7 +237,6 @@ public:
 
 	FORCEINLINE void SetClimbDirection(float Value)  { ClimbDirection = Value; }
 
-	FORCEINLINE FVector GetClimbableSurfaceNormal() const { return CurrentClimbableSurfaceNormal; }
 
 #pragma endregion
 

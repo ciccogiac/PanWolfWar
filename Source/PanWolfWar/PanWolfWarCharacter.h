@@ -83,6 +83,9 @@ private:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	UInputAction* ClimbMoveAction;
 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	UInputAction* ClimbJumpAction;
+
 
 	#pragma endregion
 
@@ -91,6 +94,7 @@ private:
 #pragma region PrivateFunctions
 private:
 
+	// Delegates
 	void OnPlayerEnterClimbState();
 	void OnPlayerExitClimbState();
 
@@ -107,12 +111,11 @@ private:
 	void Climb();
 	void ClimbMove(const FInputActionValue& Value);
 	void ClimbMoveEnd(const FInputActionValue& Value);
+	void ClimbJump();
 
 	#pragma endregion
 
 #pragma endregion
-
-
 
 #pragma region FORCEINLINE_functions
 
