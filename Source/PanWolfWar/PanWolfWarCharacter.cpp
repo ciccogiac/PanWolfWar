@@ -13,6 +13,7 @@
 
 #include "Components/ClimbingComponent.h"
 
+#include "Kismet/KismetMathLibrary.h"
 #include "DebugHelper.h"
 
 DEFINE_LOG_CATEGORY(LogTemplateCharacter);
@@ -20,11 +21,13 @@ DEFINE_LOG_CATEGORY(LogTemplateCharacter);
 //////////////////////////////////////////////////////////////////////////
 // APanWolfWarCharacter
 
+#pragma region EngineFunctions
+
 APanWolfWarCharacter::APanWolfWarCharacter()
 {
 	// Set size for collision capsule
 	GetCapsuleComponent()->InitCapsuleSize(42.f, 96.0f);
-		
+
 	// Don't rotate when the controller rotates. Let that just affect the camera.
 	bUseControllerRotationPitch = false;
 	bUseControllerRotationYaw = false;
@@ -56,7 +59,6 @@ APanWolfWarCharacter::APanWolfWarCharacter()
 
 	ClimbingComponent = CreateDefaultSubobject<UClimbingComponent>(TEXT("ClimbingComponent"));
 
-
 }
 
 void APanWolfWarCharacter::BeginPlay()
@@ -73,8 +75,10 @@ void APanWolfWarCharacter::BeginPlay()
 		ClimbingComponent->OnEnterClimbStateDelegate.BindUObject(this, &ThisClass::OnPlayerEnterClimbState);
 		ClimbingComponent->OnExitClimbStateDelegate.BindUObject(this, &ThisClass::OnPlayerExitClimbState);
 	}
-	
+
 }
+
+#pragma endregion
 
 
 //////////////////////////////////////////////////////////////////////////
@@ -183,26 +187,17 @@ void APanWolfWarCharacter::Look(const FInputActionValue& Value)
 
 void APanWolfWarCharacter::JumpClimbTrace()
 {
-	//ClimbingComponent->ToggleClimbing();
 	if (!ClimbingComponent->IsClimbing() && !ClimbingComponent->TryClimbing()) { ClimbingComponent->ToggleClimbing();  ACharacter::Jump(); }
 }
 
 void APanWolfWarCharacter::ClimbMove(const FInputActionValue& Value)
 {
-	const FVector2D MovementVector = Value.Get<FVector2D>() * 50.f;
+	const FVector2D MovementVector = Value.Get<FVector2D>();
 
 	if (Controller != nullptr)
-	{
-		if (MovementVector.Y != 0)
-			ClimbingComponent->LedgeUpMove(MovementVector.Y);
-			//ClimbingComponent->TryClimbing();
-		else if (MovementVector.X != 0)
-			ClimbingComponent->LedgeRightMove(MovementVector.X);
-		
-		else
-			ClimbingComponent->SetClimbDirection(0.f);
+	{		
+		ClimbingComponent->LedgeMove(Get8DirectionVector(MovementVector));
 	}
-
 
 }
 
@@ -223,6 +218,56 @@ void APanWolfWarCharacter::Climb()
 
 
 #pragma endregion
+
+FVector2D APanWolfWarCharacter::Get8DirectionVector(const FVector2D& InputVector)
+{
+	FVector2D Normalized = InputVector.GetSafeNormal();
+	float Angle = FMath::Atan2(Normalized.Y, Normalized.X);
+	// Aggiungere 2PI se l'angolo è negativo
+	if (Angle < 0)
+	{
+		Angle += 2.0f * PI;
+	}
+
+	// Convertire l'angolo in gradi
+	float AngleDegrees = FMath::RadiansToDegrees(Angle);
+
+	//// Determinare la direzione in base all'angolo
+	if (AngleDegrees <= 30.f || AngleDegrees > 330.f)
+	{
+		return FVector2D(1.0f, 0.0f);  // Right
+	}
+	else if (AngleDegrees <= 70.f)
+	{
+		return FVector2D(1.0f, 1.0f);  // Up-Right
+	}
+	else if (AngleDegrees <= 110.f)
+	{
+		return FVector2D(0.0f, 1.0f);  // Up
+	}
+	else if (AngleDegrees <= 150.f)
+	{
+		return FVector2D(-1.0f, 1.0f); // Up-Left
+	}
+	else if (AngleDegrees <= 210.f)
+	{
+		return FVector2D(-1.0f, 0.0f); // Left
+	}
+	else if (AngleDegrees <= 250.f)
+	{
+		return FVector2D(-1.0f, -1.0f); // Down-Left
+	}
+	else if (AngleDegrees <= 290.f)
+	{
+		return FVector2D(0.0f, -1.0f); // Down
+	}
+	else if (AngleDegrees <= 330.f)
+	{
+		return FVector2D(1.0f, -1.0f); // Down-Right
+	}
+
+	return FVector2D(0.0f, 0.0f);  // Default, should not be reached
+}
 
 //////////////////////////////////////////////////////////////////////////
 // Components Delegates

@@ -52,10 +52,9 @@ private:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
 	UCameraComponent* FollowCamera;
 
+	/** Climbing Component */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Movement, meta = (AllowPrivateAccess = "true"))
 	UClimbingComponent* ClimbingComponent;
-
-
 
 	#pragma endregion
 
@@ -68,6 +67,7 @@ private:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	UInputMappingContext* ClimbingMappingContext;
 
+	/** InputActions */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	UInputAction* JumpAction;
 
@@ -101,11 +101,14 @@ private:
 	void AddMappingContext(UInputMappingContext* MappingContextToAdd, int32 Priority);
 	void RemoveMappingContext(UInputMappingContext* MappingContextToRemove);
 
+	FVector2D Get8DirectionVector(const FVector2D& InputVector);
+
 	#pragma region InputCallback
 
 	void Move(const FInputActionValue& Value);
 	void Look(const FInputActionValue& Value);
 
+	/** Climbing CallBacks */
 	void JumpClimbTrace();
 
 	void Climb();
