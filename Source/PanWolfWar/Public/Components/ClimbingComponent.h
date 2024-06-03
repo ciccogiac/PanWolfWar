@@ -56,6 +56,7 @@ private:
 
 	bool CanClimbDownLedge();
 	const FHitResult DoLineTraceSingleByObject(const FVector& Start, const FVector& End);
+	const FHitResult DoLineTraceSingleByChannel(const FVector& Start, const FVector& End);
 
 	void StartClimbing();
 	void StopClimbing();
@@ -64,6 +65,7 @@ private:
 	// Sphere Traces to Find PointLocation Climbable
 	const FHitResult DoSphereTraceSingleForObjects(const FVector& Start, const FVector& End, float Radius);
 	const FHitResult DoSphereTraceSingleForChannel(const FVector& Start, const FVector& End, float Radius);
+	const FHitResult DoCapsuleTraceSingleForChannel(const FVector& Start, const FVector& End, float Radius, float HalfHeight);
 
 	const FHitResult TraceFromEyeHeight(const float Radius, const float BaseEyeHeightOffset_UP, const float BaseEyeHeightOffset_Right = 0.f);
 	const FHitResult TraceForObject(const float Radius, const float BaseEyeHeightOffset_UP, const float BaseEyeHeightOffset_Right = 0.f);
@@ -74,6 +76,7 @@ private:
 	bool CheckClimbableObjectTrace(const FHitResult& outClimbableObjectHit);
 	bool FindClimbablePoint(const FHitResult& ClimbableObjectHit);
 	bool CheckClimbableSpaceCondition(const FHitResult& CLimbablePointHit);
+	bool CheckCapsuleSpaceCondition(const FVector& CLimbablePoint , bool FullHeight = false);
 
 	bool CanClimbUpon();
 
@@ -87,7 +90,7 @@ private:
 	bool LedgeUpMove(const FVector2D& Direction);
 
 
-	void MoveOnLedge(const FVector& ImpactObjectPoint, const FVector& ClimbablePoint, const FRotator& Rotation);
+	bool MoveOnLedge(const FVector& ImpactObjectPoint, const FVector& ClimbablePoint, const FRotator& Rotation);
 	void HandleRightMove(const FHitResult& outClimbableObjectHit,const FHitResult& outClimbablePointHit, float Direction);
 
 	void PlayClimbMontage(UAnimMontage* MontageToPlay);

@@ -50,9 +50,9 @@ void UClimbingComponent::TickComponent(float DeltaTime, ELevelTick TickType, FAc
 
 	if (!bIsClimbing && bCanClimb && MovementComponent->IsFalling() && MovementComponent->Velocity.Z >0.f) { TryClimbing(); }
 	
-	if (!OwningPlayerAnimInstance->IsAnyMontagePlaying() && CanClimbDownLedge())
+	
+	if (!MovementComponent->IsFalling() && !OwningPlayerAnimInstance->IsAnyMontagePlaying()  && MovementComponent->GetLastInputVector().Y!=0.f && CanClimbDownLedge())
 	{
-		Debug::Print(TEXT("Can Climb? : YES ") , FColor::Magenta, 1);
 		PlayClimbMontage(TopToClimbMontage);
 	}
 }
@@ -74,7 +74,8 @@ void UClimbingComponent::StartClimbing()
 	ClimbDirection = 0.f;
 
 	MovementComponent->StopMovementImmediately();
-
+	CharacterOwner->GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	CharacterOwner->GetCapsuleComponent()->SetCapsuleHalfHeight(45);
 	MovementComponent->MaxFlySpeed = 0.f;
 	MovementComponent->SetMovementMode(EMovementMode::MOVE_Flying, 0);
 
@@ -88,6 +89,7 @@ void UClimbingComponent::StopClimbing()
 	bIsClimbing = false;
 	ClimbDirection = 0.f;
 
+
 	MovementComponent->SetMovementMode(EMovementMode::MOVE_Falling);
 
 	const FRotator DirtyRotation = MovementComponent->UpdatedComponent->GetComponentRotation();
@@ -95,6 +97,9 @@ void UClimbingComponent::StopClimbing()
 	MovementComponent->UpdatedComponent->SetRelativeRotation(CleanStandRotation);
 
 	OnExitClimbStateDelegate.ExecuteIfBound();
+
+	CharacterOwner->GetCapsuleComponent()->SetCapsuleHalfHeight(90);
+	CharacterOwner->GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
 }
 
 #pragma endregion
@@ -118,6 +123,15 @@ bool UClimbingComponent::CheckClimbableSpaceCondition(const FHitResult& Climbabl
 
 	return !outClimbableConditionHit.bBlockingHit;
 
+}
+
+bool UClimbingComponent::CheckCapsuleSpaceCondition(const FVector& CLimbablePoint, bool FullHeight)
+{
+	//float CapsuleHalfHeight = CharacterOwner->GetCapsuleComponent()->GetScaledCapsuleHalfHeight();
+	float CapsuleHalfHeight = FullHeight ? 90.f : 45.f;
+	float CapsuleRadius = CharacterOwner->GetCapsuleComponent()->GetScaledCapsuleRadius();
+	const FVector Start = CLimbablePoint + FVector(0.f, 0.f, 1.f + CapsuleHalfHeight);
+	return !DoCapsuleTraceSingleForChannel(Start, Start, CapsuleRadius, CapsuleHalfHeight).bBlockingHit;
 }
 
 #pragma endregion
@@ -157,9 +171,11 @@ bool UClimbingComponent::FindClimbablePoint(const FHitResult& ClimbableObjectHit
 
 	if (outClimbingPointHit.bBlockingHit && CheckClimbableSpaceCondition(outClimbingPointHit))
 	{
+		
 		ProcessClimbableSurfaceInfo(ClimbableObjectHit);
 		LedgeLocation = CalculateLedgeLocation(CurrentClimbableSurfaceLocation, outClimbingPointHit.ImpactPoint, ClimbRotation, -1);
-		return true;
+		return CheckCapsuleSpaceCondition(LedgeLocation - FVector(0.f,0.f, CharacterOwner->GetCapsuleComponent()->GetScaledCapsuleHalfHeight()));
+		//return true;
 	}
 
 	return false;
@@ -208,17 +224,23 @@ void UClimbingComponent::HandleRightMove(const FHitResult& outClimbableObjectHit
 	const FVector Start = outClimbablePointHit.ImpactPoint;
 	const FVector End = Start + RightVersor * HandOffset;
 
-	const FHitResult outEndLedgePointHit = DoSphereTraceSingleForObjects(End, End, Radius_FirstTrace_Hand);
+	const FHitResult outEndLedgePointHit = DoSphereTraceSingleForObjects(End, End + ActorOwner->GetActorForwardVector() * 30.f, Radius_FirstTrace_Hand);
 
-	const FHitResult outClimbableConditionHit = DoSphereTraceSingleForChannel(Start - ActorOwner->GetActorForwardVector()*15.f, End - ActorOwner->GetActorForwardVector()*15.f, Radius_ThirdTrace);
-
-	if (outEndLedgePointHit.bBlockingHit && !outClimbableConditionHit.bBlockingHit)
+	if (outEndLedgePointHit.bBlockingHit )
 	{
-		MoveOnLedge(outClimbableObjectHit.ImpactPoint, outClimbablePointHit.ImpactPoint, UKismetMathLibrary::MakeRotFromX(outClimbableObjectHit.ImpactNormal));
-		ClimbDirection = Direction;
+		if(MoveOnLedge(outClimbableObjectHit.ImpactPoint, outClimbablePointHit.ImpactPoint, UKismetMathLibrary::MakeRotFromX(outClimbableObjectHit.ImpactNormal)))
+		{
+			ClimbDirection = Direction;
+		}
+		else
+		{
+			ClimbDirection = 0.f;
+		}
+
 	}
 	else
 	{
+		Debug::Print(TEXT("Can Turn On Corner?"), FColor::Blue, 1);
 		ClimbDirection = 0.f;
 	}
 
@@ -244,12 +266,13 @@ bool UClimbingComponent::CanClimbUpon()
 
 		//return DoSphereTraceSingleForChannel(Start_Height, End_Height, Radius_FirstTrace_Landing).bBlockingHit;
 
-		FHitResult hit = DoSphereTraceSingleForChannel(Start_Height, End_Height, Radius_FirstTrace_Landing);
+		FHitResult hit = DoLineTraceSingleByChannel(Start_Height, End_Height);
 		if (hit.bBlockingHit)
 		{
-			float CapsuleHeight = CharacterOwner->GetCapsuleComponent()->GetScaledCapsuleHalfHeight();
+			/*float CapsuleHeight = CharacterOwner->GetCapsuleComponent()->GetScaledCapsuleHalfHeight();
 			float CapsuleRadius = CharacterOwner->GetCapsuleComponent()->GetScaledCapsuleRadius();
-			return !DoSphereTraceSingleForChannel(hit.ImpactPoint + FVector (0.f,0.f,50.f), hit.ImpactPoint + FVector(0.f, 0.f, 50.f + CapsuleHeight), CapsuleRadius).bBlockingHit;
+			return !DoSphereTraceSingleForChannel(hit.ImpactPoint + FVector (0.f,0.f,50.f), hit.ImpactPoint + FVector(0.f, 0.f, 50.f + CapsuleHeight), CapsuleRadius).bBlockingHit;*/
+			return CheckCapsuleSpaceCondition(hit.ImpactPoint,true);
 		}
 
 	}
@@ -265,29 +288,18 @@ bool UClimbingComponent::CanClimbDownLedge()
 	const FVector ComponentForward = ActorOwner->GetActorForwardVector();
 	const FVector DownVector = -ActorOwner->GetActorUpVector();
 
-	const FVector WalkableSurfaceTraceStart = ComponentLocation + ComponentForward * 100.f;
-	const FVector WalkableSurfaceTraceEnd = WalkableSurfaceTraceStart + DownVector * 100.f;
+	const float height = CharacterOwner->GetCapsuleComponent()->GetScaledCapsuleHalfHeight();
+	const FVector WalkableSurfaceTraceStart = ComponentLocation + FVector(0.f,0.f,-height -20.f);
+	const FVector WalkableSurfaceTraceEnd = WalkableSurfaceTraceStart + ComponentForward * 50.f;
 
-	//FHitResult WalkableSurfaceHit = DoLineTraceSingleByObject(WalkableSurfaceTraceStart, WalkableSurfaceTraceEnd);
-	FHitResult WalkableSurfaceHit = DoSphereTraceSingleForObjects(WalkableSurfaceTraceStart, WalkableSurfaceTraceEnd, 25.f);
+	FHitResult WalkableSurfaceHit = DoSphereTraceSingleForObjects( WalkableSurfaceTraceEnd, WalkableSurfaceTraceStart, 25.f);
 	
-
-	const FVector LedgeTraceStart = WalkableSurfaceHit.TraceStart + ComponentForward * 50.f;
-	const FVector LedgeTraceEnd = LedgeTraceStart + DownVector * 200.f;
-
-	FHitResult LedgeTraceHit = DoLineTraceSingleByObject(LedgeTraceStart, LedgeTraceEnd);
-
-	if (WalkableSurfaceHit.bBlockingHit && !LedgeTraceHit.bBlockingHit)
+	if (WalkableSurfaceHit.bBlockingHit && std::abs(WalkableSurfaceHit.ImpactNormal.Z) < MaxImpactNormal_Z_value &&
+		FMath::IsNearlyEqual(FVector::DotProduct(WalkableSurfaceHit.ImpactNormal, ActorOwner->GetActorForwardVector()), 1.0f, MaxImpactNormalToForwardVector_Cos_value))
 	{
-		Debug::Print(TEXT("Normal : ") + WalkableSurfaceHit.ImpactNormal.ToString(),FColor::Cyan,2);
-
-		const FHitResult outClimbableObjectHit = TraceForObject(Radius_FirstTrace, -110.f);
-
-		if (outClimbableObjectHit.bBlockingHit && std::abs(outClimbableObjectHit.ImpactNormal.Z) < MaxImpactNormal_Z_value)
-		{
-			return FindClimbablePoint(outClimbableObjectHit);
-		}
+		return FindClimbablePoint(WalkableSurfaceHit);
 	}
+
 
 	return false;
 }
@@ -341,6 +353,7 @@ void UClimbingComponent::TryClimbUpon()
 	{
 		ClimbDirection = 0.f;
 		bIsClimbing = false;
+		CharacterOwner->GetCapsuleComponent()->SetCapsuleHalfHeight(90);
 		PlayClimbMontage(ClimbToTopMontage);
 	}
 }
@@ -354,15 +367,18 @@ void UClimbingComponent::MoveToLedgeLocation()
 	UKismetSystemLibrary::MoveComponentTo(CapsuleComponent, LedgeLocation, Rotator, true, false, OverTime, true, EMoveComponentAction::Move, LatentInfo);
 }
 
-void UClimbingComponent::MoveOnLedge(const FVector& ImpactObjectPoint, const FVector& ClimbablePoint, const FRotator& Rotation)
+bool UClimbingComponent::MoveOnLedge(const FVector& ImpactObjectPoint, const FVector& ClimbablePoint, const FRotator& Rotation)
 {
 	FVector Location = CalculateLedgeLocation(ImpactObjectPoint, ClimbablePoint, Rotation, 1);
+	if (!CheckCapsuleSpaceCondition(Location - FVector(0.f, 0.f, CharacterOwner->GetCapsuleComponent()->GetScaledCapsuleHalfHeight()))) return false;
 	FRotator Rotator = FRotator(Rotation.Roll, Rotation.Yaw - 180, Rotation.Roll);
 
 	FVector NewLocation = UKismetMathLibrary::VInterpTo(CharacterOwner->GetActorLocation(), Location, GetWorld()->GetDeltaSeconds(), 2.f);
 	FRotator NewRotation = UKismetMathLibrary::RInterpTo(CharacterOwner->GetActorRotation(), Rotator, GetWorld()->GetDeltaSeconds(), 5.f);
 
 	CharacterOwner->SetActorLocationAndRotation(NewLocation, NewRotation);
+
+	return true;
 }
 
 #pragma endregion
@@ -424,6 +440,17 @@ const FHitResult UClimbingComponent::DoLineTraceSingleByObject(const FVector& St
 	return OutHit;
 }
 
+const FHitResult UClimbingComponent::DoLineTraceSingleByChannel(const FVector& Start, const FVector& End)
+{
+	FHitResult OutHit;
+
+	EDrawDebugTrace::Type DebugTraceType = ShowDebugTrace ? EDrawDebugTrace::ForOneFrame : EDrawDebugTrace::None;
+
+	UKismetSystemLibrary::LineTraceSingle(this, Start, End, TraceType, false, TArray<AActor*>(), DebugTraceType, OutHit, false);
+
+	return OutHit;
+}
+
 const FHitResult UClimbingComponent::DoSphereTraceSingleForObjects(const FVector& Start, const FVector& End, float Radius)
 {
 	FHitResult OutHit;
@@ -440,6 +467,16 @@ const FHitResult UClimbingComponent::DoSphereTraceSingleForChannel(const FVector
 	EDrawDebugTrace::Type DebugTraceType = ShowDebugTrace ? EDrawDebugTrace::ForOneFrame : EDrawDebugTrace::None;
 
 	UKismetSystemLibrary::SphereTraceSingle(this, Start, End, Radius, TraceType, false, TArray<AActor*>(), DebugTraceType, OutHit, true, FLinearColor::Yellow);
+
+	return OutHit;
+}
+
+const FHitResult UClimbingComponent::DoCapsuleTraceSingleForChannel(const FVector& Start, const FVector& End, float Radius, float HalfHeight)
+{
+	FHitResult OutHit;
+	EDrawDebugTrace::Type DebugTraceType = ShowDebugTrace ? EDrawDebugTrace::ForOneFrame : EDrawDebugTrace::None;
+
+	UKismetSystemLibrary::CapsuleTraceSingle(this, Start, End, Radius, HalfHeight, TraceType, false, TArray<AActor*>(), DebugTraceType, OutHit, true, FLinearColor::Yellow);
 
 	return OutHit;
 }
