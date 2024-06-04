@@ -220,11 +220,12 @@ void UClimbingComponent::LedgeRightMove(float Direction)
 
 void UClimbingComponent::HandleRightMove(const FHitResult& outClimbableObjectHit,const FHitResult& outClimbablePointHit, float Direction)
 {
-	const FVector RightVersor = ActorOwner->GetActorRightVector() * FMath::Sign(Direction) ;
+	const float SignDirection = FMath::Sign(Direction);
+	const FVector RightVersor = ActorOwner->GetActorRightVector() * SignDirection;
 	const FVector Start = outClimbablePointHit.ImpactPoint;
 	const FVector End = Start + RightVersor * HandOffset;
 
-	const FHitResult outEndLedgePointHit = DoSphereTraceSingleForObjects(End, End + ActorOwner->GetActorForwardVector() * 30.f, Radius_FirstTrace_Hand);
+	const FHitResult outEndLedgePointHit = DoSphereTraceSingleForObjects(End - ActorOwner->GetActorForwardVector() * HandBorder_Backward, End + ActorOwner->GetActorForwardVector() * HandBorder_Forward, Radius_FirstTrace_Hand);
 
 	if (outEndLedgePointHit.bBlockingHit )
 	{
@@ -234,13 +235,24 @@ void UClimbingComponent::HandleRightMove(const FHitResult& outClimbableObjectHit
 		}
 		else
 		{
+			if (CanClimbCorner(outEndLedgePointHit, SignDirection,true))
+			{
+				UAnimMontage* Montage = SignDirection > 0 ? ClimbInternCornerRightMontage : ClimbInternCornerLeftMontage;
+				PlayClimbMontage(Montage);
+			}
+			else
 			ClimbDirection = 0.f;
 		}
 
 	}
 	else
 	{
-		Debug::Print(TEXT("Can Turn On Corner?"), FColor::Blue, 1);
+		if (CanClimbCorner(outEndLedgePointHit, SignDirection))
+		{
+			UAnimMontage* Montage = SignDirection > 0 ? ClimbExternCornerRightMontage : ClimbExternCornerLeftMontage;
+			PlayClimbMontage(Montage);
+
+		}
 		ClimbDirection = 0.f;
 	}
 
@@ -304,6 +316,34 @@ bool UClimbingComponent::CanClimbDownLedge()
 	return false;
 }
 
+bool UClimbingComponent::CanClimbCorner(const FHitResult& outEndLedgePointHit, float Direction, bool InternLedge)
+{
+	FVector Start ;
+	FVector End ;
+
+	if (!InternLedge)
+	{
+		 Start = outEndLedgePointHit.TraceEnd;
+		 End = Start + ActorOwner->GetActorRightVector() * 40.f * -Direction;
+	}
+
+	else
+	{
+		Start = outEndLedgePointHit.ImpactPoint + ActorOwner->GetActorRightVector() * 40.f * -Direction;
+		End = outEndLedgePointHit.ImpactPoint - ActorOwner->GetActorRightVector() * 40.f * -Direction;
+	}
+	
+
+	const FHitResult outClimbableObjectHit = DoSphereTraceSingleForObjects(Start , End, Radius_FirstTrace);
+
+	if (outClimbableObjectHit.bBlockingHit)
+	{
+		return FindClimbablePoint(outClimbableObjectHit);
+	}
+	//PlayClimbMontage(ClimbCornerLeftMontage);
+
+	return false;
+}
 #pragma endregion
 
 #pragma region ClimbingMove
@@ -311,6 +351,7 @@ bool UClimbingComponent::CanClimbDownLedge()
 void UClimbingComponent::LedgeMove(const FVector2D MovementVector)
 {
 	if (!bIsClimbing) return;
+	if(OwningPlayerAnimInstance->IsAnyMontagePlaying()) return;
 
 	if (MovementVector.Y == 0 && MovementVector.X != 0)
 	{

@@ -79,6 +79,7 @@ private:
 	bool CheckCapsuleSpaceCondition(const FVector& CLimbablePoint , bool FullHeight = false);
 
 	bool CanClimbUpon();
+	bool CanClimbCorner(const FHitResult& outEndLedgePointHit, float Direction, bool InternLedge = false);
 
 	void ProcessClimbableSurfaceInfo(const FHitResult& ClimbableObjectHit);
 	FVector CalculateLedgeLocation(const FVector& ImpactObjectPoint, const FVector& ClimbablePoint, const FRotator& Rotation, int ForwardDirectionAdjusted);
@@ -156,6 +157,12 @@ private:
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Climb Params ", meta = (AllowPrivateAccess = "true"))
 	float HandOffset = 28.f;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Climb Params ", meta = (AllowPrivateAccess = "true"))
+	float HandBorder_Forward = 25.f;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Climb Params ", meta = (AllowPrivateAccess = "true"))
+	float HandBorder_Backward = 25.f;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Climb Params ", meta = (AllowPrivateAccess = "true"))
 	float MaxImpactNormal_Z_value = 0.2f;
@@ -258,6 +265,19 @@ private:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Climb Montages", meta = (AllowPrivateAccess = "true"))
 	UAnimMontage* TopToClimbMontage;
 
+	/** Corner */
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Climb Montages", meta = (AllowPrivateAccess = "true"))
+	UAnimMontage* ClimbExternCornerLeftMontage;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Climb Montages", meta = (AllowPrivateAccess = "true"))
+	UAnimMontage* ClimbExternCornerRightMontage;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Climb Montages", meta = (AllowPrivateAccess = "true"))
+	UAnimMontage* ClimbInternCornerLeftMontage;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Climb Montages", meta = (AllowPrivateAccess = "true"))
+	UAnimMontage* ClimbInternCornerRightMontage;
 
 	#pragma endregion
 
