@@ -80,6 +80,7 @@ private:
 
 	bool CanClimbUpon();
 	bool CanClimbCorner(const FHitResult& outEndLedgePointHit, float Direction, bool InternLedge = false);
+	bool CanClimbJump(const FHitResult& outEndLedgePointHit, float Direction);
 
 	void ProcessClimbableSurfaceInfo(const FHitResult& ClimbableObjectHit);
 	FVector CalculateLedgeLocation(const FVector& ImpactObjectPoint, const FVector& ClimbablePoint, const FRotator& Rotation, int ForwardDirectionAdjusted);
@@ -130,6 +131,7 @@ private:
 	FRotator ClimbRotation;
 	FVector LedgeLocation;
 	bool bCanClimb = true;
+	bool bClimbDown = false;
 
 	float ClimbDirection = 0;
 
@@ -279,6 +281,14 @@ private:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Climb Montages", meta = (AllowPrivateAccess = "true"))
 	UAnimMontage* ClimbInternCornerRightMontage;
 
+	/** Jump */
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Climb Montages", meta = (AllowPrivateAccess = "true"))
+	UAnimMontage* ClimbJumpLeftMontage;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Climb Montages", meta = (AllowPrivateAccess = "true"))
+	UAnimMontage* ClimbJumpRightMontage;
+
 	#pragma endregion
 
 
@@ -296,6 +306,7 @@ public:
 	FORCEINLINE float GetClimbDirection() const { return ClimbDirection; }
 
 	FORCEINLINE void SetClimbDirection(float Direction)  { ClimbDirection = Direction; }
+	FORCEINLINE void SetClimbDown(bool Value) { bClimbDown = Value; }
 
 #pragma endregion
 

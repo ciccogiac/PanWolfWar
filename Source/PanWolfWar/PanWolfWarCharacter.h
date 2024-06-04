@@ -78,6 +78,9 @@ private:
 	UInputAction* LookAction;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	UInputAction* ClimbDownAction;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	UInputAction* ClimbAction;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
@@ -112,6 +115,8 @@ private:
 	void JumpClimbTrace();
 
 	void Climb();
+	void ClimbDownActivate();
+	void ClimbDownDeActivate();
 	void ClimbMove(const FInputActionValue& Value);
 	void ClimbMoveEnd(const FInputActionValue& Value);
 	void ClimbJump();

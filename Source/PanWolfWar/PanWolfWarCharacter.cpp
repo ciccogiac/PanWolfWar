@@ -138,6 +138,9 @@ void APanWolfWarCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInpu
 		EnhancedInputComponent->BindAction(ClimbAction, ETriggerEvent::Started, this, &APanWolfWarCharacter::Climb);
 
 		EnhancedInputComponent->BindAction(ClimbJumpAction, ETriggerEvent::Started, this, &APanWolfWarCharacter::ClimbJump);
+
+		EnhancedInputComponent->BindAction(ClimbDownAction, ETriggerEvent::Started, this, &APanWolfWarCharacter::ClimbDownActivate);
+		EnhancedInputComponent->BindAction(ClimbDownAction, ETriggerEvent::Completed, this, &APanWolfWarCharacter::ClimbDownDeActivate);
 	}
 	else
 	{
@@ -214,6 +217,16 @@ void APanWolfWarCharacter::ClimbJump()
 void APanWolfWarCharacter::Climb()
 {
 	ClimbingComponent->ToggleClimbing();	
+}
+
+void APanWolfWarCharacter::ClimbDownActivate()
+{
+	ClimbingComponent->SetClimbDown(true);
+}
+
+void APanWolfWarCharacter::ClimbDownDeActivate()
+{
+	ClimbingComponent->SetClimbDown(false);
 }
 
 

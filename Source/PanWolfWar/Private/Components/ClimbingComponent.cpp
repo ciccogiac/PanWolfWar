@@ -51,7 +51,7 @@ void UClimbingComponent::TickComponent(float DeltaTime, ELevelTick TickType, FAc
 	if (!bIsClimbing && bCanClimb && MovementComponent->IsFalling() && MovementComponent->Velocity.Z >0.f) { TryClimbing(); }
 	
 	
-	if (!MovementComponent->IsFalling() && !OwningPlayerAnimInstance->IsAnyMontagePlaying()  && MovementComponent->GetLastInputVector().Y!=0.f && CanClimbDownLedge())
+	if (bClimbDown && !MovementComponent->IsFalling() && !OwningPlayerAnimInstance->IsAnyMontagePlaying()  && CanClimbDownLedge())
 	{
 		PlayClimbMontage(TopToClimbMontage);
 	}
@@ -253,6 +253,17 @@ void UClimbingComponent::HandleRightMove(const FHitResult& outClimbableObjectHit
 			PlayClimbMontage(Montage);
 
 		}
+
+		else
+		{
+			//TryJumping
+			if (CanClimbJump(outEndLedgePointHit, SignDirection))
+			{
+				//Debug::Print(TEXT("I Can Jump!!"));
+				UAnimMontage* Montage = SignDirection > 0 ? ClimbJumpRightMontage : ClimbJumpLeftMontage;
+				PlayClimbMontage(Montage);
+			}
+		}
 		ClimbDirection = 0.f;
 	}
 
@@ -341,6 +352,30 @@ bool UClimbingComponent::CanClimbCorner(const FHitResult& outEndLedgePointHit, f
 		return FindClimbablePoint(outClimbableObjectHit);
 	}
 	//PlayClimbMontage(ClimbCornerLeftMontage);
+
+	return false;
+}
+
+bool UClimbingComponent::CanClimbJump(const FHitResult& outEndLedgePointHit, float Direction)
+{
+	const FVector Start = outEndLedgePointHit.TraceStart + ActorOwner->GetActorForwardVector() * HandBorder_Backward + ActorOwner->GetActorRightVector() * Direction * 10.f;
+	const FVector End = Start + ActorOwner->GetActorRightVector() * Direction * 150.f;
+
+	const FHitResult hit = DoSphereTraceSingleForObjects(Start, End, 20.f);
+
+	if (hit.bBlockingHit)
+	{
+		const FVector Start2 = hit.ImpactPoint + ActorOwner->GetActorRightVector() * -Direction;
+		const FVector End2 = hit.ImpactPoint - ActorOwner->GetActorRightVector() * 5.f * -Direction;
+
+		const FHitResult outClimbableObjectHit = DoSphereTraceSingleForObjects( End2, Start2, Radius_FirstTrace);
+
+		if (outClimbableObjectHit.bBlockingHit)
+		{
+			return FindClimbablePoint(outClimbableObjectHit);
+		}
+	}
+
 
 	return false;
 }
