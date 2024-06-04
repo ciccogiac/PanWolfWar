@@ -37,7 +37,8 @@ public:
 
 	void LedgeMove(const FVector2D MovementVector);
 
-	void TryClimbUpon();
+	bool TryClimbUpon();
+	bool TryJumping();
 
 
 #pragma endregion
@@ -65,6 +66,7 @@ private:
 	// Sphere Traces to Find PointLocation Climbable
 	const FHitResult DoSphereTraceSingleForObjects(const FVector& Start, const FVector& End, float Radius);
 	const FHitResult DoSphereTraceSingleForChannel(const FVector& Start, const FVector& End, float Radius);
+	const FHitResult DoCapsuleTraceSingleForObjects(const FVector& Start, const FVector& End, float Radius, float HalfHeight, AActor* ActorToIgnore = nullptr);
 	const FHitResult DoCapsuleTraceSingleForChannel(const FVector& Start, const FVector& End, float Radius, float HalfHeight);
 
 	const FHitResult TraceFromEyeHeight(const float Radius, const float BaseEyeHeightOffset_UP, const float BaseEyeHeightOffset_Right = 0.f);
@@ -80,7 +82,7 @@ private:
 
 	bool CanClimbUpon();
 	bool CanClimbCorner(const FHitResult& outEndLedgePointHit, float Direction, bool InternLedge = false);
-	bool CanClimbJump(const FHitResult& outEndLedgePointHit, float Direction);
+	bool CanClimbJump(const FHitResult& outEndLedgePointHit, float Direction, AActor* ActorToIgnore);
 
 	void ProcessClimbableSurfaceInfo(const FHitResult& ClimbableObjectHit);
 	FVector CalculateLedgeLocation(const FVector& ImpactObjectPoint, const FVector& ClimbablePoint, const FRotator& Rotation, int ForwardDirectionAdjusted);
@@ -132,6 +134,9 @@ private:
 	FVector LedgeLocation;
 	bool bCanClimb = true;
 	bool bClimbDown = false;
+
+	bool bJumpSaved = false;
+	UAnimMontage* SavedJumpMontage;
 
 	float ClimbDirection = 0;
 
@@ -307,6 +312,9 @@ public:
 
 	FORCEINLINE void SetClimbDirection(float Direction)  { ClimbDirection = Direction; }
 	FORCEINLINE void SetClimbDown(bool Value) { bClimbDown = Value; }
+
+	FORCEINLINE bool GetJumpSaved() const { return bJumpSaved ; }
+	FORCEINLINE void SetJumpSaved(bool Value) { bJumpSaved = Value; }
 
 #pragma endregion
 

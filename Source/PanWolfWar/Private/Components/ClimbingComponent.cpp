@@ -212,7 +212,32 @@ void UClimbingComponent::LedgeRightMove(float Direction)
 
 			if (outClimbablePointHit.bBlockingHit)
 			{
-				HandleRightMove(outClimbableObjectHit,outClimbablePointHit, Direction);
+				HandleRightMove(outClimbableObjectHit, outClimbablePointHit, Direction);
+			}
+		}
+
+		else
+		{
+			const float SignDirection = FMath::Sign(Direction);
+
+			if (CanClimbCorner(outClimbableObjectHit, SignDirection))
+			{
+				UAnimMontage* Montage = SignDirection > 0 ? ClimbExternCornerRightMontage : ClimbExternCornerLeftMontage;
+				PlayClimbMontage(Montage);
+
+			}
+
+			else
+			{
+				//TryJumping
+				if (CanClimbJump(outClimbableObjectHit, SignDirection, outClimbableObjectHit.GetActor()))
+				{
+					//Debug::Print(TEXT("I Can Jump!!"));
+					UAnimMontage* Montage = SignDirection > 0 ? ClimbJumpRightMontage : ClimbJumpLeftMontage;
+					//PlayClimbMontage(Montage);
+					SavedJumpMontage = Montage;
+					bJumpSaved = true;
+				}
 			}
 		}
 	
@@ -257,11 +282,13 @@ void UClimbingComponent::HandleRightMove(const FHitResult& outClimbableObjectHit
 		else
 		{
 			//TryJumping
-			if (CanClimbJump(outEndLedgePointHit, SignDirection))
+			if (CanClimbJump(outEndLedgePointHit, SignDirection, outClimbableObjectHit.GetActor()))
 			{
 				//Debug::Print(TEXT("I Can Jump!!"));
 				UAnimMontage* Montage = SignDirection > 0 ? ClimbJumpRightMontage : ClimbJumpLeftMontage;
-				PlayClimbMontage(Montage);
+				//PlayClimbMontage(Montage);
+				SavedJumpMontage = Montage;
+				bJumpSaved = true;
 			}
 		}
 		ClimbDirection = 0.f;
@@ -356,12 +383,15 @@ bool UClimbingComponent::CanClimbCorner(const FHitResult& outEndLedgePointHit, f
 	return false;
 }
 
-bool UClimbingComponent::CanClimbJump(const FHitResult& outEndLedgePointHit, float Direction)
+bool UClimbingComponent::CanClimbJump(const FHitResult& outEndLedgePointHit, float Direction, AActor* ActorToIgnore)
 {
-	const FVector Start = outEndLedgePointHit.TraceStart + ActorOwner->GetActorForwardVector() * HandBorder_Backward + ActorOwner->GetActorRightVector() * Direction * 10.f;
+	const FVector Start = outEndLedgePointHit.TraceStart + ActorOwner->GetActorForwardVector() * HandBorder_Backward/1.5 + ActorOwner->GetActorRightVector() * Direction * 30.f;
+	//const FVector Start = outEndLedgePointHit.TraceStart + ActorOwner->GetActorForwardVector() * HandBorder_Backward + ActorOwner->GetActorRightVector() * Direction * 10.f;
 	const FVector End = Start + ActorOwner->GetActorRightVector() * Direction * 150.f;
 
-	const FHitResult hit = DoSphereTraceSingleForObjects(Start, End, 20.f);
+	//const FHitResult hit = DoSphereTraceSingleForObjects(Start, End, 20.f);
+
+	const FHitResult hit = DoCapsuleTraceSingleForObjects(Start, End, 40.f, 60.f, ActorToIgnore);
 
 	if (hit.bBlockingHit)
 	{
@@ -423,7 +453,7 @@ bool UClimbingComponent::LedgeUpMove(const FVector2D& Direction)
 	return false;
 }
 
-void UClimbingComponent::TryClimbUpon()
+bool UClimbingComponent::TryClimbUpon()
 {
 	if (CanClimbUpon() && !OwningPlayerAnimInstance->IsAnyMontagePlaying())
 	{
@@ -431,7 +461,20 @@ void UClimbingComponent::TryClimbUpon()
 		bIsClimbing = false;
 		CharacterOwner->GetCapsuleComponent()->SetCapsuleHalfHeight(90);
 		PlayClimbMontage(ClimbToTopMontage);
+		return true;
 	}
+	return false;
+}
+
+bool UClimbingComponent::TryJumping()
+{
+	if (bJumpSaved && !OwningPlayerAnimInstance->IsAnyMontagePlaying())
+	{
+		bJumpSaved = false;
+		PlayClimbMontage(SavedJumpMontage);
+		return true;
+	}
+	return false;
 }
 
 void UClimbingComponent::MoveToLedgeLocation()
@@ -543,6 +586,19 @@ const FHitResult UClimbingComponent::DoSphereTraceSingleForChannel(const FVector
 	EDrawDebugTrace::Type DebugTraceType = ShowDebugTrace ? EDrawDebugTrace::ForOneFrame : EDrawDebugTrace::None;
 
 	UKismetSystemLibrary::SphereTraceSingle(this, Start, End, Radius, TraceType, false, TArray<AActor*>(), DebugTraceType, OutHit, true, FLinearColor::Yellow);
+
+	return OutHit;
+}
+
+const FHitResult UClimbingComponent::DoCapsuleTraceSingleForObjects(const FVector& Start, const FVector& End, float Radius, float HalfHeight, AActor* ActorToIgnore)
+{
+	FHitResult OutHit;
+	EDrawDebugTrace::Type DebugTraceType = ShowDebugTrace ? EDrawDebugTrace::ForOneFrame : EDrawDebugTrace::None;
+
+	TArray<AActor*> ActorsToIgnoreArray;
+	ActorsToIgnoreArray.Add(ActorToIgnore);
+
+	UKismetSystemLibrary::CapsuleTraceSingleForObjects(this, Start, End, Radius, HalfHeight, ClimbableObjectTypes, false, ActorsToIgnoreArray, DebugTraceType, OutHit, true, FLinearColor::White);
 
 	return OutHit;
 }

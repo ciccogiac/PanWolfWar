@@ -207,11 +207,17 @@ void APanWolfWarCharacter::ClimbMove(const FInputActionValue& Value)
 void APanWolfWarCharacter::ClimbMoveEnd(const FInputActionValue& Value)
 {
 	ClimbingComponent->SetClimbDirection(0.f);
+	ClimbingComponent->SetJumpSaved(false);
 }
 
 void APanWolfWarCharacter::ClimbJump()
 {
-	ClimbingComponent->TryClimbUpon();
+	if (ClimbingComponent->GetJumpSaved())
+	{
+		ClimbingComponent->TryJumping();
+	}
+	else
+		ClimbingComponent->TryClimbUpon();
 }
 
 void APanWolfWarCharacter::Climb()
