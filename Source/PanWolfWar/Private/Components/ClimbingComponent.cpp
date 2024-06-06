@@ -55,6 +55,10 @@ void UClimbingComponent::TickComponent(float DeltaTime, ELevelTick TickType, FAc
 	{
 		PlayClimbMontage(TopToClimbMontage);
 	}
+
+		Debug::Print(TEXT("Climbed Object :") + (ClimbedObject ? ClimbedObject->GetName() : TEXT("")), FColor::Cyan, 3);
+		Debug::Print(TEXT("Saved Climbed Object :") + (SavedClimbedObject ? SavedClimbedObject->GetName() : TEXT("")), FColor::Magenta, 4);
+
 }
 
 #pragma endregion
@@ -87,6 +91,8 @@ void UClimbingComponent::StartClimbing()
 void UClimbingComponent::StopClimbing()
 {
 	bIsClimbing = false;
+	ClimbedObject = nullptr;
+	SavedClimbedObject = nullptr;
 	ClimbDirection = 0.f;
 
 
@@ -132,6 +138,8 @@ bool UClimbingComponent::CheckCapsuleSpaceCondition(const FVector& CLimbablePoin
 	float CapsuleRadius = CharacterOwner->GetCapsuleComponent()->GetScaledCapsuleRadius();
 	const FVector Start = CLimbablePoint + FVector(0.f, 0.f, 1.f + CapsuleHalfHeight);
 	return !DoCapsuleTraceSingleForChannel(Start, Start, CapsuleRadius, CapsuleHalfHeight).bBlockingHit;
+
+	
 }
 
 #pragma endregion
@@ -140,25 +148,25 @@ bool UClimbingComponent::CheckCapsuleSpaceCondition(const FVector& CLimbablePoin
 
 bool UClimbingComponent::TryClimbing()
 {
-	bool bClimbableSurface = FindClimbableObject();
-	if (bClimbableSurface)
+	if (FindClimbableObject())
 	{
 		//DrawDebugSphere(GetWorld(), LedgeLocation, 8.f, 12, FColor::Emerald, false, 20.f);
 		//DrawDebugLine(GetWorld(),   FVector(CurrentClimbableSurfaceLocation.X, CurrentClimbableSurfaceLocation.Y,LedgeLocation.Z), LedgeLocation, FColor::Blue, false, 3.f);
-
 		UAnimMontage* Montage = MovementComponent->IsFalling() ? JumpToHang : IdleToHang;
 		PlayClimbMontage(Montage);
+		return true;
 	}	
-	return bClimbableSurface;
+	return false;
 }
 
 bool UClimbingComponent::FindClimbableObject(const float BaseEyeHeightOffset_UP, const float BaseEyeHeightOffset_Right )
 {
 	const FHitResult outClimbableObjectHit = TraceFromEyeHeight(Radius_FirstTrace,BaseEyeHeightOffset_UP, BaseEyeHeightOffset_Right);
 
-	if (CheckClimbableObjectTrace(outClimbableObjectHit))
+	if (CheckClimbableObjectTrace(outClimbableObjectHit) && FindClimbablePoint(outClimbableObjectHit))
 	{
-		return FindClimbablePoint(outClimbableObjectHit);
+		ClimbedObject = outClimbableObjectHit.GetActor();
+		return true;
 	}
 
 	return false;
@@ -174,8 +182,11 @@ bool UClimbingComponent::FindClimbablePoint(const FHitResult& ClimbableObjectHit
 		
 		ProcessClimbableSurfaceInfo(ClimbableObjectHit);
 		LedgeLocation = CalculateLedgeLocation(CurrentClimbableSurfaceLocation, outClimbingPointHit.ImpactPoint, ClimbRotation, -1);
-		return CheckCapsuleSpaceCondition(LedgeLocation - FVector(0.f,0.f, CharacterOwner->GetCapsuleComponent()->GetScaledCapsuleHalfHeight()));
-		//return true;
+		//return CheckCapsuleSpaceCondition(LedgeLocation - FVector(0.f,0.f, CharacterOwner->GetCapsuleComponent()->GetScaledCapsuleHalfHeight()));
+
+
+		return CheckCapsuleSpaceCondition(LedgeLocation - FVector(0.f, 0.f, CharacterOwner->GetCapsuleComponent()->GetScaledCapsuleHalfHeight()));
+
 	}
 
 	return false;
@@ -200,7 +211,7 @@ FVector UClimbingComponent::CalculateLedgeLocation(const FVector& ImpactObjectPo
 void UClimbingComponent::LedgeRightMove(float Direction)
 {
 
-		const FHitResult outClimbableObjectHit = TraceFromEyeHeight(Radius_FirstTrace, MoveUPOffset, MoveRightOffset * FMath::Sign(Direction));
+		const FHitResult outClimbableObjectHit = TraceFromEyeHeight(Radius_FirstHand, MoveUPOffset, MoveRightOffset * FMath::Sign(Direction),true);
 
 		if (outClimbableObjectHit.bBlockingHit)
 		{
@@ -208,11 +219,41 @@ void UClimbingComponent::LedgeRightMove(float Direction)
 			const FVector Start_ClimbablePoint = outClimbableObjectHit.ImpactPoint + FVector(0.f, 0.f, ClimbingTraceHeight_Hanging_Right);
 			const FVector End_ClimbablePoint = Start_ClimbablePoint + FVector(0.f, 0.f, -ClimbingTraceHeight_Hanging_Right);
 
-			const FHitResult outClimbablePointHit = DoSphereTraceSingleForObjects(Start_ClimbablePoint, End_ClimbablePoint, Radius_FirstTrace);
+			const FHitResult outClimbablePointHit = DoSphereTraceSingleForObjects(Start_ClimbablePoint, End_ClimbablePoint, Radius_FirstHand);
 
 			if (outClimbablePointHit.bBlockingHit)
 			{
 				HandleRightMove(outClimbableObjectHit, outClimbablePointHit, Direction);
+			}
+
+			else
+			{
+				const float SignDirection = FMath::Sign(Direction);
+
+				if (CanClimbCorner(outClimbableObjectHit, SignDirection))
+				{
+					bJumpSaved = false;
+					UAnimMontage* Montage = SignDirection > 0 ? ClimbExternCornerRightMontage : ClimbExternCornerLeftMontage;
+					PlayClimbMontage(Montage);
+
+				}
+
+				else
+				{
+					//TryJumping
+					if (CanClimbJump( SignDirection))
+					{
+						//Debug::Print(TEXT("I Can Jump!!"));
+						UAnimMontage* Montage = SignDirection > 0 ? ClimbJumpRightMontage : ClimbJumpLeftMontage;
+						//PlayClimbMontage(Montage);
+						SavedJumpMontage = Montage;
+						bJumpSaved = true;
+					}
+					else
+					{
+						bJumpSaved = false;
+					}
+				}
 			}
 		}
 
@@ -220,8 +261,10 @@ void UClimbingComponent::LedgeRightMove(float Direction)
 		{
 			const float SignDirection = FMath::Sign(Direction);
 
-			if (CanClimbCorner(outClimbableObjectHit, SignDirection))
+			//Caso in cui sono nu pizzo (Bisogna spostare in avanti il trace end del hitresult) - ActorOwner->GetActorForwardVector() * HandBorder_Backward
+			if (CanClimbCorner(outClimbableObjectHit, SignDirection,false,true))
 			{
+				bJumpSaved = false;
 				UAnimMontage* Montage = SignDirection > 0 ? ClimbExternCornerRightMontage : ClimbExternCornerLeftMontage;
 				PlayClimbMontage(Montage);
 
@@ -230,7 +273,7 @@ void UClimbingComponent::LedgeRightMove(float Direction)
 			else
 			{
 				//TryJumping
-				if (CanClimbJump(outClimbableObjectHit, SignDirection, outClimbableObjectHit.GetActor()))
+				if (CanClimbJump(SignDirection))
 				{
 					//Debug::Print(TEXT("I Can Jump!!"));
 					UAnimMontage* Montage = SignDirection > 0 ? ClimbJumpRightMontage : ClimbJumpLeftMontage;
@@ -238,8 +281,14 @@ void UClimbingComponent::LedgeRightMove(float Direction)
 					SavedJumpMontage = Montage;
 					bJumpSaved = true;
 				}
+				else
+				{
+					bJumpSaved = false;
+				}
 			}
 		}
+
+		
 	
 }
 
@@ -256,17 +305,31 @@ void UClimbingComponent::HandleRightMove(const FHitResult& outClimbableObjectHit
 	{
 		if(MoveOnLedge(outClimbableObjectHit.ImpactPoint, outClimbablePointHit.ImpactPoint, UKismetMathLibrary::MakeRotFromX(outClimbableObjectHit.ImpactNormal)))
 		{
+			if (outClimbableObjectHit.GetActor() != ClimbedObject) ClimbedObject  = outClimbableObjectHit.GetActor() ;
+
 			ClimbDirection = Direction;
+			bJumpSaved = false;
 		}
 		else
 		{
+			ClimbDirection = 0.f;
 			if (CanClimbCorner(outEndLedgePointHit, SignDirection,true))
 			{
+				bJumpSaved = false;
 				UAnimMontage* Montage = SignDirection > 0 ? ClimbInternCornerRightMontage : ClimbInternCornerLeftMontage;
 				PlayClimbMontage(Montage);
 			}
-			else
-			ClimbDirection = 0.f;
+			//TryJumping
+			else if (CanClimbJump(SignDirection))
+			{
+				//Debug::Print(TEXT("I Can Jump!!"));
+				UAnimMontage* Montage = SignDirection > 0 ? ClimbJumpRightMontage : ClimbJumpLeftMontage;
+				//PlayClimbMontage(Montage);
+				SavedJumpMontage = Montage;
+				bJumpSaved = true;
+			}
+			
+			
 		}
 
 	}
@@ -274,6 +337,7 @@ void UClimbingComponent::HandleRightMove(const FHitResult& outClimbableObjectHit
 	{
 		if (CanClimbCorner(outEndLedgePointHit, SignDirection))
 		{
+			bJumpSaved = false;
 			UAnimMontage* Montage = SignDirection > 0 ? ClimbExternCornerRightMontage : ClimbExternCornerLeftMontage;
 			PlayClimbMontage(Montage);
 
@@ -282,13 +346,17 @@ void UClimbingComponent::HandleRightMove(const FHitResult& outClimbableObjectHit
 		else
 		{
 			//TryJumping
-			if (CanClimbJump(outEndLedgePointHit, SignDirection, outClimbableObjectHit.GetActor()))
+			if (CanClimbJump(SignDirection))
 			{
 				//Debug::Print(TEXT("I Can Jump!!"));
 				UAnimMontage* Montage = SignDirection > 0 ? ClimbJumpRightMontage : ClimbJumpLeftMontage;
 				//PlayClimbMontage(Montage);
 				SavedJumpMontage = Montage;
 				bJumpSaved = true;
+			}
+			else
+			{
+				bJumpSaved = false;
 			}
 		}
 		ClimbDirection = 0.f;
@@ -317,12 +385,11 @@ bool UClimbingComponent::CanClimbUpon()
 		//return DoSphereTraceSingleForChannel(Start_Height, End_Height, Radius_FirstTrace_Landing).bBlockingHit;
 
 		FHitResult hit = DoLineTraceSingleByChannel(Start_Height, End_Height);
-		if (hit.bBlockingHit)
+		if (hit.bBlockingHit && CheckCapsuleSpaceCondition(hit.ImpactPoint, true))
 		{
-			/*float CapsuleHeight = CharacterOwner->GetCapsuleComponent()->GetScaledCapsuleHalfHeight();
-			float CapsuleRadius = CharacterOwner->GetCapsuleComponent()->GetScaledCapsuleRadius();
-			return !DoSphereTraceSingleForChannel(hit.ImpactPoint + FVector (0.f,0.f,50.f), hit.ImpactPoint + FVector(0.f, 0.f, 50.f + CapsuleHeight), CapsuleRadius).bBlockingHit;*/
-			return CheckCapsuleSpaceCondition(hit.ImpactPoint,true);
+			ClimbedObject = nullptr;
+			SavedClimbedObject = nullptr;
+			return true;
 		}
 
 	}
@@ -347,6 +414,7 @@ bool UClimbingComponent::CanClimbDownLedge()
 	if (WalkableSurfaceHit.bBlockingHit && std::abs(WalkableSurfaceHit.ImpactNormal.Z) < MaxImpactNormal_Z_value &&
 		FMath::IsNearlyEqual(FVector::DotProduct(WalkableSurfaceHit.ImpactNormal, ActorOwner->GetActorForwardVector()), 1.0f, MaxImpactNormalToForwardVector_Cos_value))
 	{
+		ClimbedObject = WalkableSurfaceHit.GetActor();
 		return FindClimbablePoint(WalkableSurfaceHit);
 	}
 
@@ -354,14 +422,15 @@ bool UClimbingComponent::CanClimbDownLedge()
 	return false;
 }
 
-bool UClimbingComponent::CanClimbCorner(const FHitResult& outEndLedgePointHit, float Direction, bool InternLedge)
+bool UClimbingComponent::CanClimbCorner(const FHitResult& outEndLedgePointHit, float Direction, bool InternLedge, bool BlindPoint )
 {
 	FVector Start ;
 	FVector End ;
 
 	if (!InternLedge)
 	{
-		 Start = outEndLedgePointHit.TraceEnd;
+		 Start = outEndLedgePointHit.TraceEnd + (BlindPoint? ActorOwner->GetActorForwardVector() * ( HandBorder_Backward + HandBorder_Forward - ForwardOffset) : FVector::ZeroVector);
+		 //Start = outEndLedgePointHit.TraceEnd + (BlindPoint ? ActorOwner->GetActorForwardVector() * (15.f) : FVector::ZeroVector);
 		 End = Start + ActorOwner->GetActorRightVector() * 40.f * -Direction;
 	}
 
@@ -372,43 +441,56 @@ bool UClimbingComponent::CanClimbCorner(const FHitResult& outEndLedgePointHit, f
 	}
 	
 
-	const FHitResult outClimbableObjectHit = DoSphereTraceSingleForObjects(Start , End, Radius_FirstTrace);
+	const FHitResult outClimbableObjectHit = DoSphereTraceSingleForObjects(Start , End, Radius_Corner);
 
-	if (outClimbableObjectHit.bBlockingHit)
+	if (outClimbableObjectHit.bBlockingHit && FindClimbablePoint(outClimbableObjectHit))
 	{
-		return FindClimbablePoint(outClimbableObjectHit);
+		ClimbedObject = outClimbableObjectHit.GetActor();
+		return true;
 	}
-	//PlayClimbMontage(ClimbCornerLeftMontage);
 
 	return false;
 }
 
-bool UClimbingComponent::CanClimbJump(const FHitResult& outEndLedgePointHit, float Direction, AActor* ActorToIgnore)
+bool UClimbingComponent::CanClimbJump( float Direction , float UP_Offset)
 {
-	const FVector Start = outEndLedgePointHit.TraceStart + ActorOwner->GetActorForwardVector() * HandBorder_Backward/1.5 + ActorOwner->GetActorRightVector() * Direction * 30.f;
-	//const FVector Start = outEndLedgePointHit.TraceStart + ActorOwner->GetActorForwardVector() * HandBorder_Backward + ActorOwner->GetActorRightVector() * Direction * 10.f;
-	const FVector End = Start + ActorOwner->GetActorRightVector() * Direction * 150.f;
+	//if (bJumpSaved) return false;
 
-	//const FHitResult hit = DoSphereTraceSingleForObjects(Start, End, 20.f);
+	const float Radius = 25.f;
+	const float HalfHeiht = 50.f;
 
-	const FHitResult hit = DoCapsuleTraceSingleForObjects(Start, End, 40.f, 60.f, ActorToIgnore);
-
-	if (hit.bBlockingHit)
+	for (size_t i = 0; i < 15; i++)
 	{
-		const FVector Start2 = hit.ImpactPoint + ActorOwner->GetActorRightVector() * -Direction;
-		const FVector End2 = hit.ImpactPoint - ActorOwner->GetActorRightVector() * 5.f * -Direction;
 
-		const FHitResult outClimbableObjectHit = DoSphereTraceSingleForObjects( End2, Start2, Radius_FirstTrace);
+		//const FVector Start = outEndLedgePointHit.TraceStart + ActorOwner->GetActorForwardVector() * (-HandBorder_Backward *2.f) - ActorOwner->GetActorRightVector() * Direction * (HandOffset + 60.f) + ActorOwner->GetActorRightVector() * Direction * Radius * (i+1);
+		const FVector Start = ActorOwner->GetActorLocation() + ActorOwner->GetActorUpVector() * (CharacterOwner->BaseEyeHeight + UP_Offset) +
+			ActorOwner->GetActorForwardVector() * (-HandBorder_Backward * 2.25f) 
+			+ ActorOwner->GetActorRightVector() * Direction * Radius * (i + 1);
 
-		if (outClimbableObjectHit.bBlockingHit)
+		const FVector End = Start + ActorOwner->GetActorForwardVector() * HandBorder_Backward * 4.f;
+
+
+		const FHitResult hit = DoCapsuleTraceSingleForObjects(Start, End, Radius, HalfHeiht);
+
+		if (hit.bBlockingHit && FindClimbablePoint(hit))
 		{
-			return FindClimbablePoint(outClimbableObjectHit);
+			const float CapsuleHalfHeight = CharacterOwner->GetCapsuleComponent()->GetScaledCapsuleHalfHeight();
+			const float CapsuleRadius = CharacterOwner->GetCapsuleComponent()->GetScaledCapsuleRadius();
+			if (!DoCapsuleTraceSingleForChannel(ActorOwner->GetActorLocation(), LedgeLocation, CapsuleRadius, CapsuleHalfHeight).bBlockingHit)
+			{
+
+				SavedClimbedObject = hit.GetActor();
+				return true;
+			}
+
 		}
+
 	}
 
 
 	return false;
 }
+
 #pragma endregion
 
 #pragma region ClimbingMove
@@ -430,32 +512,59 @@ void UClimbingComponent::LedgeMove(const FVector2D MovementVector)
 			LedgeRightMove(MovementVector.X);
 	}
 
+
+	
+
 }
 
 bool UClimbingComponent::LedgeUpMove(const FVector2D& Direction)
 {
 	const float RightOffset = Direction.X == 0 ? 0.f : Direction.X > 0 ? 50.f : -50.f;
+	const float Y_Offset = Direction.Y == 0 ? 0.f : Direction.Y > 0 ? (ClimbingTraceHeight_Hanging_UP) : (- 3 * ClimbingTraceHeight_Hanging_UP);
+	const float X_SignDirection = FMath::Sign(Direction.X);
 
-	if (Direction.Y > 0 && FindClimbableObject(1.f, RightOffset))
+	if (Direction.Y > 0 && FindClimbableObject(Y_Offset, RightOffset))
 	{
 			PlayClimbMontage(HangToHang_UP);
 			return true;
 		
 	}
 
-	else if (Direction.Y < 0 && FindClimbableObject(-1.f, RightOffset))
+	else if (Direction.Y < 0 && FindClimbableObject(Y_Offset, RightOffset))
 	{
 			PlayClimbMontage(HangToHang_DOWN);
 			return true;
 		
 	}
 
+	//TryJumping Traverse
+	else if (Direction.X != 0 )
+	{
+		//const FHitResult outClimbableObjectHit = TraceFromEyeHeight(Radius_FirstTrace, Y_Offset, RightOffset);
+		if (CanClimbJump( X_SignDirection, Direction.Y > 0 ? Y_Offset + ClimbingTraceHeight_Hanging_UP : Y_Offset))
+		{
+			//Debug::Print(TEXT("I Can Jump!!"));
+			UAnimMontage* Montage = X_SignDirection > 0 ? ClimbJumpRightMontage : ClimbJumpLeftMontage;
+			//PlayClimbMontage(Montage);
+			SavedJumpMontage = Montage;
+			bJumpSaved = true;
+
+			return true;
+		}
+		else
+		{
+			bJumpSaved = false;
+		}
+
+	}
+
+
 	return false;
 }
 
 bool UClimbingComponent::TryClimbUpon()
 {
-	if (CanClimbUpon() && !OwningPlayerAnimInstance->IsAnyMontagePlaying())
+	if (!OwningPlayerAnimInstance->IsAnyMontagePlaying() && CanClimbUpon())
 	{
 		ClimbDirection = 0.f;
 		bIsClimbing = false;
@@ -468,9 +577,12 @@ bool UClimbingComponent::TryClimbUpon()
 
 bool UClimbingComponent::TryJumping()
 {
-	if (bJumpSaved && !OwningPlayerAnimInstance->IsAnyMontagePlaying())
+	if (bJumpSaved && SavedClimbedObject && !OwningPlayerAnimInstance->IsAnyMontagePlaying())
 	{
 		bJumpSaved = false;
+		ClimbedObject = SavedClimbedObject;
+		SavedClimbedObject = nullptr;
+
 		PlayClimbMontage(SavedJumpMontage);
 		return true;
 	}
@@ -590,13 +702,13 @@ const FHitResult UClimbingComponent::DoSphereTraceSingleForChannel(const FVector
 	return OutHit;
 }
 
-const FHitResult UClimbingComponent::DoCapsuleTraceSingleForObjects(const FVector& Start, const FVector& End, float Radius, float HalfHeight, AActor* ActorToIgnore)
+const FHitResult UClimbingComponent::DoCapsuleTraceSingleForObjects(const FVector& Start, const FVector& End, float Radius, float HalfHeight)
 {
 	FHitResult OutHit;
 	EDrawDebugTrace::Type DebugTraceType = ShowDebugTrace ? EDrawDebugTrace::ForOneFrame : EDrawDebugTrace::None;
 
 	TArray<AActor*> ActorsToIgnoreArray;
-	ActorsToIgnoreArray.Add(ActorToIgnore);
+	ActorsToIgnoreArray.Add(ClimbedObject);
 
 	UKismetSystemLibrary::CapsuleTraceSingleForObjects(this, Start, End, Radius, HalfHeight, ClimbableObjectTypes, false, ActorsToIgnoreArray, DebugTraceType, OutHit, true, FLinearColor::White);
 
@@ -613,20 +725,24 @@ const FHitResult UClimbingComponent::DoCapsuleTraceSingleForChannel(const FVecto
 	return OutHit;
 }
 
-const FHitResult UClimbingComponent::TraceFromEyeHeight(const float Radius, const float BaseEyeHeightOffset_UP, const float BaseEyeHeightOffset_Right)
+const FHitResult UClimbingComponent::TraceFromEyeHeight(const float Radius, const float BaseEyeHeightOffset_UP, const float BaseEyeHeightOffset_Right, bool DoSphereTrace)
 {
 	const FVector CharacterLocation = ActorOwner->GetActorLocation();
 	const FVector ForwardVector = ActorOwner->GetActorForwardVector();
 	float BaseEyeHeightOffset = MovementComponent->IsFalling() ? BaseEyeHeightOffset_Jumping : BaseEyeHeightOffset_Idle;
-	BaseEyeHeightOffset = bIsClimbing ? BaseEyeHeightOffset + BaseEyeHeightOffset_UP : BaseEyeHeightOffset; 
-	const FVector UpVector = ActorOwner->GetActorUpVector() * CharacterOwner->BaseEyeHeight * BaseEyeHeightOffset;
+	BaseEyeHeightOffset = bIsClimbing ?  BaseEyeHeightOffset_UP : BaseEyeHeightOffset; 
+	//const FVector UpVector = ActorOwner->GetActorUpVector() * CharacterOwner->BaseEyeHeight * BaseEyeHeightOffset;
+
+	const FVector UpVector = ActorOwner->GetActorUpVector() * (CharacterOwner->BaseEyeHeight + BaseEyeHeightOffset);
 
 	const FVector RightVector = ActorOwner->GetActorRightVector() * BaseEyeHeightOffset_Right;
 
 	const FVector Start = CharacterLocation + UpVector + RightVector;
 	const FVector End = Start + ForwardVector * ForwardOffset;
 
-	return DoSphereTraceSingleForObjects(Start, End, Radius);
+	if(DoSphereTrace) return DoSphereTraceSingleForObjects(Start, End, Radius);
+
+	return DoCapsuleTraceSingleForObjects(Start, End, Radius,25.f);
 
 }
 

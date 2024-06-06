@@ -198,7 +198,7 @@ void APanWolfWarCharacter::ClimbMove(const FInputActionValue& Value)
 	const FVector2D MovementVector = Value.Get<FVector2D>();
 
 	if (Controller != nullptr)
-	{		
+	{
 		ClimbingComponent->LedgeMove(Get8DirectionVector(MovementVector));
 	}
 
@@ -208,6 +208,7 @@ void APanWolfWarCharacter::ClimbMoveEnd(const FInputActionValue& Value)
 {
 	ClimbingComponent->SetClimbDirection(0.f);
 	ClimbingComponent->SetJumpSaved(false);
+	ClimbingComponent->ResetSavedClimbedObject();
 }
 
 void APanWolfWarCharacter::ClimbJump()

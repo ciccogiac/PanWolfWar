@@ -66,10 +66,10 @@ private:
 	// Sphere Traces to Find PointLocation Climbable
 	const FHitResult DoSphereTraceSingleForObjects(const FVector& Start, const FVector& End, float Radius);
 	const FHitResult DoSphereTraceSingleForChannel(const FVector& Start, const FVector& End, float Radius);
-	const FHitResult DoCapsuleTraceSingleForObjects(const FVector& Start, const FVector& End, float Radius, float HalfHeight, AActor* ActorToIgnore = nullptr);
+	const FHitResult DoCapsuleTraceSingleForObjects(const FVector& Start, const FVector& End, float Radius, float HalfHeight);
 	const FHitResult DoCapsuleTraceSingleForChannel(const FVector& Start, const FVector& End, float Radius, float HalfHeight);
 
-	const FHitResult TraceFromEyeHeight(const float Radius, const float BaseEyeHeightOffset_UP, const float BaseEyeHeightOffset_Right = 0.f);
+	const FHitResult TraceFromEyeHeight(const float Radius, const float BaseEyeHeightOffset_UP, const float BaseEyeHeightOffset_Right = 0.f, bool DoSphereTrace = false);
 	const FHitResult TraceForObject(const float Radius, const float BaseEyeHeightOffset_UP, const float BaseEyeHeightOffset_Right = 0.f);
 	const FHitResult TraceFromClimbableObject(const float Radius, const FVector& ImpactPoint);
 
@@ -81,8 +81,8 @@ private:
 	bool CheckCapsuleSpaceCondition(const FVector& CLimbablePoint , bool FullHeight = false);
 
 	bool CanClimbUpon();
-	bool CanClimbCorner(const FHitResult& outEndLedgePointHit, float Direction, bool InternLedge = false);
-	bool CanClimbJump(const FHitResult& outEndLedgePointHit, float Direction, AActor* ActorToIgnore);
+	bool CanClimbCorner(const FHitResult& outEndLedgePointHit, float Direction, bool InternLedge = false , bool BlindPoint = false);
+	bool CanClimbJump(float Direction, float UP_Offset = 0.f );
 
 	void ProcessClimbableSurfaceInfo(const FHitResult& ClimbableObjectHit);
 	FVector CalculateLedgeLocation(const FVector& ImpactObjectPoint, const FVector& ClimbablePoint, const FRotator& Rotation, int ForwardDirectionAdjusted);
@@ -137,6 +137,9 @@ private:
 
 	bool bJumpSaved = false;
 	UAnimMontage* SavedJumpMontage;
+
+	AActor* ClimbedObject;
+	AActor* SavedClimbedObject;
 
 	float ClimbDirection = 0;
 
@@ -199,6 +202,12 @@ private:
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Climb Params | First Trace", meta = (AllowPrivateAccess = "true"))
 	float Radius_FirstTrace = 10.f;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Climb Params | First Trace", meta = (AllowPrivateAccess = "true"))
+	float Radius_Corner = 10.f;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Climb Params | First Trace", meta = (AllowPrivateAccess = "true"))
+	float Radius_FirstHand = 10.f;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Climb Params | First Trace", meta = (AllowPrivateAccess = "true"))
 	float Radius_FirstTrace_Landing = 25.f;
@@ -315,6 +324,7 @@ public:
 
 	FORCEINLINE bool GetJumpSaved() const { return bJumpSaved ; }
 	FORCEINLINE void SetJumpSaved(bool Value) { bJumpSaved = Value; }
+	FORCEINLINE void ResetSavedClimbedObject() { SavedClimbedObject = nullptr; }
 
 #pragma endregion
 
