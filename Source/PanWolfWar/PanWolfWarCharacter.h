@@ -36,11 +36,16 @@ protected:
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 	virtual void BeginPlay();
 
+	virtual void Landed(const FHitResult& Hit) override;
+
 #pragma endregion
 
 #pragma region PrivateVariables
 
 private:
+
+	float LastClimb_X = 0.0f;
+	float LastClimb_Y = 0.0f;
 
 	#pragma region Components
 

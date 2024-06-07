@@ -13,6 +13,13 @@ class UCharacterMovementComponent;
 class UCapsuleComponent;
 class UAnimMontage;
 
+UENUM(BlueprintType)
+enum class EClimbingState : uint8
+{
+	ECS_NOTClimbing UMETA(DisplayName = "NOTClimbing"),
+	ECS_Climbing UMETA(DisplayName = "Climbing"),
+	ECS_Falling UMETA(DisplayName = "Falling")
+};
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class PANWOLFWAR_API UClimbingComponent : public UActorComponent
@@ -39,6 +46,9 @@ public:
 
 	bool TryClimbUpon();
 	bool TryJumping();
+	bool TryDirectionalJumping();
+
+	void Landed();
 
 
 #pragma endregion
@@ -82,7 +92,8 @@ private:
 
 	bool CanClimbUpon();
 	bool CanClimbCorner(const FHitResult& outEndLedgePointHit, float Direction, bool InternLedge = false , bool BlindPoint = false);
-	bool CanClimbJump(float Direction, float UP_Offset = 0.f );
+	bool CanClimbJump();
+	bool CanClimbDirectionalJump(float Direction, float UP_Offset = 0.f );
 
 	void ProcessClimbableSurfaceInfo(const FHitResult& ClimbableObjectHit);
 	FVector CalculateLedgeLocation(const FVector& ImpactObjectPoint, const FVector& ClimbablePoint, const FRotator& Rotation, int ForwardDirectionAdjusted);
@@ -126,13 +137,14 @@ private:
 	#pragma endregion
 
 	#pragma region ClimbCoreVariables
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Climb State ", meta = (AllowPrivateAccess = "true"))
+	EClimbingState ClimbingState = EClimbingState::ECS_NOTClimbing;
 
 	bool bIsClimbing;
 	FVector CurrentClimbableSurfaceLocation;
 	FVector CurrentClimbableSurfaceNormal;
 	FRotator ClimbRotation;
 	FVector LedgeLocation;
-	bool bCanClimb = true;
 	bool bClimbDown = false;
 
 	bool bJumpSaved = false;
@@ -164,9 +176,6 @@ private:
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Climb Params ", meta = (AllowPrivateAccess = "true"))
 	float MoveUPOffset = 0.3f;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Climb Params ", meta = (AllowPrivateAccess = "true"))
-	float HandOffset = 28.f;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Climb Params ", meta = (AllowPrivateAccess = "true"))
 	float HandBorder_Forward = 25.f;

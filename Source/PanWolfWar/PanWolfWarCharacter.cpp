@@ -178,7 +178,7 @@ void APanWolfWarCharacter::Move(const FInputActionValue& Value)
 void APanWolfWarCharacter::Look(const FInputActionValue& Value)
 {
 	// input is a Vector2D
-	FVector2D LookAxisVector = Value.Get<FVector2D>();
+	FVector2D LookAxisVector = Value.Get<FVector2D>() ;
 
 	if (Controller != nullptr)
 	{
@@ -193,13 +193,25 @@ void APanWolfWarCharacter::JumpClimbTrace()
 	if (!ClimbingComponent->IsClimbing() && !ClimbingComponent->TryClimbing()) { ClimbingComponent->ToggleClimbing();  ACharacter::Jump(); }
 }
 
+void APanWolfWarCharacter::Landed(const FHitResult& Hit)
+{
+	Super::Landed(Hit);
+
+	ClimbingComponent->Landed();
+	OnPlayerExitClimbState();
+}
+
 void APanWolfWarCharacter::ClimbMove(const FInputActionValue& Value)
 {
 	const FVector2D MovementVector = Value.Get<FVector2D>();
 
 	if (Controller != nullptr)
 	{
-		ClimbingComponent->LedgeMove(Get8DirectionVector(MovementVector));
+		const FVector2D DirectionVector = Get8DirectionVector(MovementVector);
+		ClimbingComponent->LedgeMove(DirectionVector);
+
+		LastClimb_X = DirectionVector.X;
+		LastClimb_Y = DirectionVector.Y;
 	}
 
 }
@@ -209,16 +221,33 @@ void APanWolfWarCharacter::ClimbMoveEnd(const FInputActionValue& Value)
 	ClimbingComponent->SetClimbDirection(0.f);
 	ClimbingComponent->SetJumpSaved(false);
 	ClimbingComponent->ResetSavedClimbedObject();
+
+	LastClimb_X = 0.0f;
+	LastClimb_Y = 0.0f;
 }
 
 void APanWolfWarCharacter::ClimbJump()
 {
+
+	Debug::Print(TEXT("Last Input Vector X : ") + FString::SanitizeFloat(LastClimb_X) + TEXT("Last Input Vector Y : ") + FString::SanitizeFloat(LastClimb_Y), FColor::Magenta, 8);
+
 	if (ClimbingComponent->GetJumpSaved())
+	{
+		ClimbingComponent->TryDirectionalJumping();
+	}
+	else if ((LastClimb_X == 0.0f && LastClimb_Y >= 0.0f) && !ClimbingComponent->TryClimbUpon())
 	{
 		ClimbingComponent->TryJumping();
 	}
-	else
-		ClimbingComponent->TryClimbUpon();
+
+	
+
+
+
+	//Debug::Print(TEXT("Last Input Vector X : ") + FString::SanitizeFloat(LastInput.Y), FColor::Magenta, 8);
+
+	//if ((LastInput.Y != 0.0f || LastInput.X > 0.0f)) return false;
+		
 }
 
 void APanWolfWarCharacter::Climb()
