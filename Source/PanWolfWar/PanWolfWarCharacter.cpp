@@ -11,6 +11,7 @@
 #include "EnhancedInputSubsystems.h"
 #include "InputActionValue.h"
 
+#include "MotionWarpingComponent.h"
 #include "Components/ClimbingComponent.h"
 
 #include "Kismet/KismetMathLibrary.h"
@@ -56,6 +57,8 @@ APanWolfWarCharacter::APanWolfWarCharacter()
 	FollowCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("FollowCamera"));
 	FollowCamera->SetupAttachment(CameraBoom, USpringArmComponent::SocketName); // Attach the camera to the end of the boom and let the boom adjust to match the controller orientation
 	FollowCamera->bUsePawnControlRotation = false; // Camera does not rotate relative to arm
+
+	MotionWarpingComponent = CreateDefaultSubobject<UMotionWarpingComponent>(TEXT("MotionWarpingComp"));
 
 	ClimbingComponent = CreateDefaultSubobject<UClimbingComponent>(TEXT("ClimbingComponent"));
 
@@ -210,8 +213,8 @@ void APanWolfWarCharacter::ClimbMove(const FInputActionValue& Value)
 		const FVector2D DirectionVector = Get8DirectionVector(MovementVector);
 		ClimbingComponent->LedgeMove(DirectionVector);
 
-		LastClimb_X = DirectionVector.X;
-		LastClimb_Y = DirectionVector.Y;
+		//LastClimb_X = DirectionVector.X;
+		//LastClimb_Y = DirectionVector.Y;
 	}
 
 }
@@ -221,32 +224,25 @@ void APanWolfWarCharacter::ClimbMoveEnd(const FInputActionValue& Value)
 	ClimbingComponent->SetClimbDirection(0.f);
 	ClimbingComponent->SetJumpSaved(false);
 	ClimbingComponent->ResetSavedClimbedObject();
-
-	LastClimb_X = 0.0f;
-	LastClimb_Y = 0.0f;
+	ClimbingComponent->ResetMovementVector();
+	//LastClimb_X = 0.0f;
+	//LastClimb_Y = 0.0f;
 }
 
 void APanWolfWarCharacter::ClimbJump()
 {
 
-	Debug::Print(TEXT("Last Input Vector X : ") + FString::SanitizeFloat(LastClimb_X) + TEXT("Last Input Vector Y : ") + FString::SanitizeFloat(LastClimb_Y), FColor::Magenta, 8);
+	//Debug::Print(TEXT("Last Input Vector X : ") + FString::SanitizeFloat(LastClimb_X) + TEXT("Last Input Vector Y : ") + FString::SanitizeFloat(LastClimb_Y), FColor::Magenta, 8);
 
 	if (ClimbingComponent->GetJumpSaved())
 	{
 		ClimbingComponent->TryDirectionalJumping();
 	}
-	else if ((LastClimb_X == 0.0f && LastClimb_Y >= 0.0f) && !ClimbingComponent->TryClimbUpon())
+	//else if ((LastClimb_X == 0.0f && LastClimb_Y >= 0.0f) && !ClimbingComponent->TryClimbUpon())
+	else if (!ClimbingComponent->TryClimbUpon())
 	{
 		ClimbingComponent->TryJumping();
 	}
-
-	
-
-
-
-	//Debug::Print(TEXT("Last Input Vector X : ") + FString::SanitizeFloat(LastInput.Y), FColor::Magenta, 8);
-
-	//if ((LastInput.Y != 0.0f || LastInput.X > 0.0f)) return false;
 		
 }
 
@@ -258,6 +254,8 @@ void APanWolfWarCharacter::Climb()
 void APanWolfWarCharacter::ClimbDownActivate()
 {
 	ClimbingComponent->SetClimbDown(true);
+
+	//ClimbingComponent->TryStartVaulting();
 }
 
 void APanWolfWarCharacter::ClimbDownDeActivate()
