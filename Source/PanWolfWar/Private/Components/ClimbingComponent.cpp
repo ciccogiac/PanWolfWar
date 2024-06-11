@@ -61,6 +61,7 @@ void UClimbingComponent::TickComponent(float DeltaTime, ELevelTick TickType, FAc
 		PlayClimbMontage(TopToClimbMontage);
 	}
 
+
 }
 
 #pragma endregion
@@ -199,7 +200,7 @@ bool UClimbingComponent::FindClimbableObject(const float BaseEyeHeightOffset_UP,
 	if (CheckClimbableObjectTrace(outClimbableObjectHit) && FindClimbablePoint(outClimbableObjectHit))
 	{
 		ClimbedObject = outClimbableObjectHit.GetActor();
-		return true;
+		return true; 
 	}
 
 	return false;
@@ -437,9 +438,9 @@ bool UClimbingComponent::CanClimbCorner(const FHitResult& outEndLedgePointHit, f
 
 bool UClimbingComponent::CanClimbJump()
 {
-	if (FindClimbableObject(ClimbingTraceHeight_Hanging_UP)) return true;
+	if (FindClimbableObject(ClimbingTraceHeight_Hanging_UP)) {  return true; }
 
-	for (size_t i = 0; i < 5; i++)
+	for (size_t i = 0; i < 7; i++)
 	{
 		const FHitResult hit = DoClimbJumpTrace(i);
 
@@ -458,7 +459,7 @@ bool UClimbingComponent::CanClimbBackJump()
 {
 	if (ClimbingState == EClimbingState::ECS_Falling) return false;
 
-	for (size_t i = 0; i < 10; i++)
+	for (size_t i = 0; i < 12; i++)
 	{
 		const FHitResult hit = DoClimbBackJumpTrace(i);
 
@@ -476,7 +477,7 @@ bool UClimbingComponent::CanClimbDirectionalJump( float Direction , float UP_Off
 {
 	if (ClimbingState == EClimbingState::ECS_Falling) return false;
 
-	for (size_t i = 0; i < 10; i++)
+	for (size_t i = 0; i < 12; i++)
 	{
 		const FHitResult hit = DoClimbDirectionalJumpTrace(i, Direction, UP_Offset);
 
@@ -915,8 +916,8 @@ const FHitResult UClimbingComponent::DoClimbBackJumpTrace(size_t i)
 	const float HandOffset = Radius_FirstHand + 1.f;
 
 	const FVector Start = ActorOwner->GetActorLocation() + ActorOwner->GetActorUpVector() * (CharacterOwner->BaseEyeHeight +  UP_Offset) +
-		ActorOwner->GetActorForwardVector() * (-HandBorder_Backward * 2.25f) -
-		ActorOwner->GetActorRightVector() * (HandOffset + 4*Radius)  +
+		ActorOwner->GetActorForwardVector() * (-HandBorder_Backward * 2.75f) -
+		ActorOwner->GetActorRightVector() * (HandOffset + 6*Radius)  +
 		ActorOwner->GetActorRightVector() * Radius * (i );
 
 	const FVector End = Start + ActorOwner->GetActorForwardVector() * HandBorder_Backward * 2.25f;
