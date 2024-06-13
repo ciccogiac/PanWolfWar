@@ -193,12 +193,24 @@ void APanWolfWarCharacter::Look(const FInputActionValue& Value)
 
 void APanWolfWarCharacter::JumpClimbTrace()
 {
-	if (!ClimbingComponent->IsClimbing() && !ClimbingComponent->TryClimbing()) { ClimbingComponent->ToggleClimbing();  ACharacter::Jump(); }
+	if (!ClimbingComponent) 
+	{
+		ACharacter::Jump();
+		return;
+	} 
+
+	if (!ClimbingComponent->IsClimbing() && !ClimbingComponent->TryClimbing()) 
+	{ 
+		ClimbingComponent->ToggleClimbing();  
+		ACharacter::Jump(); 
+	}
 }
 
 void APanWolfWarCharacter::Landed(const FHitResult& Hit)
 {
 	Super::Landed(Hit);
+
+	if (!ClimbingComponent) return;
 
 	ClimbingComponent->Landed();
 	OnPlayerExitClimbState();
@@ -206,6 +218,8 @@ void APanWolfWarCharacter::Landed(const FHitResult& Hit)
 
 void APanWolfWarCharacter::ClimbMove(const FInputActionValue& Value)
 {
+	if (!ClimbingComponent) return;
+
 	const FVector2D MovementVector = Value.Get<FVector2D>();
 
 	if (Controller != nullptr)
@@ -213,32 +227,24 @@ void APanWolfWarCharacter::ClimbMove(const FInputActionValue& Value)
 		const FVector2D DirectionVector = Get8DirectionVector(MovementVector);
 		ClimbingComponent->LedgeMove(DirectionVector);
 
-		//LastClimb_X = DirectionVector.X;
-		//LastClimb_Y = DirectionVector.Y;
 	}
 
 }
 
 void APanWolfWarCharacter::ClimbMoveEnd(const FInputActionValue& Value)
 {
-	ClimbingComponent->SetClimbDirection(0.f);
-	ClimbingComponent->SetJumpSaved(false);
-	ClimbingComponent->ResetSavedClimbedObject();
-	ClimbingComponent->ResetMovementVector();
-	//LastClimb_X = 0.0f;
-	//LastClimb_Y = 0.0f;
+	if (!ClimbingComponent) return;
+	ClimbingComponent->ClimbMoveEnd();
 }
 
 void APanWolfWarCharacter::ClimbJump()
 {
-
-	//Debug::Print(TEXT("Last Input Vector X : ") + FString::SanitizeFloat(LastClimb_X) + TEXT("Last Input Vector Y : ") + FString::SanitizeFloat(LastClimb_Y), FColor::Magenta, 8);
+	if (!ClimbingComponent) return;
 
 	if (ClimbingComponent->GetJumpSaved())
 	{
 		ClimbingComponent->TryDirectionalJumping();
 	}
-	//else if ((LastClimb_X == 0.0f && LastClimb_Y >= 0.0f) && !ClimbingComponent->TryClimbUpon())
 	else if (!ClimbingComponent->TryClimbUpon())
 	{
 		ClimbingComponent->TryJumping();
@@ -248,18 +254,19 @@ void APanWolfWarCharacter::ClimbJump()
 
 void APanWolfWarCharacter::Climb()
 {
+	if (!ClimbingComponent) return;
 	ClimbingComponent->ToggleClimbing();	
 }
 
 void APanWolfWarCharacter::ClimbDownActivate()
 {
+	if (!ClimbingComponent) return;
 	ClimbingComponent->SetClimbDown(true);
-
-	//ClimbingComponent->TryStartVaulting();
 }
 
 void APanWolfWarCharacter::ClimbDownDeActivate()
 {
+	if (!ClimbingComponent) return;
 	ClimbingComponent->SetClimbDown(false);
 }
 

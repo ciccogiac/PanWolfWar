@@ -56,7 +56,7 @@ public:
 
 
 	void Landed();
-
+	void ClimbMoveEnd();
 
 #pragma endregion
 
@@ -358,14 +358,6 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Climbing")
 	FORCEINLINE float GetClimbDirection() const { return ClimbDirection; }
 
-	FORCEINLINE void SetClimbDirection(float Direction)  { ClimbDirection = Direction; }
-	//FORCEINLINE void SetClimbDown(bool Value) { bClimbDown = Value; }
-	FORCEINLINE void SetClimbDown(bool Value) { Value ? ClimbingState = EClimbingState::ECS_SearchingClimbingDown : ClimbingState = EClimbingState::ECS_NOTClimbing; }
-
-
-	FORCEINLINE void SetJumpSaved(bool Value) { bJumpSaved = Value; }
-	FORCEINLINE void ResetSavedClimbedObject() { SavedClimbedObject = nullptr; }
-
 	UFUNCTION(BlueprintCallable, Category = "Climbing")
 	FORCEINLINE bool GetJumpSaved() const { return bJumpSaved; }
 
@@ -373,6 +365,10 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Climbing")
 	FORCEINLINE FVector2D GetLastMovementVector() const { return LastClimb_MovementVector; }
 
+	FORCEINLINE void SetClimbDirection(float Direction)  { ClimbDirection = Direction; }
+	FORCEINLINE void SetClimbDown(bool Value) { Value ? ClimbingState = EClimbingState::ECS_SearchingClimbingDown : ClimbingState = EClimbingState::ECS_NOTClimbing; }
+	FORCEINLINE void SetJumpSaved(bool Value) { bJumpSaved = Value; }
+	FORCEINLINE void ResetSavedClimbedObject() { SavedClimbedObject = nullptr; }
 	FORCEINLINE void ResetMovementVector()  { LastClimb_MovementVector = FVector2D(0.0f, 0.0f); }
 
 
