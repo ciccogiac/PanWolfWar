@@ -13,6 +13,8 @@ class UCharacterMovementComponent;
 class UMotionWarpingComponent;
 class UCapsuleComponent;
 class UAnimMontage;
+struct FInputActionValue;
+class UInputAction;
 
 UENUM(BlueprintType)
 enum class EClimbingState : uint8
@@ -28,35 +30,34 @@ class PANWOLFWAR_API UClimbingComponent : public UActorComponent
 {
 	GENERATED_BODY()
 
+#pragma region Delegates
+
 public:
 
 	//Delegates
 	FOnEnterClimbState OnEnterClimbStateDelegate;
 	FOnExitClimbState OnExitClimbStateDelegate;
 
+#pragma endregion
+
 #pragma region PublicFunctions
 
 public:
 
 	UClimbingComponent();
-	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
-	bool CheckClimbDownLedgeConditions();
+	#pragma region InputCallback
 
-	bool CheckTryClimbingConditions();
-
-	void ToggleClimbing();
-	bool TryClimbing();
-
-	void LedgeMove(const FVector2D MovementVector);
-
-	bool TryClimbUpon();
-	bool TryJumping();
-	bool TryDirectionalJumping();
-
-
+	bool ActivateJumpTrace();
+	void Climb();
+	void ClimbMove(const FInputActionValue& Value);
+	void ClimbMoveEnd(const FInputActionValue& Value);
+	void ClimbJump();
+	void ClimbDownActivate();
+	void ClimbDownDeActivate();
 	void Landed();
-	void ClimbMoveEnd();
+
+	#pragma endregion
 
 #pragma endregion
 
@@ -65,6 +66,7 @@ public:
 protected:
 
 	virtual void BeginPlay() override;
+	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
 #pragma endregion
 
@@ -72,71 +74,101 @@ protected:
 
 private:
 
-	bool CanClimbDownLedge();
+	FVector2D Get8DirectionVector(const FVector2D& InputVector);
+
+	#pragma region CheckClimbingCondition
+
+	bool CheckClimbDownLedgeConditions();
+	bool CheckTryClimbingConditions();
 	bool CheckClimbableDownLedgeTrace(const FHitResult& ClimbableSurfaceHit);
 	bool CheckCapsuleEndPositionCollision();
-	const FHitResult DoLineTraceSingleByChannel(const FVector& Start, const FVector& End);
-	const FHitResult DoLineTraceSingleByObject(const FVector& Start, const FVector& End);
+	bool CheckClimbableObjectTrace(const FHitResult& outClimbableObjectHit);
+	bool CheckClimbableSpaceCondition(const FHitResult& CLimbablePointHit);
+	bool CheckCapsuleSpaceCondition(const FVector& CLimbablePoint, bool FullHeight = false);
 
+	#pragma endregion
+
+	#pragma region SetClimbState
+
+	void ToggleClimbing();
 	void StartClimbing();
 	void StopClimbing();
 
+	#pragma endregion
 
-	// Sphere Traces to Find PointLocation Climbable
+	#pragma region CalculateClimbingCondition
+
+	bool TryClimbing();
+	bool FindClimbableObject(const float BaseEyeHeightOffset_UP = 0.f, const float BaseEyeHeightOffset_Right = 0.f);
+	bool FindClimbablePoint(const FHitResult& ClimbableObjectHit);
+	void ProcessClimbableSurfaceInfo(const FHitResult& ClimbableObjectHit);
+	FVector CalculateLedgeLocation(const FVector& ImpactObjectPoint, const FVector& ClimbablePoint, const FRotator& Rotation, int ForwardDirectionAdjusted);
+	void LedgeRightMove(float Direction);
+	void TryCornerOrDirectionalJump(float Direction, const FHitResult& outClimbableObjectHit , bool InternLedge = false, bool BlindPoint = false);
+	void HandleRightMove(const FHitResult& outClimbableObjectHit, const FHitResult& outClimbablePointHit, float Direction);
+	bool CanClimbUpon();
+	bool CanClimbDownLedge();
+	bool CanClimbCorner(const FHitResult& outEndLedgePointHit, float Direction, bool InternLedge = false, bool BlindPoint = false);
+	bool CanClimbJump();
+	bool CanClimbBackJump();
+	bool CanClimbDirectionalJump(float Direction, float UP_Offset = 0.f);
+
+	#pragma endregion
+
+	#pragma region ClimbingMove
+
+	void LedgeMove(const FVector2D MovementVector);
+	bool LedgeUpMove(const FVector2D& Direction);
+	bool TryClimbUpon();
+	bool TryJumping();
+	bool TryDirectionalJumping();
+	void MoveToLedgeLocation();
+	bool MoveOnLedge(const FVector& ImpactObjectPoint, const FVector& ClimbablePoint, const FRotator& Rotation);
+
+	#pragma endregion
+
+	#pragma region ClimbTraces
+
+	const FHitResult DoLineTraceSingleByChannel(const FVector& Start, const FVector& End);
+	const FHitResult DoLineTraceSingleByObject(const FVector& Start, const FVector& End);
 	const FHitResult DoSphereTraceSingleForObjects(const FVector& Start, const FVector& End, float Radius);
 	const FHitResult DoSphereTraceSingleForChannel(const FVector& Start, const FVector& End, float Radius);
 	const FHitResult DoCapsuleTraceSingleForObjects(const FVector& Start, const FVector& End, float Radius, float HalfHeight);
 	const FHitResult DoCapsuleTraceSingleForChannel(const FVector& Start, const FVector& End, float Radius, float HalfHeight);
-	const FHitResult DoClimbUponTrace();
-	const FHitResult DoClimbUponLineDownTrace(const FVector Start_Height);
-	const FHitResult DoClimbableDownLedgeTrace();
-	const FHitResult DoClimbCornerTrace(const FHitResult& outEndLedgePointHit, float Direction, bool InternLedge, bool BlindPoint);
-	const FHitResult DoClimbJumpTrace(size_t i);
-	const FHitResult DoClimbDirectionalJumpTrace(size_t i, float Direction, float UP_Offset);
-	const FHitResult DoClimbBackJumpTrace(size_t i);
-
 
 	const FHitResult TraceFromEyeHeight(const float Radius, const float BaseEyeHeightOffset_UP, const float BaseEyeHeightOffset_Right = 0.f, bool DoSphereTrace = false);
 	float GetBaseEyeHeightOffset(const float BaseEyeHeightOffset_UP);
 	const FHitResult TraceFromClimbableObject(const float Radius, const FVector& ImpactPoint);
 
+	const FHitResult DoClimbableDownLedgeTrace();
+	const FHitResult DoClimbCornerTrace(const FHitResult& outEndLedgePointHit, float Direction, bool InternLedge, bool BlindPoint);
+	const FHitResult DoClimbJumpTrace(size_t i);
+	const FHitResult DoClimbDirectionalJumpTrace(size_t i, float Direction, float UP_Offset);
+	const FHitResult DoClimbBackJumpTrace(size_t i);
+	const FHitResult DoClimbUponTrace();
+	const FHitResult DoClimbUponLineDownTrace(const FVector Start_Height);
 
-	bool FindClimbableObject(const float BaseEyeHeightOffset_UP = 0.f, const float BaseEyeHeightOffset_Right = 0.f);
-	bool CheckClimbableObjectTrace(const FHitResult& outClimbableObjectHit);
-	bool FindClimbablePoint(const FHitResult& ClimbableObjectHit);
-	bool CheckClimbableSpaceCondition(const FHitResult& CLimbablePointHit);
-	bool CheckCapsuleSpaceCondition(const FVector& CLimbablePoint , bool FullHeight = false);
+	#pragma endregion
 
-	bool CanClimbUpon();
-	bool CanClimbCorner(const FHitResult& outEndLedgePointHit, float Direction, bool InternLedge = false , bool BlindPoint = false);
-	bool CanClimbJump();
-	bool CanClimbBackJump();
-	bool CanClimbDirectionalJump(float Direction, float UP_Offset = 0.f );
-
-	void ProcessClimbableSurfaceInfo(const FHitResult& ClimbableObjectHit);
-	FVector CalculateLedgeLocation(const FVector& ImpactObjectPoint, const FVector& ClimbablePoint, const FRotator& Rotation, int ForwardDirectionAdjusted);
-
-	//Set Climbing State and Move to Climbing Point
-	void MoveToLedgeLocation();
-
-	void LedgeRightMove(float Direction);
-	bool LedgeUpMove(const FVector2D& Direction);
-
-
-	bool MoveOnLedge(const FVector& ImpactObjectPoint, const FVector& ClimbablePoint, const FRotator& Rotation);
-	void HandleRightMove(const FHitResult& outClimbableObjectHit,const FHitResult& outClimbablePointHit, float Direction);
+	#pragma region MontageSection
 
 	void PlayClimbMontage(UAnimMontage* MontageToPlay);
+
 	UFUNCTION()
 	void OnClimbMontageStartedHanging(FName NotifyName, const FBranchingPointNotifyPayload& BranchingPointPayload);
 
 	UFUNCTION()
 	void OnClimbMontageEnded(UAnimMontage* Montage, bool bInterrupted);
 
-	void SetMotionWarpTarget(const FName& InWarpTargetName, const FVector& InTargetPosition, const FRotator& InTargetRotation = FRotator::ZeroRotator);
+	#pragma endregion
 
+	#pragma region MotionWarping
+
+	void SetMotionWarpTarget(const FName& InWarpTargetName, const FVector& InTargetPosition, const FRotator& InTargetRotation = FRotator::ZeroRotator);
+	bool TryStartUponVaulting();
 	bool CanStartUponVaulting(FVector& OutVaultStartPosition, FVector& OutVaultLandPosition);
-	void TryStartUponVaulting();
+
+	#pragma endregion
 
 #pragma endregion
 
@@ -158,6 +190,7 @@ private:
 	#pragma endregion
 
 	#pragma region ClimbCoreVariables
+
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Climb State ", meta = (AllowPrivateAccess = "true"))
 	EClimbingState ClimbingState = EClimbingState::ECS_NOTClimbing;
 
@@ -175,14 +208,13 @@ private:
 	AActor* SavedClimbedObject;
 
 	float ClimbDirection = 0;
-
-	/*float LastClimb_X = 0.0f;
-	float LastClimb_Y = 0.0f;*/
 	FVector2D LastClimb_MovementVector = FVector2D(0.0f, 0.0f);
 
 	#pragma endregion
 
 	#pragma region ClimbBPVariables
+
+	#pragma region Climb Params
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Climb Params", meta = (AllowPrivateAccess = "true"))
 	bool ShowDebugTrace = false;
@@ -191,32 +223,38 @@ private:
 	TArray<TEnumAsByte<EObjectTypeQuery> > ClimbableObjectTypes;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Climb Params", meta = (AllowPrivateAccess = "true"))
+	TEnumAsByte<ETraceTypeQuery> TraceType;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Climb Params", meta = (AllowPrivateAccess = "true"))
 	float LedgeHeightLocationXY = 40.f;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Climb Params", meta = (AllowPrivateAccess = "true"))
 	float LedgeHeightLocationZ = 110.f;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Climb Params ", meta = (AllowPrivateAccess = "true"))
-	float MoveRightOffset = 1.5f;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Climb Params", meta = (AllowPrivateAccess = "true"))
+	int N_JumpCapsuleIteration = 14;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Climb Params ", meta = (AllowPrivateAccess = "true"))
-	float MoveUPOffset = 0.3f;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Climb Params", meta = (AllowPrivateAccess = "true"))
+	int N_BackJumpCapsuleIteration = 24;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Climb Params ", meta = (AllowPrivateAccess = "true"))
-	float HandBorder_Forward = 25.f;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Climb Params", meta = (AllowPrivateAccess = "true"))
+	int N_DirectionalJumpCapsuleIteration = 24;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Climb Params ", meta = (AllowPrivateAccess = "true"))
-	float HandBorder_Backward = 25.f;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Climb Params ", meta = (AllowPrivateAccess = "true"))
+	float MoveRightOffset = 28.f;
+	float MoveUPOffset = 0.15f;
+	float HandBorder_Forward = 80.f;
+	float HandBorder_Backward = 70.f;
 	float MaxImpactNormal_Z_value = 0.2f;
+	float MaxImpactNormal_Cos_value = 0.3f;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Climb Params ", meta = (AllowPrivateAccess = "true"))
-	float MaxImpactNormalToForwardVector_Cos_value = 0.3f;
+	#pragma endregion
 
 	#pragma region TraceVariables
 
 	#pragma region First Trace
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Climb Params | First Trace", meta = (AllowPrivateAccess = "true"))
+	float Radius_FirstTrace = 10.f;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Climb Params | First Trace", meta = (AllowPrivateAccess = "true"))
 	float BaseEyeHeightOffset_Idle = 1.5f;
@@ -227,7 +265,6 @@ private:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Climb Params | First Trace", meta = (AllowPrivateAccess = "true"))
 	float BaseEyeHeightOffset_Landing = 2.5f;
 
-
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Climb Params | First Trace", meta = (AllowPrivateAccess = "true"))
 	float ForwardOffset = 100.f;
 
@@ -235,16 +272,7 @@ private:
 	float ForwardOffset_Landing = 90.f;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Climb Params | First Trace", meta = (AllowPrivateAccess = "true"))
-	float Radius_FirstTrace = 10.f;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Climb Params | First Trace", meta = (AllowPrivateAccess = "true"))
 	float Radius_Corner = 10.f;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Climb Params | First Trace", meta = (AllowPrivateAccess = "true"))
-	float Radius_FirstHand = 10.f;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Climb Params | First Trace", meta = (AllowPrivateAccess = "true"))
-	float Radius_FirstTrace_Landing = 25.f;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Climb Params | First Trace", meta = (AllowPrivateAccess = "true"))
 	float Radius_FirstTrace_Hand = 10.f;
@@ -260,14 +288,10 @@ private:
 	float ClimbingTraceHeight_Jumping = 50.f;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Climb Params | Second Trace", meta = (AllowPrivateAccess = "true"))
-	float ClimbingTraceHeight_Landing = 50.f;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Climb Params | Second Trace", meta = (AllowPrivateAccess = "true"))
 	float ClimbingTraceHeight_Hanging_UP = 30.f;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Climb Params | Second Trace", meta = (AllowPrivateAccess = "true"))
 	float ClimbingTraceHeight_Hanging_Right = 15.f;
-
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Climb Params | Second Trace", meta = (AllowPrivateAccess = "true"))
 	float Radius_SecondTrace = 10.f;
@@ -285,8 +309,7 @@ private:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Climb Params | Third Trace", meta = (AllowPrivateAccess = "true"))
 	float Radius_ThirdTrace = 5.f;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Climb Params | Third Trace", meta = (AllowPrivateAccess = "true"))
-	TEnumAsByte<ETraceTypeQuery> TraceType;
+
 
 	#pragma endregion
 
@@ -352,6 +375,8 @@ private:
 
 public:
 
+	#pragma region BlueprintCallable
+
 	UFUNCTION(BlueprintCallable, Category = "Climbing")
 	FORCEINLINE bool IsClimbing() const { return ClimbingState == EClimbingState::ECS_Climbing; }
 
@@ -365,14 +390,26 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Climbing")
 	FORCEINLINE FVector2D GetLastMovementVector() const { return LastClimb_MovementVector; }
 
-	FORCEINLINE void SetClimbDirection(float Direction)  { ClimbDirection = Direction; }
-	FORCEINLINE void SetClimbDown(bool Value) { Value ? ClimbingState = EClimbingState::ECS_SearchingClimbingDown : ClimbingState = EClimbingState::ECS_NOTClimbing; }
-	FORCEINLINE void SetJumpSaved(bool Value) { bJumpSaved = Value; }
-	FORCEINLINE void ResetSavedClimbedObject() { SavedClimbedObject = nullptr; }
-	FORCEINLINE void ResetMovementVector()  { LastClimb_MovementVector = FVector2D(0.0f, 0.0f); }
-
+	#pragma endregion
 
 #pragma endregion
 
+#pragma region InputActions
+
+public:
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input Climb")
+	UInputAction* ClimbDownAction;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input Climb")
+	UInputAction* ClimbAction;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input Climb")
+	UInputAction* ClimbMoveAction;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input Climb")
+	UInputAction* ClimbJumpAction;
+
+#pragma endregion
 
 };

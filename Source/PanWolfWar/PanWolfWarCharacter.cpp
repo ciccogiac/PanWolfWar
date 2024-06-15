@@ -14,8 +14,12 @@
 #include "MotionWarpingComponent.h"
 #include "Components/ClimbingComponent.h"
 
-#include "Kismet/KismetMathLibrary.h"
+
 #include "DebugHelper.h"
+
+
+#include "Actors/InteractableObject.h"
+#include "Components/InteractComponent.h"
 
 DEFINE_LOG_CATEGORY(LogTemplateCharacter);
 
@@ -61,7 +65,7 @@ APanWolfWarCharacter::APanWolfWarCharacter()
 	MotionWarpingComponent = CreateDefaultSubobject<UMotionWarpingComponent>(TEXT("MotionWarpingComp"));
 
 	ClimbingComponent = CreateDefaultSubobject<UClimbingComponent>(TEXT("ClimbingComponent"));
-
+	InteractComponent = CreateDefaultSubobject<UInteractComponent>(TEXT("InteractComponent"));
 }
 
 void APanWolfWarCharacter::BeginPlay()
@@ -77,6 +81,12 @@ void APanWolfWarCharacter::BeginPlay()
 	{
 		ClimbingComponent->OnEnterClimbStateDelegate.BindUObject(this, &ThisClass::OnPlayerEnterClimbState);
 		ClimbingComponent->OnExitClimbStateDelegate.BindUObject(this, &ThisClass::OnPlayerExitClimbState);
+	}
+
+	if (InteractComponent)
+	{
+		InteractComponent->OnEnterInteractStateDelegate.BindUObject(this, &ThisClass::OnPlayerEnterInteractState);
+		InteractComponent->OnExitInteractStateDelegate.BindUObject(this, &ThisClass::OnPlayerExitInteractState);
 	}
 
 }
@@ -123,27 +133,29 @@ void APanWolfWarCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInpu
 	// Set up action bindings
 	if (UEnhancedInputComponent* EnhancedInputComponent = Cast<UEnhancedInputComponent>(PlayerInputComponent)) {
 		
-		// Jumping
-		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Started, this, &APanWolfWarCharacter::JumpClimbTrace);
-		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Completed, this, &ACharacter::StopJumping);
-
 		// Moving
 		EnhancedInputComponent->BindAction(MoveAction, ETriggerEvent::Triggered, this, &APanWolfWarCharacter::Move);
 
 		// Looking
 		EnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &APanWolfWarCharacter::Look);
 
+		// Jumping
+		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Started, this, &APanWolfWarCharacter::JumpClimbTrace);
+		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Completed, this, &ACharacter::StopJumping);
+
+		//Interact
+		EnhancedInputComponent->BindAction(InteractComponent->InteractAction, ETriggerEvent::Started, InteractComponent, &UInteractComponent::Interact);
+		EnhancedInputComponent->BindAction(InteractComponent->InteractMoveAction, ETriggerEvent::Triggered, InteractComponent, &UInteractComponent::MoveObject);
+
 		// Climbing
+		EnhancedInputComponent->BindAction(ClimbingComponent->ClimbAction, ETriggerEvent::Started, ClimbingComponent, &UClimbingComponent::Climb);
+		EnhancedInputComponent->BindAction(ClimbingComponent->ClimbMoveAction, ETriggerEvent::Triggered, ClimbingComponent, &UClimbingComponent::ClimbMove);
+		EnhancedInputComponent->BindAction(ClimbingComponent->ClimbMoveAction, ETriggerEvent::Completed, ClimbingComponent, &UClimbingComponent::ClimbMoveEnd);
+		EnhancedInputComponent->BindAction(ClimbingComponent->ClimbJumpAction, ETriggerEvent::Started, ClimbingComponent, &UClimbingComponent::ClimbJump);
+		EnhancedInputComponent->BindAction(ClimbingComponent->ClimbDownAction, ETriggerEvent::Started, ClimbingComponent, &UClimbingComponent::ClimbDownActivate);
+		EnhancedInputComponent->BindAction(ClimbingComponent->ClimbDownAction, ETriggerEvent::Completed, ClimbingComponent, &UClimbingComponent::ClimbDownDeActivate);
 
-		EnhancedInputComponent->BindAction(ClimbMoveAction, ETriggerEvent::Triggered, this, &APanWolfWarCharacter::ClimbMove);
-		EnhancedInputComponent->BindAction(ClimbMoveAction, ETriggerEvent::Completed, this, &APanWolfWarCharacter::ClimbMoveEnd);
-
-		EnhancedInputComponent->BindAction(ClimbAction, ETriggerEvent::Started, this, &APanWolfWarCharacter::Climb);
-
-		EnhancedInputComponent->BindAction(ClimbJumpAction, ETriggerEvent::Started, this, &APanWolfWarCharacter::ClimbJump);
-
-		EnhancedInputComponent->BindAction(ClimbDownAction, ETriggerEvent::Started, this, &APanWolfWarCharacter::ClimbDownActivate);
-		EnhancedInputComponent->BindAction(ClimbDownAction, ETriggerEvent::Completed, this, &APanWolfWarCharacter::ClimbDownDeActivate);
+		
 	}
 	else
 	{
@@ -198,11 +210,10 @@ void APanWolfWarCharacter::JumpClimbTrace()
 		ACharacter::Jump();
 		return;
 	} 
-
-	if (!ClimbingComponent->IsClimbing() && !ClimbingComponent->TryClimbing()) 
-	{ 
-		ClimbingComponent->ToggleClimbing();  
-		ACharacter::Jump(); 
+	
+	if (ClimbingComponent->ActivateJumpTrace())
+	{
+		ACharacter::Jump();
 	}
 }
 
@@ -216,112 +227,7 @@ void APanWolfWarCharacter::Landed(const FHitResult& Hit)
 	OnPlayerExitClimbState();
 }
 
-void APanWolfWarCharacter::ClimbMove(const FInputActionValue& Value)
-{
-	if (!ClimbingComponent) return;
-
-	const FVector2D MovementVector = Value.Get<FVector2D>();
-
-	if (Controller != nullptr)
-	{
-		const FVector2D DirectionVector = Get8DirectionVector(MovementVector);
-		ClimbingComponent->LedgeMove(DirectionVector);
-
-	}
-
-}
-
-void APanWolfWarCharacter::ClimbMoveEnd(const FInputActionValue& Value)
-{
-	if (!ClimbingComponent) return;
-	ClimbingComponent->ClimbMoveEnd();
-}
-
-void APanWolfWarCharacter::ClimbJump()
-{
-	if (!ClimbingComponent) return;
-
-	if (ClimbingComponent->GetJumpSaved())
-	{
-		ClimbingComponent->TryDirectionalJumping();
-	}
-	else if (!ClimbingComponent->TryClimbUpon())
-	{
-		ClimbingComponent->TryJumping();
-	}
-		
-}
-
-void APanWolfWarCharacter::Climb()
-{
-	if (!ClimbingComponent) return;
-	ClimbingComponent->ToggleClimbing();	
-}
-
-void APanWolfWarCharacter::ClimbDownActivate()
-{
-	if (!ClimbingComponent) return;
-	ClimbingComponent->SetClimbDown(true);
-}
-
-void APanWolfWarCharacter::ClimbDownDeActivate()
-{
-	if (!ClimbingComponent) return;
-	ClimbingComponent->SetClimbDown(false);
-}
-
-
 #pragma endregion
-
-FVector2D APanWolfWarCharacter::Get8DirectionVector(const FVector2D& InputVector)
-{
-	FVector2D Normalized = InputVector.GetSafeNormal();
-	float Angle = FMath::Atan2(Normalized.Y, Normalized.X);
-	// Aggiungere 2PI se l'angolo è negativo
-	if (Angle < 0)
-	{
-		Angle += 2.0f * PI;
-	}
-
-	// Convertire l'angolo in gradi
-	float AngleDegrees = FMath::RadiansToDegrees(Angle);
-
-	//// Determinare la direzione in base all'angolo
-	if (AngleDegrees <= 30.f || AngleDegrees > 330.f)
-	{
-		return FVector2D(1.0f, 0.0f);  // Right
-	}
-	else if (AngleDegrees <= 70.f)
-	{
-		return FVector2D(1.0f, 1.0f);  // Up-Right
-	}
-	else if (AngleDegrees <= 110.f)
-	{
-		return FVector2D(0.0f, 1.0f);  // Up
-	}
-	else if (AngleDegrees <= 150.f)
-	{
-		return FVector2D(-1.0f, 1.0f); // Up-Left
-	}
-	else if (AngleDegrees <= 210.f)
-	{
-		return FVector2D(-1.0f, 0.0f); // Left
-	}
-	else if (AngleDegrees <= 250.f)
-	{
-		return FVector2D(-1.0f, -1.0f); // Down-Left
-	}
-	else if (AngleDegrees <= 290.f)
-	{
-		return FVector2D(0.0f, -1.0f); // Down
-	}
-	else if (AngleDegrees <= 330.f)
-	{
-		return FVector2D(1.0f, -1.0f); // Down-Right
-	}
-
-	return FVector2D(0.0f, 0.0f);  // Default, should not be reached
-}
 
 //////////////////////////////////////////////////////////////////////////
 // Components Delegates
@@ -341,6 +247,33 @@ void APanWolfWarCharacter::OnPlayerExitClimbState()
 }
 
 #pragma endregion
+
+#pragma region Interact Delegates
+
+void APanWolfWarCharacter::OnPlayerEnterInteractState()
+{
+	AddMappingContext(InteractableMappingContext, 1);
+}
+
+void APanWolfWarCharacter::OnPlayerExitInteractState()
+{
+	RemoveMappingContext(InteractableMappingContext);
+}
+
+#pragma endregion
+
+//////////////////////////////////////////////////////////////////////////
+// Interfaces
+
+#pragma region Interfaces
+
+void APanWolfWarCharacter::SetOverlappingObject(AInteractableObject* InteractableObject)
+{
+	InteractComponent->SetOverlappingObject(InteractableObject);
+}
+
+#pragma endregion
+
 
 
 

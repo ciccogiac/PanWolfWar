@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
 #include "Logging/LogMacros.h"
+#include "Interfaces/InteractInterface.h"
 #include "PanWolfWarCharacter.generated.h"
 
 class USpringArmComponent;
@@ -15,11 +16,12 @@ struct FInputActionValue;
 
 class UMotionWarpingComponent;
 class UClimbingComponent;
+class UInteractComponent;
 
 DECLARE_LOG_CATEGORY_EXTERN(LogTemplateCharacter, Log, All);
 
 UCLASS(config=Game)
-class APanWolfWarCharacter : public ACharacter
+class APanWolfWarCharacter : public ACharacter , public IInteractInterface
 {
 	GENERATED_BODY()
 
@@ -45,8 +47,6 @@ protected:
 
 private:
 
-
-
 	#pragma region Components
 
 	/** Camera boom positioning the camera behind the character */
@@ -64,6 +64,10 @@ private:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Movement, meta = (AllowPrivateAccess = "true"))
 	UClimbingComponent* ClimbingComponent;
 
+	/** Interact Component */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Movement, meta = (AllowPrivateAccess = "true"))
+	UInteractComponent* InteractComponent;
+
 	#pragma endregion
 
 	#pragma region InputAction
@@ -75,6 +79,9 @@ private:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	UInputMappingContext* ClimbingMappingContext;
 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	UInputMappingContext* InteractableMappingContext;
+
 	/** InputActions */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	UInputAction* JumpAction;
@@ -84,18 +91,6 @@ private:
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	UInputAction* LookAction;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
-	UInputAction* ClimbDownAction;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
-	UInputAction* ClimbAction;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
-	UInputAction* ClimbMoveAction;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
-	UInputAction* ClimbJumpAction;
 
 
 	#pragma endregion
@@ -109,10 +104,13 @@ private:
 	void OnPlayerEnterClimbState();
 	void OnPlayerExitClimbState();
 
+	void OnPlayerEnterInteractState();
+	void OnPlayerExitInteractState();
+
 	void AddMappingContext(UInputMappingContext* MappingContextToAdd, int32 Priority);
 	void RemoveMappingContext(UInputMappingContext* MappingContextToRemove);
 
-	FVector2D Get8DirectionVector(const FVector2D& InputVector);
+	//FVector2D Get8DirectionVector(const FVector2D& InputVector);
 
 	#pragma region InputCallback
 
@@ -122,12 +120,16 @@ private:
 	/** Climbing CallBacks */
 	void JumpClimbTrace();
 
-	void Climb();
-	void ClimbDownActivate();
-	void ClimbDownDeActivate();
-	void ClimbMove(const FInputActionValue& Value);
-	void ClimbMoveEnd(const FInputActionValue& Value);
-	void ClimbJump();
+	//void Climb();
+	//void ClimbDownActivate();
+	//void ClimbDownDeActivate();
+	//void ClimbMove(const FInputActionValue& Value);
+	//void ClimbMoveEnd(const FInputActionValue& Value);
+	//void ClimbJump();
+
+	//Interfaces
+
+	virtual void SetOverlappingObject(AInteractableObject* InteractableObject) override;
 
 	#pragma endregion
 
