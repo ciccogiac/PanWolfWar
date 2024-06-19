@@ -145,7 +145,7 @@ void APanWolfWarCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInpu
 
 		//Interact
 		EnhancedInputComponent->BindAction(InteractComponent->InteractAction, ETriggerEvent::Started, InteractComponent, &UInteractComponent::Interact);
-		EnhancedInputComponent->BindAction(InteractComponent->InteractMoveAction, ETriggerEvent::Triggered, InteractComponent, &UInteractComponent::MoveObject);
+		EnhancedInputComponent->BindAction(InteractComponent->InteractMoveAction, ETriggerEvent::Triggered, InteractComponent, &UInteractComponent::InteractMove);
 
 		// Climbing
 		EnhancedInputComponent->BindAction(ClimbingComponent->ClimbAction, ETriggerEvent::Started, ClimbingComponent, &UClimbingComponent::Climb);
@@ -267,9 +267,9 @@ void APanWolfWarCharacter::OnPlayerExitInteractState()
 
 #pragma region Interfaces
 
-void APanWolfWarCharacter::SetOverlappingObject(AInteractableObject* InteractableObject)
+bool APanWolfWarCharacter::SetOverlappingObject(AInteractableObject* InteractableObject, bool bEnter)
 {
-	InteractComponent->SetOverlappingObject(InteractableObject);
+	return InteractComponent->SetOverlappingObject(InteractableObject, bEnter);
 }
 
 #pragma endregion

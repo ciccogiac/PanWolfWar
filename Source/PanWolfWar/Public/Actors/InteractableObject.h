@@ -6,30 +6,44 @@
 #include "GameFramework/Actor.h"
 #include "InteractableObject.generated.h"
 
+class UCharacterMovementComponent;
+class UCapsuleComponent;
+struct FInputActionValue;
+
 UCLASS()
 class PANWOLFWAR_API AInteractableObject : public AActor
 {
 	GENERATED_BODY()
 	
 public:	
-	// Sets default values for this actor's properties
 	AInteractableObject();
-	virtual void Interact(bool bStartInteraction = true) ;
+
+	virtual bool Interact(ACharacter* _CharacterOwner = nullptr) ;
+	virtual void Move(const FInputActionValue& Value);
 
 protected:
-	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
-	virtual void Tick(float DeltaTime) override;
+	void InitializeBoxComponents();
 
+	FVector2D Get8DirectionVector(const FVector2D& InputVector);
+
+	ACharacter* CharacterOwner;
 
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
 	UStaticMeshComponent* StaticMesh;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Interact Params", meta = (AllowPrivateAccess = "true"))
 	class UBoxComponent* BoxComponent;
 
-private:
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Interact Params", meta = (AllowPrivateAccess = "true"))
+	TArray<class UBoxComponent*> BoxComponentArray;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Interact Params", meta = (AllowPrivateAccess = "true"))
+	TArray<class UArrowComponent*> ArrowComponentArray;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Interact Params", meta = (AllowPrivateAccess = "true"))
+	int N_InteractBox=4;
 
 	UFUNCTION()
 	void BoxCollisionEnter(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);

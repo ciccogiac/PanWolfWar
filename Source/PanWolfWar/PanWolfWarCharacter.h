@@ -120,16 +120,10 @@ private:
 	/** Climbing CallBacks */
 	void JumpClimbTrace();
 
-	//void Climb();
-	//void ClimbDownActivate();
-	//void ClimbDownDeActivate();
-	//void ClimbMove(const FInputActionValue& Value);
-	//void ClimbMoveEnd(const FInputActionValue& Value);
-	//void ClimbJump();
 
 	//Interfaces
 
-	virtual void SetOverlappingObject(AInteractableObject* InteractableObject) override;
+	virtual bool SetOverlappingObject(AInteractableObject* InteractableObject, bool bEnter = true) override;
 
 	#pragma endregion
 

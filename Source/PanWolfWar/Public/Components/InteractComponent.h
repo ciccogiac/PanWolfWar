@@ -14,6 +14,14 @@ class UCharacterMovementComponent;
 class UCapsuleComponent;
 struct FInputActionValue;
 class UInputAction;
+class AMovableObject;
+
+UENUM(BlueprintType)
+enum class EInteractState : uint8
+{
+	EIS_NOTinteracting UMETA(DisplayName = "NOTinteracting"),
+	EIS_MovingObject UMETA(DisplayName = "MovingObject")
+};
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class PANWOLFWAR_API UInteractComponent : public UActorComponent
@@ -31,33 +39,25 @@ public:
 #pragma endregion
 
 public:	
-	// Sets default values for this component's properties
 	UInteractComponent();
-
-protected:
-	// Called when the game starts
-	virtual void BeginPlay() override;
-
-public:	
-	// Called every frame
-	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 	
 	void Interact();
-	void MoveObject(const FInputActionValue& Value);
-	void SetOverlappingObject(AInteractableObject* InteractableObject);
+	void InteractMove(const FInputActionValue& Value);
+	bool SetOverlappingObject(AInteractableObject* _InteractableObject, bool bEnter );
 		
 private:
 
-	AActor* ActorOwner;
-	ACharacter* CharacterOwner;
-	UCharacterMovementComponent* MovementComponent;
-	UCapsuleComponent* CapsuleComponent;
+	void SetInteractState();
 
-	UPROPERTY(VisibleInstanceOnly)
+
+	ACharacter* CharacterOwner;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Interact State ", meta = (AllowPrivateAccess = "true"))
+	EInteractState InteractState = EInteractState::EIS_NOTinteracting;
+
+	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, Category = "Interact State ", meta = (AllowPrivateAccess = "true"))
 	class AInteractableObject* OverlappingObject;
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
-	bool bIsMovingObject = false;
 
 #pragma region InputActions
 
@@ -70,4 +70,7 @@ public:
 	UInputAction* InteractMoveAction;
 
 #pragma endregion
+
+UFUNCTION(BlueprintCallable, Category = "Interacting")
+FORCEINLINE EInteractState GetInteractState() const { return InteractState; }
 };

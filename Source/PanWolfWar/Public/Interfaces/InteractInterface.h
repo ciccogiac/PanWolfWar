@@ -22,5 +22,5 @@ class PANWOLFWAR_API IInteractInterface
 
 	// Add interface functions to this class. This is the class that will be inherited to implement this interface.
 public:
-	virtual void SetOverlappingObject(class AInteractableObject* InteractableObject) = 0;
+	virtual bool SetOverlappingObject(class AInteractableObject* InteractableObject, bool bEnter=true) = 0;
 };
