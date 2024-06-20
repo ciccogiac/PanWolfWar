@@ -29,6 +29,7 @@ protected:
 
 	ACharacter* CharacterOwner;
 
+	USceneComponent* InteractWidget;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
 	UStaticMeshComponent* StaticMesh;
@@ -42,6 +43,9 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Interact Params", meta = (AllowPrivateAccess = "true"))
 	TArray<class UArrowComponent*> ArrowComponentArray;
 
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Interact Params", meta = (AllowPrivateAccess = "true"))
+	TArray<class UWidgetComponent*> InteractionWidgetArray;
+
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Interact Params", meta = (AllowPrivateAccess = "true"))
 	int N_InteractBox=4;
 
@@ -51,4 +55,8 @@ protected:
 	UFUNCTION()
 	void BoxCollisionExit(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
 
+	FORCEINLINE void SetInteractWidget(USceneComponent* _InteractWidget) { InteractWidget = _InteractWidget; };
+
+public:
+	FORCEINLINE void SetInteractWidgetVisibility(bool bVisibility) { if(InteractWidget) InteractWidget->SetVisibility(bVisibility); };
 };

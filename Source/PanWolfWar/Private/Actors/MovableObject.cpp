@@ -53,11 +53,13 @@ bool AMovableObject::Interact(ACharacter* _CharacterOwner  )
 	if (!bIsMovingObject && CharacterOwner)
 	{
 		SetMovingState(true, 60.f, 2500.f);
+		BoxComponent->GetChildComponent(1)->SetVisibility(false);
 		SetCharacterPosition();
 	}
 	else if(bIsMovingObject && CharacterOwner)
 	{
 		SetMovingState(false, 500.f, 10000.f);
+		BoxComponent->GetChildComponent(1)->SetVisibility(true);
 	}
 
 	return bIsMovingObject;
@@ -151,7 +153,6 @@ void AMovableObject::SetCharacterPosition()
 
 	if (FMath::Abs(CurrentDistance) > FWD_AcceptanceOffset_Character)
 	{
-		Debug::Print(TEXT("Positioning"), FColor::Cyan, 9);
 		FLatentActionInfo LatentInfo;
 		LatentInfo.CallbackTarget = this;
 		const FRotator RotX = UKismetMathLibrary::MakeRotFromX(GetBoxForward());

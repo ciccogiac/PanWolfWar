@@ -20,6 +20,7 @@ UENUM(BlueprintType)
 enum class EInteractState : uint8
 {
 	EIS_NOTinteracting UMETA(DisplayName = "NOTinteracting"),
+	EIS_Interacting UMETA(DisplayName = "Interacting"),
 	EIS_MovingObject UMETA(DisplayName = "MovingObject")
 };
 

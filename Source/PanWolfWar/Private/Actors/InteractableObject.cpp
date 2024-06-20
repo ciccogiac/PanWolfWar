@@ -9,6 +9,10 @@
 
 #include "PanWolfWar/DebugHelper.h"
 
+#include "UserWidgets/InteractionWidget.h"
+
+#include "Components/WidgetComponent.h"
+
 AInteractableObject::AInteractableObject()
 {
 	PrimaryActorTick.bCanEverTick = false;
@@ -24,6 +28,7 @@ void AInteractableObject::InitializeBoxComponents()
 
 	BoxComponentArray.SetNum(N_InteractBox);
 	ArrowComponentArray.SetNum(N_InteractBox);
+	InteractionWidgetArray.SetNum(N_InteractBox);
 
 	for (int32 i = 0; i < BoxComponentArray.Num(); ++i)
 	{
@@ -34,8 +39,8 @@ void AInteractableObject::InitializeBoxComponents()
 		if (BoxComponentArray[i])
 		{
 			BoxComponentArray[i]->SetupAttachment(StaticMesh);
-			BoxComponentArray[i]->bHiddenInGame = false;
-			BoxComponentArray[i]->SetLineThickness(2.f);
+			BoxComponentArray[i]->bHiddenInGame = true;
+			//BoxComponentArray[i]->SetLineThickness(2.f);
 			BoxComponentArray[i]->SetCollisionObjectType(ECollisionChannel::ECC_Pawn);
 
 			ArrowComponentArray[i] = CreateDefaultSubobject<UArrowComponent>(*FString::Printf(TEXT("ArrowComponent%d"), i));
@@ -43,6 +48,17 @@ void AInteractableObject::InitializeBoxComponents()
 			{
 				ArrowComponentArray[i]->SetupAttachment(BoxComponentArray[i]);
 				ArrowComponentArray[i]->ArrowLength = BoxComponentArray[i]->GetScaledBoxExtent().X;
+			}
+
+			InteractionWidgetArray[i] = CreateDefaultSubobject<UWidgetComponent>(*FString::Printf(TEXT("InteractionWidget%d"), i));
+			if (InteractionWidgetArray[i])
+			{
+				 InteractionWidgetArray[i]->SetupAttachment(BoxComponentArray[i]);
+				 InteractionWidgetArray[i]->SetRelativeRotation(FQuat(0.f,0.f,180.f,0.f));
+				 const FVector WidgetLocation = InteractionWidgetArray[i]->GetRelativeLocation() + FVector(BoxComponentArray[i]->GetScaledBoxExtent().X, 0.f, 0.f);
+				 InteractionWidgetArray[i]->SetRelativeLocationAndRotation(WidgetLocation,FQuat(0.f, 0.f, 180.f, 0.f));
+				 InteractionWidgetArray[i]->SetWidgetSpace(EWidgetSpace::Screen);
+				 InteractionWidgetArray[i]->SetVisibility(false);
 			}
 			
 		}
@@ -80,18 +96,26 @@ void AInteractableObject::BoxCollisionEnter(UPrimitiveComponent* OverlappedCompo
 		
 		IInteractInterface* InteractInterface = Cast<IInteractInterface>(OtherActor);
 		if (InteractInterface && InteractInterface->SetOverlappingObject(this))
-		{		
-				BoxComponent = Cast<UBoxComponent>(OverlappedComponent);						
+		{
+			//if (BoxComponent) { BoxComponent->GetChildComponent(1)->SetVisibility(false); }
+				BoxComponent = Cast<UBoxComponent>(OverlappedComponent);
+				SetInteractWidget(BoxComponent->GetChildComponent(1));
+				SetInteractWidgetVisibility(true);
+				//BoxComponent->GetChildComponent(1)->SetVisibility(true);
 		}
 }
 
 void AInteractableObject::BoxCollisionExit(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
 {
-		
+		//if(BoxComponent)BoxComponent->GetChildComponent(1)->SetVisibility(false);
+		SetInteractWidgetVisibility(false);
+
 		IInteractInterface* InteractInterface = Cast<IInteractInterface>(OtherActor);
 		if (InteractInterface && InteractInterface->SetOverlappingObject(this, false))
 		{		
-				BoxComponent = nullptr;				
+			    SetInteractWidget(nullptr);
+				BoxComponent = nullptr;
+				
 		}
 }
 

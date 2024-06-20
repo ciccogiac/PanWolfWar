@@ -37,6 +37,8 @@ void UInteractComponent::Interact()
 {
 	if (OverlappingObject)
 	{
+		InteractState = EInteractState::EIS_Interacting;
+
 		if (OverlappingObject->Interact(CharacterOwner))
 		{
 			SetInteractState();
@@ -64,6 +66,7 @@ bool UInteractComponent::SetOverlappingObject(AInteractableObject* InteractableO
 	//Sto uscendo da oggetto overlappato prima e ho interazioni
 	if (InteractableObject && InteractableObject == OverlappingObject && InteractState != EInteractState::EIS_NOTinteracting)
 	{
+		
 		OverlappingObject->Interact(nullptr);
 		InteractState = EInteractState::EIS_NOTinteracting;
 		OnExitInteractStateDelegate.ExecuteIfBound();
@@ -73,6 +76,7 @@ bool UInteractComponent::SetOverlappingObject(AInteractableObject* InteractableO
 	//Sto entrando in un oggetto  e non ho iterazioni
 	else if (bEnter && InteractableObject && OverlappingObject != InteractableObject && InteractState == EInteractState::EIS_NOTinteracting)
 	{
+		if (OverlappingObject) { OverlappingObject->SetInteractWidgetVisibility(false); }
 		OverlappingObject = InteractableObject;
 		return true;
 	}
