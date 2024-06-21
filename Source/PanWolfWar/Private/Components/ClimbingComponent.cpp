@@ -1047,11 +1047,15 @@ void UClimbingComponent::ClimbJump()
 
 void UClimbingComponent::ClimbDownActivate()
 {
+	if (ClimbingState == EClimbingState::ECS_CANNOTClimb) return;
+
 	ClimbingState = EClimbingState::ECS_SearchingClimbingDown;
 }
 
 void UClimbingComponent::ClimbDownDeActivate()
 {
+	if (ClimbingState == EClimbingState::ECS_CANNOTClimb) return;
+
 	ClimbingState = EClimbingState::ECS_NOTClimbing;
 }
 

@@ -22,7 +22,8 @@ enum class EClimbingState : uint8
 	ECS_NOTClimbing UMETA(DisplayName = "NOTClimbing"),
 	ECS_SearchingClimbingDown UMETA(DisplayName = "SearchingClimbingDown"),
 	ECS_Climbing UMETA(DisplayName = "Climbing"),
-	ECS_Falling UMETA(DisplayName = "Falling")
+	ECS_Falling UMETA(DisplayName = "Falling"),
+	ECS_CANNOTClimb UMETA(DisplayName = "CANNOTClimb")
 };
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
@@ -389,6 +390,7 @@ public:
 	//LastClimb_MovementVector
 	UFUNCTION(BlueprintCallable, Category = "Climbing")
 	FORCEINLINE FVector2D GetLastMovementVector() const { return LastClimb_MovementVector; }
+	FORCEINLINE void SetCanClimb(bool Value)  { Value ? ClimbingState = EClimbingState::ECS_NOTClimbing : ClimbingState = EClimbingState::ECS_CANNOTClimb; }
 
 	#pragma endregion
 

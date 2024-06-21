@@ -21,6 +21,10 @@
 #include "Actors/InteractableObject.h"
 #include "Components/InteractComponent.h"
 
+#include "Components/TransformationComponent.h"
+
+#include "NiagaraComponent.h"
+
 DEFINE_LOG_CATEGORY(LogTemplateCharacter);
 
 //////////////////////////////////////////////////////////////////////////
@@ -62,10 +66,14 @@ APanWolfWarCharacter::APanWolfWarCharacter()
 	FollowCamera->SetupAttachment(CameraBoom, USpringArmComponent::SocketName); // Attach the camera to the end of the boom and let the boom adjust to match the controller orientation
 	FollowCamera->bUsePawnControlRotation = false; // Camera does not rotate relative to arm
 
+	NiagaraTransformation = CreateDefaultSubobject<UNiagaraComponent>(TEXT("NiagaraTransformation"));
+	NiagaraTransformation->SetupAttachment(GetMesh());
+
 	MotionWarpingComponent = CreateDefaultSubobject<UMotionWarpingComponent>(TEXT("MotionWarpingComp"));
 
 	ClimbingComponent = CreateDefaultSubobject<UClimbingComponent>(TEXT("ClimbingComponent"));
 	InteractComponent = CreateDefaultSubobject<UInteractComponent>(TEXT("InteractComponent"));
+	TransformationComponent = CreateDefaultSubobject<UTransformationComponent>(TEXT("TransformationComponent"));
 }
 
 void APanWolfWarCharacter::BeginPlay()
@@ -155,7 +163,10 @@ void APanWolfWarCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInpu
 		EnhancedInputComponent->BindAction(ClimbingComponent->ClimbDownAction, ETriggerEvent::Started, ClimbingComponent, &UClimbingComponent::ClimbDownActivate);
 		EnhancedInputComponent->BindAction(ClimbingComponent->ClimbDownAction, ETriggerEvent::Completed, ClimbingComponent, &UClimbingComponent::ClimbDownDeActivate);
 
-		
+		// Transformation
+		EnhancedInputComponent->BindAction(TransformationComponent->TransformationApply, ETriggerEvent::Started, TransformationComponent, &UTransformationComponent::ApplyTrasformation);
+		EnhancedInputComponent->BindAction(TransformationComponent->TransformationSelectRightAction, ETriggerEvent::Started, TransformationComponent, &UTransformationComponent::SelectRightTransformation);
+		EnhancedInputComponent->BindAction(TransformationComponent->TransformationSelectLeftAction, ETriggerEvent::Started, TransformationComponent, &UTransformationComponent::SelectLeftTransformation);
 	}
 	else
 	{
@@ -205,13 +216,13 @@ void APanWolfWarCharacter::Look(const FInputActionValue& Value)
 
 void APanWolfWarCharacter::JumpClimbTrace()
 {
-	if (!ClimbingComponent) 
+	if (!ClimbingComponent || TransformationComponent->IsInTransformingState())
 	{
 		ACharacter::Jump();
 		return;
 	} 
 	
-	if (ClimbingComponent->ActivateJumpTrace())
+	if (!TransformationComponent->IsInTransformingState() && ClimbingComponent->ActivateJumpTrace() )
 	{
 		ACharacter::Jump();
 	}
@@ -221,7 +232,7 @@ void APanWolfWarCharacter::Landed(const FHitResult& Hit)
 {
 	Super::Landed(Hit);
 
-	if (!ClimbingComponent) return;
+	if (!ClimbingComponent || TransformationComponent->IsInTransformingState()) return;
 
 	ClimbingComponent->Landed();
 	OnPlayerExitClimbState();
