@@ -19,6 +19,8 @@ class UMotionWarpingComponent;
 class UClimbingComponent;
 class UInteractComponent;
 class UTransformationComponent;
+class UAttributeComponent;
+//class UPanwolfwarOverlay;
 
 DECLARE_LOG_CATEGORY_EXTERN(LogTemplateCharacter, Log, All);
 
@@ -59,9 +61,12 @@ private:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
 	UCameraComponent* FollowCamera;
 
-	/** Follow camera */
+	/** Niagara Transformation */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
 	UNiagaraComponent* NiagaraTransformation;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
+	UNiagaraComponent* NiagaraApplyTransformationEffect;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Movement, meta = (AllowPrivateAccess = "true"))
 	UMotionWarpingComponent* MotionWarpingComponent;
@@ -77,6 +82,15 @@ private:
 	/** Transformation Component */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Movement, meta = (AllowPrivateAccess = "true"))
 	UTransformationComponent* TransformationComponent;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Movement, meta = (AllowPrivateAccess = "true"))
+	UAttributeComponent* Attributes;
+
+	//UPROPERTY()
+	//UPanwolfwarOverlay* PanwolfwarOverlay;
+
+	//UPROPERTY(EditDefaultsOnly, Category = HUD)
+	//TSubclassOf<class UPanwolfwarOverlay> PanwolfwarOverlayClass;
 
 	#pragma endregion
 
@@ -147,11 +161,16 @@ public:
 	FORCEINLINE class UCameraComponent* GetFollowCamera() const { return FollowCamera; }
 	FORCEINLINE UMotionWarpingComponent* GetMotionWarpingComponent() const { return MotionWarpingComponent; }
 	
+	UFUNCTION(BlueprintCallable, Category = "attribute")
+	FORCEINLINE UAttributeComponent* GetAttributeComponent()  const { return Attributes; }
 	FORCEINLINE UClimbingComponent* GetClimbingComponent()  const { return ClimbingComponent; }
 	FORCEINLINE UInteractComponent* GetInteractComponent() const { return InteractComponent; }
 
 	FORCEINLINE UNiagaraComponent* GetNiagaraTransformation() { return NiagaraTransformation; }
+	FORCEINLINE UNiagaraComponent* GetNiagaraTransformationEffect() { return NiagaraApplyTransformationEffect; }
 
+
+	//FORCEINLINE UPanwolfwarOverlay* GetPanwolfwarOverlay() const { return PanwolfwarOverlay; }
 #pragma endregion
 
 

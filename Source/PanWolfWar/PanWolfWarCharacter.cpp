@@ -13,7 +13,7 @@
 
 #include "MotionWarpingComponent.h"
 #include "Components/ClimbingComponent.h"
-
+#include "Components/AttributeComponent.h"
 
 #include "DebugHelper.h"
 
@@ -24,6 +24,8 @@
 #include "Components/TransformationComponent.h"
 
 #include "NiagaraComponent.h"
+
+//#include "UserWidgets/PanwolfwarOverlay.h"
 
 DEFINE_LOG_CATEGORY(LogTemplateCharacter);
 
@@ -69,8 +71,13 @@ APanWolfWarCharacter::APanWolfWarCharacter()
 	NiagaraTransformation = CreateDefaultSubobject<UNiagaraComponent>(TEXT("NiagaraTransformation"));
 	NiagaraTransformation->SetupAttachment(GetMesh());
 
+	NiagaraApplyTransformationEffect = CreateDefaultSubobject<UNiagaraComponent>(TEXT("NiagaraApplyTransformationEffect"));
+	NiagaraApplyTransformationEffect->SetupAttachment(GetMesh());
+
+
 	MotionWarpingComponent = CreateDefaultSubobject<UMotionWarpingComponent>(TEXT("MotionWarpingComp"));
 
+	Attributes = CreateDefaultSubobject<UAttributeComponent>(TEXT("Attributes"));
 	ClimbingComponent = CreateDefaultSubobject<UClimbingComponent>(TEXT("ClimbingComponent"));
 	InteractComponent = CreateDefaultSubobject<UInteractComponent>(TEXT("InteractComponent"));
 	TransformationComponent = CreateDefaultSubobject<UTransformationComponent>(TEXT("TransformationComponent"));
@@ -80,6 +87,7 @@ void APanWolfWarCharacter::BeginPlay()
 {
 	// Call the base class  
 	Super::BeginPlay();
+
 
 	AddMappingContext(DefaultMappingContext, 0);
 
@@ -232,7 +240,7 @@ void APanWolfWarCharacter::Landed(const FHitResult& Hit)
 {
 	Super::Landed(Hit);
 
-	if (!ClimbingComponent || TransformationComponent->IsInTransformingState()) return;
+	if (!ClimbingComponent) return;
 
 	ClimbingComponent->Landed();
 	OnPlayerExitClimbState();

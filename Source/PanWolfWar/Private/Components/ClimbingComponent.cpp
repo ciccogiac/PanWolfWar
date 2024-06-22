@@ -1004,6 +1004,8 @@ bool UClimbingComponent::ActivateJumpTrace()
 
 void UClimbingComponent::Landed()
 {
+	if (ClimbingState == EClimbingState::ECS_CANNOTClimb) return;
+
 	ClimbingState = EClimbingState::ECS_NOTClimbing;
 	ClimbedObject = nullptr;
 }

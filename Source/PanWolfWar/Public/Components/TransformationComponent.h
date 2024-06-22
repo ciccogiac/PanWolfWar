@@ -27,7 +27,7 @@ public:
 	void SelectLeftTransformation();
 	void ApplyTrasformation();
 
-	void SelectDesiredTransformation();
+	void SelectDesiredTransformation(int32 TransformationState_ID);
 
 	//UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "TransformationMap")
 	//TMap<ETransformationState, FTransformationImage> TransformationMap;
@@ -44,7 +44,7 @@ private:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Transformation State ", meta = (AllowPrivateAccess = "true"))
 	ETransformationState CurrentTransformationState = ETransformationState::ETS_Pandolfo;
 
-	int DesiredTransformationState_ID = 0;
+	int32 DesiredTransformationState_ID = 0;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Transformation State ", meta = (AllowPrivateAccess = "true"))
 	TArray<ETransformationState>  PossibleTransformationState;
@@ -56,6 +56,8 @@ private:
 	TSubclassOf<UTransformationWidget> TransformationWidgetClass;
 
 	class APanWolfWarCharacter* PanWolfWarCharacter;
+
+	class UAttributeComponent* Attributes;
 
 	#pragma region Transformation Materials
 
