@@ -29,17 +29,14 @@ public:
 
 	void SelectDesiredTransformation(int32 TransformationState_ID);
 
-	//UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "TransformationMap")
-	//TMap<ETransformationState, FTransformationImage> TransformationMap;
-
 protected:
 	virtual void BeginPlay() override;
 
 private:
-	bool CanTrasform();
-	
+	bool CanTrasform(const int32 NewTransformation_ID);
+	void ExecuteTransformation(ETransformationState NewTransformationState , UMaterialInterface* Material1, UMaterialInterface* Material2,UNiagaraSystem* NiagaraTransformation = nullptr);
 
-private:
+#pragma region Variables
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Transformation State ", meta = (AllowPrivateAccess = "true"))
 	ETransformationState CurrentTransformationState = ETransformationState::ETS_Pandolfo;
@@ -58,6 +55,7 @@ private:
 	class APanWolfWarCharacter* PanWolfWarCharacter;
 
 	class UAttributeComponent* Attributes;
+	class UInteractComponent* InteractComponent;
 
 	#pragma region Transformation Materials
 
@@ -82,11 +80,9 @@ private:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Transformation Materials ", meta = (AllowPrivateAccess = "true"))
 	UNiagaraSystem* Pandolflower_Niagara;
 
-
-
 	#pragma endregion
 
-
+#pragma endregion
 
 
 
@@ -102,7 +98,15 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input Transformation")
 	UInputAction* TransformationApply;
 
+#pragma region FORCEINLINE_functions
+public:
+
+
 	FORCEINLINE ETransformationState GetCurrentState() const { return CurrentTransformationState; }
 	FORCEINLINE bool IsInTransformingState() const { return CurrentTransformationState != ETransformationState::ETS_Pandolfo; }
+
+#pragma endregion
+
+
 		
 };

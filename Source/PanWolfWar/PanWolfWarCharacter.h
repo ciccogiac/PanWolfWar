@@ -6,6 +6,7 @@
 #include "GameFramework/Character.h"
 #include "Logging/LogMacros.h"
 #include "Interfaces/InteractInterface.h"
+#include "Interfaces/CharacterInterface.h"
 #include "PanWolfWarCharacter.generated.h"
 
 class USpringArmComponent;
@@ -20,12 +21,11 @@ class UClimbingComponent;
 class UInteractComponent;
 class UTransformationComponent;
 class UAttributeComponent;
-//class UPanwolfwarOverlay;
 
 DECLARE_LOG_CATEGORY_EXTERN(LogTemplateCharacter, Log, All);
 
 UCLASS(config=Game)
-class APanWolfWarCharacter : public ACharacter , public IInteractInterface
+class APanWolfWarCharacter : public ACharacter , public IInteractInterface , public ICharacterInterface
 {
 	GENERATED_BODY()
 
@@ -86,12 +86,6 @@ private:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Movement, meta = (AllowPrivateAccess = "true"))
 	UAttributeComponent* Attributes;
 
-	//UPROPERTY()
-	//UPanwolfwarOverlay* PanwolfwarOverlay;
-
-	//UPROPERTY(EditDefaultsOnly, Category = HUD)
-	//TSubclassOf<class UPanwolfwarOverlay> PanwolfwarOverlayClass;
-
 	#pragma endregion
 
 	#pragma region InputAction
@@ -134,8 +128,6 @@ private:
 	void AddMappingContext(UInputMappingContext* MappingContextToAdd, int32 Priority);
 	void RemoveMappingContext(UInputMappingContext* MappingContextToRemove);
 
-	//FVector2D Get8DirectionVector(const FVector2D& InputVector);
-
 	#pragma region InputCallback
 
 	void Move(const FInputActionValue& Value);
@@ -161,16 +153,15 @@ public:
 	FORCEINLINE class UCameraComponent* GetFollowCamera() const { return FollowCamera; }
 	FORCEINLINE UMotionWarpingComponent* GetMotionWarpingComponent() const { return MotionWarpingComponent; }
 	
-	UFUNCTION(BlueprintCallable, Category = "attribute")
-	FORCEINLINE UAttributeComponent* GetAttributeComponent()  const { return Attributes; }
+	//UFUNCTION(BlueprintCallable, Category = "attribute")
+	FORCEINLINE virtual UAttributeComponent* GetAttributeComponent()  const override { return Attributes; }
 	FORCEINLINE UClimbingComponent* GetClimbingComponent()  const { return ClimbingComponent; }
 	FORCEINLINE UInteractComponent* GetInteractComponent() const { return InteractComponent; }
+	FORCEINLINE virtual UTransformationComponent* GetTransformationComponent()  const override { return TransformationComponent; } ;
 
 	FORCEINLINE UNiagaraComponent* GetNiagaraTransformation() { return NiagaraTransformation; }
 	FORCEINLINE UNiagaraComponent* GetNiagaraTransformationEffect() { return NiagaraApplyTransformationEffect; }
 
-
-	//FORCEINLINE UPanwolfwarOverlay* GetPanwolfwarOverlay() const { return PanwolfwarOverlay; }
 #pragma endregion
 
 

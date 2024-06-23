@@ -11,6 +11,7 @@ DECLARE_DELEGATE(FOnExitClimbState)
 
 class UCharacterMovementComponent;
 class UMotionWarpingComponent;
+class UTransformationComponent;
 class UCapsuleComponent;
 class UAnimMontage;
 struct FInputActionValue;
@@ -22,8 +23,7 @@ enum class EClimbingState : uint8
 	ECS_NOTClimbing UMETA(DisplayName = "NOTClimbing"),
 	ECS_SearchingClimbingDown UMETA(DisplayName = "SearchingClimbingDown"),
 	ECS_Climbing UMETA(DisplayName = "Climbing"),
-	ECS_Falling UMETA(DisplayName = "Falling"),
-	ECS_CANNOTClimb UMETA(DisplayName = "CANNOTClimb")
+	ECS_Falling UMETA(DisplayName = "Falling")
 };
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
@@ -100,13 +100,13 @@ private:
 	#pragma region CalculateClimbingCondition
 
 	bool TryClimbing();
-	bool FindClimbableObject(const float BaseEyeHeightOffset_UP = 0.f, const float BaseEyeHeightOffset_Right = 0.f);
+	bool FindClimbableObject( const float BaseEyeHeightOffset_UP = 0.f, const float BaseEyeHeightOffset_Right = 0.f ,  float StartingClimbOffset_UP = 0.f);
 	bool FindClimbablePoint(const FHitResult& ClimbableObjectHit);
 	void ProcessClimbableSurfaceInfo(const FHitResult& ClimbableObjectHit);
 	FVector CalculateLedgeLocation(const FVector& ImpactObjectPoint, const FVector& ClimbablePoint, const FRotator& Rotation, int ForwardDirectionAdjusted);
-	void LedgeRightMove(float Direction);
-	void TryCornerOrDirectionalJump(float Direction, const FHitResult& outClimbableObjectHit , bool InternLedge = false, bool BlindPoint = false);
-	void HandleRightMove(const FHitResult& outClimbableObjectHit, const FHitResult& outClimbablePointHit, float Direction);
+	void LedgeRightMove(float Direction, float DirectionY = 0.f);
+	void TryCornerOrDirectionalJump(float Direction, const FHitResult& outClimbableObjectHit , bool InternLedge = false, bool BlindPoint = false,float DirectionY = 0.f);
+	void HandleRightMove(const FHitResult& outClimbableObjectHit, const FHitResult& outClimbablePointHit, float Direction, float DirectionY = 0.f);
 	bool CanClimbUpon();
 	bool CanClimbDownLedge();
 	bool CanClimbCorner(const FHitResult& outEndLedgePointHit, float Direction, bool InternLedge = false, bool BlindPoint = false);
@@ -137,7 +137,7 @@ private:
 	const FHitResult DoCapsuleTraceSingleForObjects(const FVector& Start, const FVector& End, float Radius, float HalfHeight);
 	const FHitResult DoCapsuleTraceSingleForChannel(const FVector& Start, const FVector& End, float Radius, float HalfHeight);
 
-	const FHitResult TraceFromEyeHeight(const float Radius, const float BaseEyeHeightOffset_UP, const float BaseEyeHeightOffset_Right = 0.f, bool DoSphereTrace = false);
+	const FHitResult TraceFromEyeHeight(const float Radius, const float BaseEyeHeightOffset_UP, const float BaseEyeHeightOffset_Right = 0.f, bool DoSphereTrace = false, const float StartingClimbOffset_UP = 0.f);
 	float GetBaseEyeHeightOffset(const float BaseEyeHeightOffset_UP);
 	const FHitResult TraceFromClimbableObject(const float Radius, const FVector& ImpactPoint);
 
@@ -184,6 +184,7 @@ private:
 	UCharacterMovementComponent* MovementComponent;
 	UCapsuleComponent* CapsuleComponent;
 	UMotionWarpingComponent* MotionWarpingComponent;
+	UTransformationComponent* TransformationComponent;
 
 	UPROPERTY()
 	UAnimInstance* OwningPlayerAnimInstance;
@@ -217,7 +218,7 @@ private:
 
 	#pragma region Climb Params
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Climb Params", meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Climb Params", meta = (AllowPrivateAccess = "true"))
 	bool ShowDebugTrace = false;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Climb Params", meta = (AllowPrivateAccess = "true"))
@@ -390,7 +391,7 @@ public:
 	//LastClimb_MovementVector
 	UFUNCTION(BlueprintCallable, Category = "Climbing")
 	FORCEINLINE FVector2D GetLastMovementVector() const { return LastClimb_MovementVector; }
-	FORCEINLINE void SetCanClimb(bool Value)  { Value ? ClimbingState = EClimbingState::ECS_NOTClimbing : ClimbingState = EClimbingState::ECS_CANNOTClimb; }
+	//FORCEINLINE void SetCanClimb(bool Value)  { Value ? ClimbingState = EClimbingState::ECS_NOTClimbing : ClimbingState = EClimbingState::ECS_CANNOTClimb; }
 
 	#pragma endregion
 

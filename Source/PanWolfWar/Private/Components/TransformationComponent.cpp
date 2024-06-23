@@ -10,6 +10,7 @@
 #include "NiagaraComponent.h"
 
 #include "Components/AttributeComponent.h"
+#include "Components/InteractComponent.h"
 
 #include "TimerManager.h"
 
@@ -46,16 +47,15 @@ void UTransformationComponent::SelectDesiredTransformation(int32 TransformationS
 	ApplyTrasformation();
 }
 
-
 void UTransformationComponent::BeginPlay()
 {
 	Super::BeginPlay();
 
-	//TransformationWidget = Cast< UTransformationWidget> ( CreateWidget( GetWorld(), TransformationWidgetClass, FName("TransformationWidget")));
 	if (PanWolfWarCharacter)
 	{
 		Attributes = PanWolfWarCharacter->GetAttributeComponent();
 		Attributes->SetTransformationComponent(this);
+		InteractComponent = PanWolfWarCharacter->GetInteractComponent();
 	}
 
 
@@ -70,14 +70,13 @@ void UTransformationComponent::BeginPlay()
 	
 }
 
-
-bool UTransformationComponent::CanTrasform()
+bool UTransformationComponent::CanTrasform(const int32 NewTransformation_ID)
 {
+	if (NewTransformation_ID >= PossibleTransformationState.Num() || NewTransformation_ID < 0) return false;
 	if (CurrentTransformationState == ETransformationState::ETS_Transforming) return false;
 	if (Attributes->IsInConsumingState()) return false;
 	if(PanWolfWarCharacter->GetClimbingComponent()->IsClimbing()) return false;
-
-	if (PossibleTransformationState[DesiredTransformationState_ID] == CurrentTransformationState) return false;
+	if (PossibleTransformationState[NewTransformation_ID] == CurrentTransformationState) return false;
 
 	return true;
 }
@@ -85,67 +84,55 @@ bool UTransformationComponent::CanTrasform()
 void UTransformationComponent::ApplyTrasformation()
 {
 	
-	if (!CanTrasform()) return;
+	const int32 LocalTransformation_ID = DesiredTransformationState_ID;
+	if (!CanTrasform(LocalTransformation_ID)) return;
 
 	ETransformationState PreviousTransformationState = CurrentTransformationState;
-
 	CurrentTransformationState = ETransformationState::ETS_Transforming;
-
-	ETransformationState NewTransformationState = PossibleTransformationState[DesiredTransformationState_ID];
-
-	if(NewTransformationState != ETransformationState::ETS_Pandolfo) PanWolfWarCharacter->GetClimbingComponent()->SetCanClimb(false);
-	else { PanWolfWarCharacter->GetClimbingComponent()->SetCanClimb(true); }
+	ETransformationState NewTransformationState = PossibleTransformationState[LocalTransformation_ID];
 
 	switch (NewTransformationState)
 	{
 	case ETransformationState::ETS_Pandolfo:
-		PanWolfWarCharacter->GetMesh()->SetMaterial(0, Pandolfo_Material1);
-		PanWolfWarCharacter->GetMesh()->SetMaterial(1, Pandolfo_Material2);
-		PanWolfWarCharacter->GetNiagaraTransformation()->SetAsset(nullptr);
-		PanWolfWarCharacter->GetNiagaraTransformationEffect()->Activate(true);
-		CurrentTransformationState = NewTransformationState;
-		TransformationWidget->SetTransformation(CurrentTransformationState);
+
+		ExecuteTransformation(NewTransformationState, Pandolfo_Material1, Pandolfo_Material2);	
 		break;
+
 	case ETransformationState::ETS_Transforming:
 		break;
+
 	case ETransformationState::ETS_PanWolf:
 
 		if (!Attributes->ConsumeBeer()) { CurrentTransformationState = PreviousTransformationState; break; }
-		
-		PanWolfWarCharacter->GetMesh()->SetMaterial(0, Panwolf_Material1);
-		PanWolfWarCharacter->GetMesh()->SetMaterial(1, Panwolf_Material1);
-		PanWolfWarCharacter->GetNiagaraTransformation()->SetAsset(nullptr);
-		PanWolfWarCharacter->GetNiagaraTransformationEffect()->Activate(true);
-		CurrentTransformationState = NewTransformationState;
-		TransformationWidget->SetTransformation(CurrentTransformationState);
-
+		ExecuteTransformation(NewTransformationState, Panwolf_Material1, Panwolf_Material1);
 		break;
 
 	case ETransformationState::ETS_PanFlower:
 		
 		if (!Attributes->ConsumeFlowerStamina()) { CurrentTransformationState = PreviousTransformationState; break; }
-
-		PanWolfWarCharacter->GetMesh()->SetMaterial(0, Pandolflower_Material1);
-		PanWolfWarCharacter->GetMesh()->SetMaterial(1, Pandolflower_Material2);
-		PanWolfWarCharacter->GetNiagaraTransformation()->SetAsset(Pandolflower_Niagara);
-		PanWolfWarCharacter->GetNiagaraTransformationEffect()->Activate(true);
-		CurrentTransformationState = NewTransformationState;
-		TransformationWidget->SetTransformation(CurrentTransformationState);
-
+		ExecuteTransformation(NewTransformationState, Pandolflower_Material1, Pandolflower_Material2, Pandolflower_Niagara);
 		break;
-	default:
-		PanWolfWarCharacter->GetMesh()->SetMaterial(0, Pandolfo_Material1);
-		PanWolfWarCharacter->GetMesh()->SetMaterial(1, Pandolfo_Material2);
-		PanWolfWarCharacter->GetNiagaraTransformationEffect()->Activate(true);
-		CurrentTransformationState = NewTransformationState;
-		TransformationWidget->SetTransformation(CurrentTransformationState);
 
+	default:
+
+		ExecuteTransformation(NewTransformationState, Pandolfo_Material1, Pandolfo_Material2);
 		break;
 	}
 	
 
 }
 
+void UTransformationComponent::ExecuteTransformation(ETransformationState NewTransformationState, UMaterialInterface* Material1, UMaterialInterface* Material2, UNiagaraSystem* NiagaraTransformation)
+{
+	PanWolfWarCharacter->GetMesh()->SetMaterial(0, Material1);
+	PanWolfWarCharacter->GetMesh()->SetMaterial(1, Material2);
+	PanWolfWarCharacter->GetNiagaraTransformation()->SetAsset(NiagaraTransformation);
+	PanWolfWarCharacter->GetNiagaraTransformationEffect()->Activate(true);
+	CurrentTransformationState = NewTransformationState;
+	TransformationWidget->SetTransformation(CurrentTransformationState);
+
+	InteractComponent->ResetOverlappingObject();
+}
 
 
 

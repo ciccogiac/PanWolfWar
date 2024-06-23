@@ -68,13 +68,14 @@ APanWolfWarCharacter::APanWolfWarCharacter()
 	FollowCamera->SetupAttachment(CameraBoom, USpringArmComponent::SocketName); // Attach the camera to the end of the boom and let the boom adjust to match the controller orientation
 	FollowCamera->bUsePawnControlRotation = false; // Camera does not rotate relative to arm
 
+	// Create a Niagara Components
 	NiagaraTransformation = CreateDefaultSubobject<UNiagaraComponent>(TEXT("NiagaraTransformation"));
 	NiagaraTransformation->SetupAttachment(GetMesh());
 
 	NiagaraApplyTransformationEffect = CreateDefaultSubobject<UNiagaraComponent>(TEXT("NiagaraApplyTransformationEffect"));
 	NiagaraApplyTransformationEffect->SetupAttachment(GetMesh());
 
-
+	// Create a Actor Components
 	MotionWarpingComponent = CreateDefaultSubobject<UMotionWarpingComponent>(TEXT("MotionWarpingComp"));
 
 	Attributes = CreateDefaultSubobject<UAttributeComponent>(TEXT("Attributes"));
@@ -240,7 +241,7 @@ void APanWolfWarCharacter::Landed(const FHitResult& Hit)
 {
 	Super::Landed(Hit);
 
-	if (!ClimbingComponent) return;
+	if (!ClimbingComponent || TransformationComponent->IsInTransformingState()) return;
 
 	ClimbingComponent->Landed();
 	OnPlayerExitClimbState();

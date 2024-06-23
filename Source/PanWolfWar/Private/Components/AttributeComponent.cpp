@@ -3,12 +3,12 @@
 
 #include "Components/TransformationComponent.h"
 
+#include "TimerManager.h"
+
 UAttributeComponent::UAttributeComponent()
 {
-	PrimaryComponentTick.bCanEverTick = true;
-
+	PrimaryComponentTick.bCanEverTick = false;
 }
-
 
 void UAttributeComponent::BeginPlay()
 {
@@ -28,54 +28,18 @@ void UAttributeComponent::BeginPlay()
 	if (PanwolfwarOverlayClass) 
 	{
 		PanwolfwarOverlay->SetBeers(MaxBeers);
-		PanwolfwarOverlay->SetHealthBarPercent(MaxHealth);
+		PanwolfwarOverlay->SetHealthBarPercent(0.f);
 		PanwolfwarOverlay->SetFlowerStaminaBarPercent(MaxFlowerStamina);
-		PanwolfwarOverlay->SetBeerBarPercent(0.f);
-		PanwolfwarOverlay->SetBeerBarVisibility(false);
+		PanwolfwarOverlay->SetBeerBarPercent(1.f);
+		//PanwolfwarOverlay->SetBeerBarVisibility(false);
 	}
 
 }
-
-
-
 
 void UAttributeComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
-	if (AttributeState == EAttributeState::EAS_ConsumingBeer)
-	{
-		BeerConsuming = FMath::Clamp(BeerConsuming - BeerConsumingRate * DeltaTime, 0.f, BeerConsumingMAX);
-		PanwolfwarOverlay->SetBeerBarPercent(BeerConsuming/BeerConsumingMAX);
-
-		if (BeerConsuming <= 0.f)
-		{
-			PanwolfwarOverlay->SetBeerBarVisibility(false);
-			AttributeState = EAttributeState::EAS_Normal;
-			TransformationComponent->SelectDesiredTransformation(0);
-		}
-
-		return;
-	}
-
-	else if (AttributeState == EAttributeState::EAS_ConsumingFlower && !bCanRegenFlower)
-	{
-		FlowerStamina = FMath::Clamp(FlowerStamina - FlowerStaminaCost * DeltaTime , 0.f, MaxFlowerStamina);
-		PanwolfwarOverlay->SetFlowerStaminaBarPercent(FlowerStamina / MaxFlowerStamina);
-
-		if (FlowerStamina <= 0.f)
-		{
-			//PanwolfwarOverlay->SetBeerBarVisibility(false);
-			AttributeState = EAttributeState::EAS_Normal;
-			TransformationComponent->SelectDesiredTransformation(0);
-		}
-
-	}
-
-	 if (bCanRegenFlower)
-	{
-		RegenFlowerStamina(DeltaTime);
-	}
 }
 
 #pragma region Health
@@ -123,20 +87,39 @@ bool UAttributeComponent::ConsumeBeer()
 	{
 		PanwolfwarOverlay->SetBeers(Beers);
 		BeerConsuming = BeerConsumingMAX;
-		PanwolfwarOverlay->SetBeerBarVisibility(true);
+		PanwolfwarOverlay->SetBeerBarPercent(1);
+		//PanwolfwarOverlay->SetBeerBarVisibility(true);
+		
 		AttributeState = EAttributeState::EAS_ConsumingBeer;
-	}
 
+		GetWorld()->GetTimerManager().SetTimer(TimerHandle, this, &UAttributeComponent::ConsumingBeer, 0.05f , true);
+	}
 
 	return true;
 }
 
+void UAttributeComponent::ConsumingBeer()
+{
+	if (AttributeState == EAttributeState::EAS_ConsumingBeer)
+	{
+		BeerConsuming = FMath::Clamp(BeerConsuming - BeerConsumingRate, 0.f, BeerConsumingMAX);
+		PanwolfwarOverlay->SetBeerBarPercent(BeerConsuming / BeerConsumingMAX);
+
+		if (BeerConsuming <= 0.f)
+		{
+			GetWorld()->GetTimerManager().ClearTimer(TimerHandle);
+			//PanwolfwarOverlay->SetBeerBarVisibility(false);
+			AttributeState = EAttributeState::EAS_Normal;
+			TransformationComponent->SelectDesiredTransformation(0);
+			
+		}
+
+	}
+
+}
+
 
 #pragma endregion
-
-
-
-
 
 #pragma region Flower
 
@@ -151,21 +134,48 @@ bool UAttributeComponent::ConsumeFlowerStamina()
 
 	if (PanwolfwarOverlay)
 	{
-		//PanwolfwarOverlay->SetBeerBarVisibility(true);
 		AttributeState = EAttributeState::EAS_ConsumingFlower;
+		GetWorld()->GetTimerManager().SetTimer(TimerHandle, this, &UAttributeComponent::ConsumingFlowerStamina, 0.05f, true);
 	}
-
 
 	return true;
 
 }
 
-void UAttributeComponent::RegenFlowerStamina(float DeltaTime)
+void UAttributeComponent::RegenFlowerStamina()
 {
-	FlowerStamina = FMath::Clamp(FlowerStamina + FlowerStaminaRegenRate * DeltaTime, 0.f, MaxFlowerStamina);
+	if (AttributeState == EAttributeState::EAS_ConsumingBeer) return;
+
+	FlowerStamina = FMath::Clamp(FlowerStamina + FlowerStaminaRegenRate , 0.f, MaxFlowerStamina);
 	PanwolfwarOverlay->SetFlowerStaminaBarPercent(FlowerStamina / MaxFlowerStamina);
 }
 
+void UAttributeComponent::ConsumingFlowerStamina()
+{
+	if (AttributeState == EAttributeState::EAS_ConsumingFlower && !bCanRegenFlower)
+	{
+		FlowerStamina = FMath::Clamp(FlowerStamina - FlowerStaminaCost , 0.f, MaxFlowerStamina);
+		PanwolfwarOverlay->SetFlowerStaminaBarPercent(FlowerStamina / MaxFlowerStamina);
+
+		if (FlowerStamina <= 0.f)
+		{
+			GetWorld()->GetTimerManager().ClearTimer(TimerHandle);
+			AttributeState = EAttributeState::EAS_Normal;
+			TransformationComponent->SelectDesiredTransformation(0);
+		}
+
+	}
+}
+
+void UAttributeComponent::SetCanRegenFlower(bool Value)
+{
+	bCanRegenFlower = Value;
+
+	if(bCanRegenFlower)
+		GetWorld()->GetTimerManager().SetTimer(RegenFlower_TimerHandle, this, &UAttributeComponent::RegenFlowerStamina, 0.05f, true);
+	else
+		GetWorld()->GetTimerManager().ClearTimer(RegenFlower_TimerHandle);
+}
 
 #pragma endregion
 

@@ -59,4 +59,5 @@ protected:
 
 public:
 	FORCEINLINE void SetInteractWidgetVisibility(bool bVisibility) { if(InteractWidget) InteractWidget->SetVisibility(bVisibility); };
+	FORCEINLINE void ResetBox() { BoxComponent = nullptr; };
 };

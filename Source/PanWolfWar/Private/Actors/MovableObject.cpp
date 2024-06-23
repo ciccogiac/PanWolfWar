@@ -37,6 +37,9 @@ AMovableObject::AMovableObject()
 	StaticMesh->SetSimulatePhysics(true);
 	StaticMesh->SetMassOverrideInKg(NAME_None, 10000.f);
 
+	Tags.Add(FName("Pandolfo_Object"));
+	Tags.Add(FName("Movable_Object"));
+
 }
 
 bool AMovableObject::Interact(ACharacter* _CharacterOwner  )

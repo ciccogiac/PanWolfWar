@@ -14,6 +14,8 @@
 
 #include "PanWolfWar/DebugHelper.h"
 
+#include <PanWolfWar/PanWolfWarCharacter.h>
+#include "Components/TransformationComponent.h"
 
 UInteractComponent::UInteractComponent()
 {
@@ -22,11 +24,25 @@ UInteractComponent::UInteractComponent()
 	CharacterOwner = Cast<ACharacter>(GetOwner());
 }
 
+void UInteractComponent::BeginPlay()
+{
+	Super::BeginPlay();
+
+	APanWolfWarCharacter* PanWolfCharacter = Cast<APanWolfWarCharacter>(CharacterOwner);
+	if (PanWolfCharacter)
+	{
+		TransformationComponent = PanWolfCharacter->GetTransformationComponent();
+	}
+
+
+}
+
+
 void UInteractComponent::SetInteractState()
 {
 	if (OverlappingObject)
-	{
-		if(Cast<AMovableObject>(OverlappingObject))
+	{	
+		if(OverlappingObject->ActorHasTag(FName("Movable_Object")))
 			InteractState = EInteractState::EIS_MovingObject;
 		else
 			InteractState = EInteractState::EIS_NOTinteracting;
@@ -63,6 +79,8 @@ void UInteractComponent::InteractMove(const FInputActionValue& Value)
 
 bool UInteractComponent::SetOverlappingObject(AInteractableObject* InteractableObject , bool bEnter)
 {
+	if (InteractableObject->ActorHasTag(FName("Pandolfo_Object")) && TransformationComponent->IsInTransformingState()) return false;
+
 	//Sto uscendo da oggetto overlappato prima e ho interazioni
 	if (InteractableObject && InteractableObject == OverlappingObject && InteractState != EInteractState::EIS_NOTinteracting)
 	{
@@ -91,6 +109,18 @@ bool UInteractComponent::SetOverlappingObject(AInteractableObject* InteractableO
 
 	return false;
 
+}
+
+void UInteractComponent::ResetOverlappingObject()
+{
+	if (OverlappingObject) {
+		OverlappingObject->Interact(nullptr);
+		InteractState = EInteractState::EIS_NOTinteracting;
+		OnExitInteractStateDelegate.ExecuteIfBound();
+		OverlappingObject->SetInteractWidgetVisibility(false);
+		OverlappingObject->ResetBox();
+	}
+	OverlappingObject = nullptr;
 }
 
 

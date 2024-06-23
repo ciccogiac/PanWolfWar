@@ -15,6 +15,7 @@ class UCapsuleComponent;
 struct FInputActionValue;
 class UInputAction;
 class AMovableObject;
+class UTransformationComponent;
 
 UENUM(BlueprintType)
 enum class EInteractState : uint8
@@ -45,13 +46,20 @@ public:
 	void Interact();
 	void InteractMove(const FInputActionValue& Value);
 	bool SetOverlappingObject(AInteractableObject* _InteractableObject, bool bEnter );
+	void ResetOverlappingObject();
+
 		
+protected:
+	virtual void BeginPlay() override;
+
 private:
 
 	void SetInteractState();
 
 
 	ACharacter* CharacterOwner;
+	UTransformationComponent* TransformationComponent;
+
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Interact State ", meta = (AllowPrivateAccess = "true"))
 	EInteractState InteractState = EInteractState::EIS_NOTinteracting;
