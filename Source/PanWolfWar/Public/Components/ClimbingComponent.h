@@ -131,7 +131,6 @@ private:
 	#pragma region ClimbTraces
 
 	const FHitResult DoLineTraceSingleByChannel(const FVector& Start, const FVector& End);
-	const FHitResult DoLineTraceSingleByObject(const FVector& Start, const FVector& End);
 	const FHitResult DoSphereTraceSingleForObjects(const FVector& Start, const FVector& End, float Radius);
 	const FHitResult DoSphereTraceSingleForChannel(const FVector& Start, const FVector& End, float Radius);
 	const FHitResult DoCapsuleTraceSingleForObjects(const FVector& Start, const FVector& End, float Radius, float HalfHeight);
@@ -228,6 +227,9 @@ private:
 	TEnumAsByte<ETraceTypeQuery> TraceType;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Climb Params", meta = (AllowPrivateAccess = "true"))
+	TEnumAsByte<ETraceTypeQuery> ClimbableTraceType;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Climb Params", meta = (AllowPrivateAccess = "true"))
 	float LedgeHeightLocationXY = 40.f;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Climb Params", meta = (AllowPrivateAccess = "true"))
@@ -237,7 +239,7 @@ private:
 	int N_JumpCapsuleIteration = 14;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Climb Params", meta = (AllowPrivateAccess = "true"))
-	int N_BackJumpCapsuleIteration = 24;
+	int N_BackJumpCapsuleIteration = 9;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Climb Params", meta = (AllowPrivateAccess = "true"))
 	int N_DirectionalJumpCapsuleIteration = 24;
@@ -248,6 +250,7 @@ private:
 	float HandBorder_Backward = 70.f;
 	float MaxImpactNormal_Z_value = 0.2f;
 	float MaxImpactNormal_Cos_value = 0.3f;
+	float Max_Cos_value_PointToObject = 0.15f;
 
 	#pragma endregion
 
