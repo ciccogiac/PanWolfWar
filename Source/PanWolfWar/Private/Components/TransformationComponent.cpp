@@ -12,7 +12,7 @@
 #include "Components/AttributeComponent.h"
 #include "Components/InteractComponent.h"
 
-#include "TimerManager.h"
+
 
 UTransformationComponent::UTransformationComponent()
 {
@@ -21,6 +21,7 @@ UTransformationComponent::UTransformationComponent()
 	PanWolfWarCharacter = Cast<APanWolfWarCharacter>(GetOwner());
 
 }
+
 
 void UTransformationComponent::SelectRightTransformation()
 {
@@ -65,8 +66,8 @@ void UTransformationComponent::BeginPlay()
 		TransformationWidget->AddToViewport();
 	}
 
-	TransformationWidget->SetTransformation(ETransformationState::ETS_Pandolfo);
-
+	TransformationWidget->SetTransformation(ETransformationState::ETS_PanFlower);
+	//SelectDesiredTransformation(2);
 	
 }
 
@@ -110,7 +111,7 @@ void UTransformationComponent::ApplyTrasformation()
 	case ETransformationState::ETS_PanFlower:
 		
 		if (!Attributes->ConsumeFlowerStamina()) { CurrentTransformationState = PreviousTransformationState; break; }
-		ExecuteTransformation(NewTransformationState, Pandolflower_Material1, Pandolflower_Material2, Pandolflower_Niagara);
+		ExecuteTransformation(NewTransformationState, Pandolflower_Material1, Pandolflower_Material2, PandolFlowerMappingContext, Pandolflower_Niagara);
 		break;
 
 	default:
@@ -122,7 +123,7 @@ void UTransformationComponent::ApplyTrasformation()
 
 }
 
-void UTransformationComponent::ExecuteTransformation(ETransformationState NewTransformationState, UMaterialInterface* Material1, UMaterialInterface* Material2, UNiagaraSystem* NiagaraTransformation)
+void UTransformationComponent::ExecuteTransformation(ETransformationState NewTransformationState, UMaterialInterface* Material1, UMaterialInterface* Material2, UInputMappingContext* MappingContext , UNiagaraSystem* NiagaraTransformation)
 {
 	PanWolfWarCharacter->GetMesh()->SetMaterial(0, Material1);
 	PanWolfWarCharacter->GetMesh()->SetMaterial(1, Material2);
@@ -132,6 +133,8 @@ void UTransformationComponent::ExecuteTransformation(ETransformationState NewTra
 	TransformationWidget->SetTransformation(CurrentTransformationState);
 
 	InteractComponent->ResetOverlappingObject();
+
+	PanWolfWarCharacter->AddMappingContext(MappingContext,1);
 }
 
 

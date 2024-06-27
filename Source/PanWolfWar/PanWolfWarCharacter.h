@@ -21,6 +21,7 @@ class UClimbingComponent;
 class UInteractComponent;
 class UTransformationComponent;
 class UAttributeComponent;
+class UPandolFlowerComponent;
 
 DECLARE_LOG_CATEGORY_EXTERN(LogTemplateCharacter, Log, All);
 
@@ -33,6 +34,9 @@ class APanWolfWarCharacter : public ACharacter , public IInteractInterface , pub
 
 public:
 	APanWolfWarCharacter();
+
+	void AddMappingContext(UInputMappingContext* MappingContextToAdd, int32 Priority);
+	void RemoveMappingContext(UInputMappingContext* MappingContextToRemove);
 
 #pragma endregion
 
@@ -84,6 +88,9 @@ private:
 	UTransformationComponent* TransformationComponent;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Movement, meta = (AllowPrivateAccess = "true"))
+	UPandolFlowerComponent* PandolFlowerComponent;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Movement, meta = (AllowPrivateAccess = "true"))
 	UAttributeComponent* Attributes;
 
 	#pragma endregion
@@ -125,8 +132,7 @@ private:
 	void OnPlayerEnterInteractState();
 	void OnPlayerExitInteractState();
 
-	void AddMappingContext(UInputMappingContext* MappingContextToAdd, int32 Priority);
-	void RemoveMappingContext(UInputMappingContext* MappingContextToRemove);
+
 
 	#pragma region InputCallback
 

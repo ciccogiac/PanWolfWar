@@ -857,7 +857,7 @@ void UClimbingComponent::OnClimbMontageEnded(UAnimMontage* Montage, bool bInterr
 		MovementComponent->StopMovementImmediately();
 	}
 
-	else
+	else if(IsClimbing())
 	{
 		MoveToLedgeLocation();
 		MovementComponent->StopMovementImmediately();

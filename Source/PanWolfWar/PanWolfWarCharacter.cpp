@@ -25,6 +25,8 @@
 
 #include "NiagaraComponent.h"
 
+#include "Components/PandolFlowerComponent.h"
+
 //#include "UserWidgets/PanwolfwarOverlay.h"
 
 DEFINE_LOG_CATEGORY(LogTemplateCharacter);
@@ -82,6 +84,8 @@ APanWolfWarCharacter::APanWolfWarCharacter()
 	ClimbingComponent = CreateDefaultSubobject<UClimbingComponent>(TEXT("ClimbingComponent"));
 	InteractComponent = CreateDefaultSubobject<UInteractComponent>(TEXT("InteractComponent"));
 	TransformationComponent = CreateDefaultSubobject<UTransformationComponent>(TEXT("TransformationComponent"));
+
+	PandolFlowerComponent = CreateDefaultSubobject<UPandolFlowerComponent>(TEXT("PandolFlowerComponent"));
 }
 
 void APanWolfWarCharacter::BeginPlay()
@@ -176,6 +180,9 @@ void APanWolfWarCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInpu
 		EnhancedInputComponent->BindAction(TransformationComponent->TransformationApply, ETriggerEvent::Started, TransformationComponent, &UTransformationComponent::ApplyTrasformation);
 		EnhancedInputComponent->BindAction(TransformationComponent->TransformationSelectRightAction, ETriggerEvent::Started, TransformationComponent, &UTransformationComponent::SelectRightTransformation);
 		EnhancedInputComponent->BindAction(TransformationComponent->TransformationSelectLeftAction, ETriggerEvent::Started, TransformationComponent, &UTransformationComponent::SelectLeftTransformation);
+
+		//PandolFlowerAction
+		EnhancedInputComponent->BindAction(PandolFlowerComponent->HookAction, ETriggerEvent::Started, PandolFlowerComponent, &UPandolFlowerComponent::Hook);
 	}
 	else
 	{

@@ -13,7 +13,8 @@
 class UInputAction;
 class UTransformationWidget;
 class UNiagaraSystem;
-
+class UPandolFlowerComponent;
+class UInputMappingContext;
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class PANWOLFWAR_API UTransformationComponent : public UActorComponent
@@ -34,7 +35,9 @@ protected:
 
 private:
 	bool CanTrasform(const int32 NewTransformation_ID);
-	void ExecuteTransformation(ETransformationState NewTransformationState , UMaterialInterface* Material1, UMaterialInterface* Material2,UNiagaraSystem* NiagaraTransformation = nullptr);
+	void ExecuteTransformation(ETransformationState NewTransformationState , UMaterialInterface* Material1, UMaterialInterface* Material2, UInputMappingContext* MappingContext = nullptr,UNiagaraSystem* NiagaraTransformation = nullptr );
+
+	void ConsumingBeer();
 
 #pragma region Variables
 
@@ -56,6 +59,11 @@ private:
 
 	class UAttributeComponent* Attributes;
 	class UInteractComponent* InteractComponent;
+
+
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	UInputMappingContext* PandolFlowerMappingContext;
 
 	#pragma region Transformation Materials
 

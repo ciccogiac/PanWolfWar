@@ -108,6 +108,6 @@ public:
 
 	FORCEINLINE void SetTransformationComponent(UTransformationComponent* _TransformationComponent) { TransformationComponent = _TransformationComponent; }
 	FORCEINLINE bool IsInConsumingState() const { return AttributeState != EAttributeState::EAS_Normal; }
-	
+	FORCEINLINE EAttributeState GetAttributeState() const { return AttributeState; }
 		
 };
