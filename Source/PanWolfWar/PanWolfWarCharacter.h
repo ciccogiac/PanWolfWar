@@ -17,10 +17,11 @@ struct FInputActionValue;
 class UNiagaraComponent;
 
 class UMotionWarpingComponent;
-class UClimbingComponent;
 class UInteractComponent;
 class UTransformationComponent;
 class UAttributeComponent;
+class UPandolfoComponent;
+class UPanWolfComponent;
 class UPandolFlowerComponent;
 
 DECLARE_LOG_CATEGORY_EXTERN(LogTemplateCharacter, Log, All);
@@ -75,10 +76,6 @@ private:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Movement, meta = (AllowPrivateAccess = "true"))
 	UMotionWarpingComponent* MotionWarpingComponent;
 
-	/** Climbing Component */
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Movement, meta = (AllowPrivateAccess = "true"))
-	UClimbingComponent* ClimbingComponent;
-
 	/** Interact Component */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Movement, meta = (AllowPrivateAccess = "true"))
 	UInteractComponent* InteractComponent;
@@ -88,7 +85,13 @@ private:
 	UTransformationComponent* TransformationComponent;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Movement, meta = (AllowPrivateAccess = "true"))
+	UPandolfoComponent* PandolfoComponent;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Movement, meta = (AllowPrivateAccess = "true"))
 	UPandolFlowerComponent* PandolFlowerComponent;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Movement, meta = (AllowPrivateAccess = "true"))
+	UPanWolfComponent* PanWolfComponent;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Movement, meta = (AllowPrivateAccess = "true"))
 	UAttributeComponent* Attributes;
@@ -100,9 +103,6 @@ private:
 	/** MappingContext */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	UInputMappingContext* DefaultMappingContext;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
-	UInputMappingContext* ClimbingMappingContext;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	UInputMappingContext* InteractableMappingContext;
@@ -126,9 +126,6 @@ private:
 private:
 
 	// Delegates
-	void OnPlayerEnterClimbState();
-	void OnPlayerExitClimbState();
-
 	void OnPlayerEnterInteractState();
 	void OnPlayerExitInteractState();
 
@@ -138,9 +135,6 @@ private:
 
 	void Move(const FInputActionValue& Value);
 	void Look(const FInputActionValue& Value);
-
-	/** Climbing CallBacks */
-	void JumpClimbTrace();
 
 
 	//Interfaces
@@ -159,11 +153,13 @@ public:
 	FORCEINLINE class UCameraComponent* GetFollowCamera() const { return FollowCamera; }
 	FORCEINLINE UMotionWarpingComponent* GetMotionWarpingComponent() const { return MotionWarpingComponent; }
 	
-	//UFUNCTION(BlueprintCallable, Category = "attribute")
 	FORCEINLINE virtual UAttributeComponent* GetAttributeComponent()  const override { return Attributes; }
-	FORCEINLINE UClimbingComponent* GetClimbingComponent()  const { return ClimbingComponent; }
 	FORCEINLINE UInteractComponent* GetInteractComponent() const { return InteractComponent; }
-	FORCEINLINE virtual UTransformationComponent* GetTransformationComponent()  const override { return TransformationComponent; } ;
+
+	FORCEINLINE UTransformationComponent* GetTransformationComponent()  const  { return TransformationComponent; } ;
+	FORCEINLINE UPandolfoComponent* GetPandolfoComponent() const { return PandolfoComponent; }
+	FORCEINLINE UPanWolfComponent* GetPanWolfComponent() const { return PanWolfComponent; }
+	FORCEINLINE UPandolFlowerComponent* GetPandolFlowerComponent() const { return PandolFlowerComponent; }
 
 	FORCEINLINE UNiagaraComponent* GetNiagaraTransformation() { return NiagaraTransformation; }
 	FORCEINLINE UNiagaraComponent* GetNiagaraTransformationEffect() { return NiagaraApplyTransformationEffect; }

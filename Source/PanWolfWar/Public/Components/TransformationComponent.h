@@ -10,11 +10,9 @@
 #include "TransformationComponent.generated.h"
 
 
-class UInputAction;
 class UTransformationWidget;
 class UNiagaraSystem;
 class UPandolFlowerComponent;
-class UInputMappingContext;
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class PANWOLFWAR_API UTransformationComponent : public UActorComponent
@@ -28,6 +26,7 @@ public:
 	void SelectLeftTransformation();
 	void ApplyTrasformation();
 
+	UFUNCTION(BlueprintCallable)
 	void SelectDesiredTransformation(int32 TransformationState_ID);
 
 protected:
@@ -35,14 +34,15 @@ protected:
 
 private:
 	bool CanTrasform(const int32 NewTransformation_ID);
-	void ExecuteTransformation(ETransformationState NewTransformationState , UMaterialInterface* Material1, UMaterialInterface* Material2, UInputMappingContext* MappingContext = nullptr,UNiagaraSystem* NiagaraTransformation = nullptr );
+	void ExecuteTransformation(ETransformationState NewTransformationState , UMaterialInterface* Material1, UMaterialInterface* Material2,UNiagaraSystem* NiagaraTransformation = nullptr );
+	void HandleComponentActivation(ETransformationState NewTransformationState, ETransformationState PreviousTransformationState);
 
 	void ConsumingBeer();
 
 #pragma region Variables
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Transformation State ", meta = (AllowPrivateAccess = "true"))
-	ETransformationState CurrentTransformationState = ETransformationState::ETS_Pandolfo;
+	ETransformationState CurrentTransformationState = ETransformationState::ETS_None;
 
 	int32 DesiredTransformationState_ID = 0;
 
@@ -62,8 +62,7 @@ private:
 
 
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
-	UInputMappingContext* PandolFlowerMappingContext;
+
 
 	#pragma region Transformation Materials
 
@@ -93,18 +92,6 @@ private:
 #pragma endregion
 
 
-
-
-public:
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input Transformation")
-	UInputAction* TransformationSelectRightAction;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input Transformation")
-	UInputAction* TransformationSelectLeftAction;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input Transformation")
-	UInputAction* TransformationApply;
 
 #pragma region FORCEINLINE_functions
 public:

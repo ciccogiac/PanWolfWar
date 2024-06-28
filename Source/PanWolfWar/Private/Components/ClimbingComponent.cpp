@@ -14,16 +14,28 @@
 
 #include "PanWolfWar/DebugHelper.h"
 
-#include "Components/TransformationComponent.h"
-
 #pragma region EngineFunctions
 
 UClimbingComponent::UClimbingComponent()
 {
 	PrimaryComponentTick.bCanEverTick = true;
+	PrimaryComponentTick.bStartWithTickEnabled = false;
+	PrimaryComponentTick.SetTickFunctionEnable(false);
+	bAutoActivate = false;
 
 	ActorOwner = GetOwner();
 	CharacterOwner = Cast<ACharacter>(ActorOwner);
+	PanWolfCharacter = Cast<APanWolfWarCharacter>(CharacterOwner);
+}
+
+void UClimbingComponent::Activate(bool bReset)
+{
+	Super::Activate();
+}
+
+void UClimbingComponent::Deactivate()
+{
+	Super::Deactivate();
 }
 
 void UClimbingComponent::BeginPlay()
@@ -43,13 +55,10 @@ void UClimbingComponent::BeginPlay()
 		OwningPlayerAnimInstance->OnMontageEnded.AddDynamic(this, &UClimbingComponent::OnClimbMontageEnded);
 	}
 
-	APanWolfWarCharacter* PanWolfCharacter = Cast<APanWolfWarCharacter>(CharacterOwner);
 	if (PanWolfCharacter) 
 	{
 		MotionWarpingComponent = PanWolfCharacter->GetMotionWarpingComponent();
-		TransformationComponent = PanWolfCharacter->GetTransformationComponent();
 	}
-	if(MotionWarpingComponent) MotionWarpingComponent->Activate();
 	
 }
 
@@ -57,11 +66,19 @@ void UClimbingComponent::TickComponent(float DeltaTime, ELevelTick TickType, FAc
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
-	if (CheckTryClimbingConditions()) { TryClimbing(); }
-	
-	if (CheckClimbDownLedgeConditions())
+	switch (ClimbingState)
 	{
-		PlayClimbMontage(TopToClimbMontage);
+	case  EClimbingState::ECS_NOTClimbing :
+		if (CheckTryClimbingConditions()) { TryClimbing(); }
+		break;
+
+	case EClimbingState::ECS_Falling :
+		TryClimbing();
+		break;
+
+	case EClimbingState::ECS_SearchingClimbingDown:
+		if (CheckClimbDownLedgeConditions()) { PlayClimbMontage(TopToClimbMontage); }
+		break;
 	}
 
 }
@@ -70,22 +87,10 @@ void UClimbingComponent::TickComponent(float DeltaTime, ELevelTick TickType, FAc
 
 #pragma region SetClimbState
 
-void UClimbingComponent::ToggleClimbing()
-{
-	if (OwningPlayerAnimInstance->IsAnyMontagePlaying()) return;
-
-	if (ClimbingState == EClimbingState::ECS_Climbing) {
-		ClimbingState = EClimbingState::ECS_Falling;
-		SavedClimbedObject = nullptr; 
-		MovementComponent->SetMovementMode(EMovementMode::MOVE_Falling);
-		CapsuleComponent->SetCapsuleHalfHeight(90);
-		CapsuleComponent->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
-	}
-	
-}
-
 void UClimbingComponent::StartClimbing()
 {
+	PrimaryComponentTick.SetTickFunctionEnable(false);
+
 	ClimbingState = EClimbingState::ECS_Climbing;
 	ClimbDirection = 0.f;
 
@@ -95,7 +100,10 @@ void UClimbingComponent::StartClimbing()
 	MovementComponent->MaxFlySpeed = 0.f;
 	MovementComponent->SetMovementMode(EMovementMode::MOVE_Flying, 0);
 
-	OnEnterClimbStateDelegate.ExecuteIfBound();
+
+
+	PanWolfCharacter->AddMappingContext(ClimbingMappingContext, 2);
+	MovementComponent->bOrientRotationToMovement = false;
 
 	MovementComponent->StopMovementImmediately();
 }
@@ -112,13 +120,13 @@ void UClimbingComponent::StopClimbing()
 	const FRotator CleanStandRotation = FRotator(0.f, DirtyRotation.Yaw, 0.f);
 	MovementComponent->UpdatedComponent->SetRelativeRotation(CleanStandRotation);
 
-	OnExitClimbStateDelegate.ExecuteIfBound();
+
+	PanWolfCharacter->RemoveMappingContext(ClimbingMappingContext);
+	MovementComponent->bOrientRotationToMovement = true;
 
 	CapsuleComponent->SetCapsuleHalfHeight(90);
 	CapsuleComponent->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
 }
-
-
 
 #pragma endregion
 
@@ -126,16 +134,12 @@ void UClimbingComponent::StopClimbing()
 
 bool UClimbingComponent::CheckTryClimbingConditions()
 {
-	return !TransformationComponent->IsInTransformingState() &&
-		((ClimbingState == EClimbingState::ECS_NOTClimbing && MovementComponent->IsFalling() && MovementComponent->Velocity.Z > -300.f) ||
-		ClimbingState == EClimbingState::ECS_Falling );
+	return (MovementComponent->IsFalling() && MovementComponent->Velocity.Z > -300.f);
 }
 
 bool UClimbingComponent::CheckClimbDownLedgeConditions()
 {
-	return !TransformationComponent->IsInTransformingState() &&
-		(ClimbingState == EClimbingState::ECS_SearchingClimbingDown &&
-		!MovementComponent->IsFalling() && !OwningPlayerAnimInstance->IsAnyMontagePlaying() && CanClimbDownLedge());
+	return (!MovementComponent->IsFalling() && !OwningPlayerAnimInstance->IsAnyMontagePlaying() && CanClimbDownLedge());
 }
 
 bool UClimbingComponent::CheckClimbableObjectTrace(const FHitResult& outClimbableObjectHit)
@@ -148,14 +152,6 @@ bool UClimbingComponent::CheckClimbableObjectTrace(const FHitResult& outClimbabl
 
 bool UClimbingComponent::CheckClimbableSpaceCondition(const FHitResult& ClimbablePointHit)
 {
-
-	/*const FVector Start = ClimbablePointHit.ImpactPoint + FVector(0.f, 0.f, CheckingClimbable_Z_Offset);
-	const FVector End = Start + ActorOwner->GetActorForwardVector() * CheckingClimbable_Forward_Offset;
-
-	const FHitResult outClimbableConditionHit = DoSphereTraceSingleForChannel(Start, End, Radius_ThirdTrace);
-
-	return !outClimbableConditionHit.bBlockingHit;*/
-
 	const FVector ActorForward = ClimbablePointHit.GetActor()->GetActorForwardVector();
 	const FVector PointNormal = ClimbablePointHit.ImpactNormal;
 
@@ -796,14 +792,9 @@ void UClimbingComponent::PlayClimbMontage(UAnimMontage* MontageToPlay)
 	if (!OwningPlayerAnimInstance) return;
 	if (OwningPlayerAnimInstance->IsAnyMontagePlaying()) return;
 
-	if (MontageToPlay == TopToClimbMontage || MontageToPlay == VaultMontage)
+	if (MontageToPlay == TopToClimbMontage || MontageToPlay == VaultMontage || MontageToPlay == ClimbToTopMontage)
 	{
 		OwningPlayerAnimInstance->Montage_Play(MontageToPlay);
-	}
-
-	else if (MontageToPlay == ClimbToTopMontage)
-	{
-		OwningPlayerAnimInstance->Montage_Play(ClimbToTopMontage);
 	}
 
 	else
@@ -842,8 +833,6 @@ void UClimbingComponent::OnClimbMontageEnded(UAnimMontage* Montage, bool bInterr
 
 		MovementComponent->SetMovementMode(MOVE_Walking);
 		MovementComponent->StopMovementImmediately();
-
-		OnExitClimbStateDelegate.ExecuteIfBound();
 
 	}
 
@@ -996,27 +985,36 @@ FVector2D UClimbingComponent::Get8DirectionVector(const FVector2D& InputVector)
 	return FVector2D(0.0f, 0.0f);  // Default, should not be reached
 }
 
-bool UClimbingComponent::ActivateJumpTrace()
-{
-	if (!IsClimbing() && !TryClimbing())
-	{
-		ToggleClimbing();
-		return true;
-	}
-	return false;
-}
-
 void UClimbingComponent::Landed()
 {
-	//if (ClimbingState == EClimbingState::ECS_CANNOTClimb) return;
 
-	ClimbingState = EClimbingState::ECS_NOTClimbing;
-	ClimbedObject = nullptr;
+	if (ClimbingState == EClimbingState::ECS_Falling)
+	{
+		ClimbingState = EClimbingState::ECS_NOTClimbing;
+		ClimbedObject = nullptr;
+
+		PanWolfCharacter->RemoveMappingContext(ClimbingMappingContext);
+		MovementComponent->bOrientRotationToMovement = true;
+
+		
+	}
+
+
+	Deactivate();
 }
 
-void UClimbingComponent::Climb()
+void UClimbingComponent::ToggleClimbing()
 {
-	ToggleClimbing();
+	if (OwningPlayerAnimInstance->IsAnyMontagePlaying()) return;
+
+	if (ClimbingState == EClimbingState::ECS_Climbing) {
+		ClimbingState = EClimbingState::ECS_Falling;
+		PrimaryComponentTick.SetTickFunctionEnable(true);
+		SavedClimbedObject = nullptr;
+		MovementComponent->SetMovementMode(EMovementMode::MOVE_Falling);
+		CapsuleComponent->SetCapsuleHalfHeight(90);
+		CapsuleComponent->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+	}
 }
 
 void UClimbingComponent::ClimbMove(const FInputActionValue& Value)
@@ -1053,16 +1051,13 @@ void UClimbingComponent::ClimbJump()
 
 void UClimbingComponent::ClimbDownActivate()
 {
-	if (TransformationComponent->IsInTransformingState()) return;
-
+	Activate();
 	ClimbingState = EClimbingState::ECS_SearchingClimbingDown;
 }
 
 void UClimbingComponent::ClimbDownDeActivate()
 {
-
-	if (TransformationComponent->IsInTransformingState()) return;
-
+	Deactivate();
 	ClimbingState = EClimbingState::ECS_NOTClimbing;
 }
 

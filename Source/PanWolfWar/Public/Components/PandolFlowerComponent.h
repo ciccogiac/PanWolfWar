@@ -12,6 +12,7 @@ class UCameraComponent;
 class AFlowerCable;
 class UAnimMontage;
 class UMotionWarpingComponent;
+class UInputMappingContext;
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class PANWOLFWAR_API UPandolFlowerComponent : public UActorComponent
@@ -21,9 +22,14 @@ class PANWOLFWAR_API UPandolFlowerComponent : public UActorComponent
 public:	
 	UPandolFlowerComponent();
 
+	virtual void Activate(bool bReset = false) override;
+	virtual void Deactivate() override;
+
 protected:
 	virtual void BeginPlay() override;
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
+
+
 
 public:
 
@@ -40,6 +46,12 @@ private:
 	APanWolfWarCharacter* PanWolfCharacter;
 	UCameraComponent* FollowCamera;
 	UMotionWarpingComponent* MotionWarpingComponent;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	UInputMappingContext* PandolFlowerMappingContext;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Hooking Params", meta = (AllowPrivateAccess = "true"))
+	bool ShowDebugTrace = false;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Hooking Params", meta = (AllowPrivateAccess = "true"))
 	TEnumAsByte<ETraceTypeQuery> HookingTraceType;

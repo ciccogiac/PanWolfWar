@@ -16,11 +16,23 @@ class PANWOLFWAR_API AFlowerCable : public AActor
 public:	
 	AFlowerCable();
 
+	void HookCable(const FVector Hook_TargetLocation, const FRotator Hook_TargetRotation, const FVector CharacterLocation);
+
+
+	void SetAttachEndCable(USceneComponent* Component, FName SocketName = NAME_None);
+	void SetAttachStartCable(bool Value);
+
 protected:
 	virtual void BeginPlay() override;
-	virtual void Tick(float DeltaTime) override;
+	virtual void Tick(float DeltaSeconds) override;
 
 public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Hooking Params")
 	UCableComponent* CableComponent;
+
+private:
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Hooking Params", meta = (AllowPrivateAccess = "true"))
+	float HookCable_Divisor = 2500.f;
+
+
 };

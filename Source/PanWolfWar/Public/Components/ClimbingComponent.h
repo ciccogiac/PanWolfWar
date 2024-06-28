@@ -6,16 +6,14 @@
 #include "Components/ActorComponent.h"
 #include "ClimbingComponent.generated.h"
 
-DECLARE_DELEGATE(FOnEnterClimbState)
-DECLARE_DELEGATE(FOnExitClimbState)
-
 class UCharacterMovementComponent;
 class UMotionWarpingComponent;
-class UTransformationComponent;
 class UCapsuleComponent;
 class UAnimMontage;
 struct FInputActionValue;
 class UInputAction;
+class APanWolfWarCharacter;
+class UInputMappingContext;
 
 UENUM(BlueprintType)
 enum class EClimbingState : uint8
@@ -31,15 +29,6 @@ class PANWOLFWAR_API UClimbingComponent : public UActorComponent
 {
 	GENERATED_BODY()
 
-#pragma region Delegates
-
-public:
-
-	//Delegates
-	FOnEnterClimbState OnEnterClimbStateDelegate;
-	FOnExitClimbState OnExitClimbStateDelegate;
-
-#pragma endregion
 
 #pragma region PublicFunctions
 
@@ -47,10 +36,15 @@ public:
 
 	UClimbingComponent();
 
+	virtual void Activate(bool bReset = false) override;
+	virtual void Deactivate() override;
+
+	bool TryClimbing();
+
 	#pragma region InputCallback
 
 	bool ActivateJumpTrace();
-	void Climb();
+	void ToggleClimbing();
 	void ClimbMove(const FInputActionValue& Value);
 	void ClimbMoveEnd(const FInputActionValue& Value);
 	void ClimbJump();
@@ -91,7 +85,6 @@ private:
 
 	#pragma region SetClimbState
 
-	void ToggleClimbing();
 	void StartClimbing();
 	void StopClimbing();
 
@@ -99,7 +92,7 @@ private:
 
 	#pragma region CalculateClimbingCondition
 
-	bool TryClimbing();
+
 	bool FindClimbableObject( const float BaseEyeHeightOffset_UP = 0.f, const float BaseEyeHeightOffset_Right = 0.f ,  float StartingClimbOffset_UP = 0.f);
 	bool FindClimbablePoint(const FHitResult& ClimbableObjectHit);
 	void ProcessClimbableSurfaceInfo(const FHitResult& ClimbableObjectHit);
@@ -180,10 +173,10 @@ private:
 
 	AActor* ActorOwner;
 	ACharacter* CharacterOwner;
+	APanWolfWarCharacter* PanWolfCharacter;
 	UCharacterMovementComponent* MovementComponent;
 	UCapsuleComponent* CapsuleComponent;
 	UMotionWarpingComponent* MotionWarpingComponent;
-	UTransformationComponent* TransformationComponent;
 
 	UPROPERTY()
 	UAnimInstance* OwningPlayerAnimInstance;
@@ -194,6 +187,9 @@ private:
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Climb State ", meta = (AllowPrivateAccess = "true"))
 	EClimbingState ClimbingState = EClimbingState::ECS_NOTClimbing;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	UInputMappingContext* ClimbingMappingContext;
 
 	FVector CurrentClimbableSurfaceLocation;
 	FVector CurrentClimbableSurfaceNormal;
@@ -391,10 +387,8 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Climbing")
 	FORCEINLINE bool GetJumpSaved() const { return bJumpSaved; }
 
-	//LastClimb_MovementVector
 	UFUNCTION(BlueprintCallable, Category = "Climbing")
 	FORCEINLINE FVector2D GetLastMovementVector() const { return LastClimb_MovementVector; }
-	//FORCEINLINE void SetCanClimb(bool Value)  { Value ? ClimbingState = EClimbingState::ECS_NOTClimbing : ClimbingState = EClimbingState::ECS_CANNOTClimb; }
 
 	#pragma endregion
 
@@ -408,7 +402,7 @@ public:
 	UInputAction* ClimbDownAction;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input Climb")
-	UInputAction* ClimbAction;
+	UInputAction* ToggleClimbAction;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input Climb")
 	UInputAction* ClimbMoveAction;

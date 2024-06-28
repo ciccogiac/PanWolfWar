@@ -11,32 +11,37 @@
 #include "Kismet/KismetMathLibrary.h"
 #include "GameFramework/CharacterMovementComponent.h"
 
-
 #include "Components/CapsuleComponent.h"
 
-
 #include "CharacterActor/FlowerCable.h"
-#include "CableComponent.h"
 
 #include "MotionWarpingComponent.h"
+
+#pragma region EngineFunctions
 
 UPandolFlowerComponent::UPandolFlowerComponent()
 {
 	PrimaryComponentTick.bCanEverTick = true;
+	PrimaryComponentTick.bStartWithTickEnabled = false;
+	PrimaryComponentTick.SetTickFunctionEnable(false);
+	bAutoActivate = false;
 
 	CharacterOwner = Cast<ACharacter>(GetOwner());
+	PanWolfCharacter = Cast<APanWolfWarCharacter>(CharacterOwner);
 }
 
 void UPandolFlowerComponent::BeginPlay()
 {
 	Super::BeginPlay();
+
 	
-	PanWolfCharacter = Cast<APanWolfWarCharacter>(CharacterOwner);
-	if(PanWolfCharacter)
+	if (PanWolfCharacter)
 	{
 		FollowCamera = PanWolfCharacter->GetFollowCamera();
 		MotionWarpingComponent = PanWolfCharacter->GetMotionWarpingComponent();
 	}
+
+	if (MotionWarpingComponent) MotionWarpingComponent->Activate();
 
 	OwningPlayerAnimInstance = CharacterOwner->GetMesh()->GetAnimInstance();
 	if (OwningPlayerAnimInstance)
@@ -45,25 +50,57 @@ void UPandolFlowerComponent::BeginPlay()
 		OwningPlayerAnimInstance->OnMontageEnded.AddDynamic(this, &UPandolFlowerComponent::OnFlowerMontageEnded);
 	}
 
-	FlowerCable = GetWorld()->SpawnActorDeferred<AFlowerCable>(BP_FlowerCable, CharacterOwner->GetActorTransform());
 
-	FlowerCable->CableComponent->SetAttachEndToComponent(CharacterOwner->GetMesh(),FName("hand_r"));
 }
 
 void UPandolFlowerComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
-	//Debug::Print(TEXT("Hello"));
 	if (!bIsHooking)
 	{
 		SearchHookingPoint();
 	}
-	
+
 }
+
+#pragma endregion
+
+#pragma region ActivationComponent
+
+void UPandolFlowerComponent::Activate(bool bReset)
+{
+	Super::Activate(bReset);
+
+	Debug::Print(TEXT("PanFlower Activate"));
+
+	PanWolfCharacter->AddMappingContext(PandolFlowerMappingContext, 1);
+
+	FlowerCable = GetWorld()->SpawnActor<AFlowerCable>(BP_FlowerCable, CharacterOwner->GetActorLocation(), CharacterOwner->GetActorRotation());
+	FlowerCable->SetAttachEndCable(CharacterOwner->GetMesh(), FName("hand_r"));
+
+}
+
+void UPandolFlowerComponent::Deactivate()
+{
+	Super::Deactivate();
+
+	Debug::Print(TEXT("PanFlower Deactivate"));
+
+	PanWolfCharacter->RemoveMappingContext(PandolFlowerMappingContext);
+
+	if (FlowerCable)
+		FlowerCable->Destroy();
+}
+
+#pragma endregion
+
+#pragma region Hooking
 
 void UPandolFlowerComponent::Hook()
 {
+	if (!IsActive()) return;
+
 	if (bIsHooking) return;
 
 	if (!bDidHit) { Debug::Print(TEXT("Noo Hooking Point Find")); return; }
@@ -71,7 +108,6 @@ void UPandolFlowerComponent::Hook()
 	if (!SearchHookableObject()) return;
 
 	bIsHooking = true;
-	//isHookingState = false;
 	//Face to HookingTarget
 	const FRotator NewRotation = FRotator(CharacterOwner->GetActorRotation().Pitch, Hook_TargetRotation.Yaw, CharacterOwner->GetActorRotation().Roll);
 	CharacterOwner->SetActorRotation(NewRotation);
@@ -83,14 +119,16 @@ void UPandolFlowerComponent::Hook()
 
 void UPandolFlowerComponent::SearchHookingPoint()
 {
-	const FVector CameraForward =  FollowCamera->GetForwardVector();
+	const FVector CameraForward = FollowCamera->GetForwardVector();
 	const FVector CameraLocation = FollowCamera->GetComponentLocation();
 	const FVector ActorUP = CharacterOwner->GetActorUpVector();
 
-	const FVector Start = CameraLocation + CameraForward *820.f + ActorUP * 44.f;
-	const FVector End   = CameraLocation + CameraForward * 1555.f + ActorUP * 333.f;
+	const FVector Start = CameraLocation + CameraForward * 820.f + ActorUP * 44.f;
+	const FVector End = CameraLocation + CameraForward * 1555.f + ActorUP * 333.f;
 
-	UKismetSystemLibrary::SphereTraceSingle(this ,Start, End, SearchHook_Radius, HookingTraceType,false, TArray<AActor*>(),EDrawDebugTrace::None, FirstTrace,true);
+	EDrawDebugTrace::Type DebugTraceType = ShowDebugTrace ? EDrawDebugTrace::ForOneFrame : EDrawDebugTrace::None;
+
+	UKismetSystemLibrary::SphereTraceSingle(this, Start, End, SearchHook_Radius, HookingTraceType, false, TArray<AActor*>(), DebugTraceType, FirstTrace, true);
 
 	if (FirstTrace.bBlockingHit)
 	{
@@ -103,10 +141,12 @@ void UPandolFlowerComponent::SearchHookingPoint()
 
 bool UPandolFlowerComponent::SearchHookableObject()
 {
-	const FVector Start = FirstTrace.ImpactPoint + FVector(0.f,0.f,33.f);
+	const FVector Start = FirstTrace.ImpactPoint + FVector(0.f, 0.f, 33.f);
 	const FVector End = FirstTrace.ImpactPoint + FVector(0.f, 0.f, -150.f);
 
-	UKismetSystemLibrary::SphereTraceSingleForObjects(this, Start, End, SearchObjectHookable_Radius, HookableObjectTypes, false, TArray<AActor*>(), EDrawDebugTrace::None, SecondTrace, true);
+	EDrawDebugTrace::Type DebugTraceType = ShowDebugTrace ? EDrawDebugTrace::ForDuration : EDrawDebugTrace::None;
+
+	UKismetSystemLibrary::SphereTraceSingleForObjects(this, Start, End, SearchObjectHookable_Radius, HookableObjectTypes, false, TArray<AActor*>(), DebugTraceType, SecondTrace, true);
 
 	if (SecondTrace.bBlockingHit)
 	{
@@ -122,6 +162,42 @@ bool UPandolFlowerComponent::SearchHookableObject()
 	}
 	return false;
 }
+
+void UPandolFlowerComponent::StartHooking()
+{
+	const FVector TargetLocation = SecondTrace.ImpactPoint + FVector(0.f, 0.f, 57.5f);
+	DrawDebugPoint(GetWorld(), TargetLocation, 5.f, FColor::Magenta, false, 10.f);
+
+	//FLatentActionInfo LatentInfo;
+	//LatentInfo.CallbackTarget = this;
+	////FRotator Rotator = FRotator(0.f, ClimbRotation.Yaw, 0.f);
+	//float OverTime = FVector::Distance(TargetLocation, CharacterOwner->GetActorLocation()) / 1000.f;
+	//UKismetSystemLibrary::MoveComponentTo(CharacterOwner->GetCapsuleComponent(), TargetLocation, Hook_TargetRotation, true, false, OverTime, true, EMoveComponentAction::Move, LatentInfo);
+
+	SetMotionWarpTarget(FName("HookTarget"), TargetLocation, Hook_TargetRotation);
+	CharacterOwner->GetCharacterMovement()->MaxFlySpeed = 0.f;
+	CharacterOwner->GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Flying, 0);
+
+	CharacterOwner->GetCapsuleComponent()->SetCapsuleHalfHeight(45.f);
+	PlayMontage(HookJump_Montage);
+
+
+	//isHookingState = true;
+}
+
+void UPandolFlowerComponent::EndHooking()
+{
+	bIsHooking = false;
+	//isHookingState = false;
+	CharacterOwner->GetCharacterMovement()->StopMovementImmediately();
+	CharacterOwner->GetCapsuleComponent()->SetCapsuleHalfHeight(90.f);
+	CharacterOwner->GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Walking);
+	FlowerCable->SetAttachStartCable(false);
+}
+
+#pragma endregion
+
+#pragma region MontageSection
 
 void UPandolFlowerComponent::PlayMontage(UAnimMontage* MontageToPlay)
 {
@@ -146,13 +222,8 @@ void UPandolFlowerComponent::OnFlowerNotifyStarted(FName NotifyName, const FBran
 {
 	if (NotifyName == FName("StartHooking"))
 	{
-		FlowerCable->CableComponent->bAttachStart = true;
+		FlowerCable->HookCable(Hook_TargetLocation, Hook_TargetRotation, CharacterOwner->GetActorLocation());
 
-		FLatentActionInfo LatentInfo;
-		LatentInfo.CallbackTarget = this;
-		float OverTime = FVector::Distance(Hook_TargetLocation, CharacterOwner->GetActorLocation()) / 2500.f;
-		UKismetSystemLibrary::MoveComponentTo(FlowerCable->CableComponent, Hook_TargetLocation, Hook_TargetRotation, true, false, OverTime, true, EMoveComponentAction::Move, LatentInfo);
-	
 	}
 
 }
@@ -170,28 +241,10 @@ void UPandolFlowerComponent::OnFlowerMontageEnded(UAnimMontage* Montage, bool bI
 	}
 }
 
-void UPandolFlowerComponent::StartHooking()
-{
-	const FVector TargetLocation =  SecondTrace.ImpactPoint + FVector(0.f, 0.f, 120.f);
-	//DrawDebugPoint(GetWorld(), TargetLocation, 5.f, FColor::Magenta,false,10.f);
+#pragma endregion
 
-	FLatentActionInfo LatentInfo;
-	LatentInfo.CallbackTarget = this;
-	//FRotator Rotator = FRotator(0.f, ClimbRotation.Yaw, 0.f);
-	float OverTime = FVector::Distance(TargetLocation, CharacterOwner->GetActorLocation()) / 1000.f;
-	UKismetSystemLibrary::MoveComponentTo(CharacterOwner->GetCapsuleComponent(), TargetLocation, Hook_TargetRotation, true, false, OverTime, true, EMoveComponentAction::Move, LatentInfo);
 
-	//SetMotionWarpTarget(FName("HookTarget"), TargetLocation, Hook_TargetRotation);
 
-	PlayMontage(HookJump_Montage);
-	//isHookingState = true;
-}
 
-void UPandolFlowerComponent::EndHooking()
-{
-	bIsHooking = false;
-	//isHookingState = false;
-	CharacterOwner->GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Walking);
-	FlowerCable->CableComponent->bAttachStart = false;
-}
+
 

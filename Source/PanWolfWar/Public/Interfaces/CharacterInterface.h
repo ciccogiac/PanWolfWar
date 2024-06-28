@@ -24,7 +24,6 @@ class PANWOLFWAR_API ICharacterInterface
 	GENERATED_BODY()
 
 public:
-	 virtual UTransformationComponent* GetTransformationComponent() const  = 0;
 	 virtual UAttributeComponent* GetAttributeComponent() const = 0;
 
 };

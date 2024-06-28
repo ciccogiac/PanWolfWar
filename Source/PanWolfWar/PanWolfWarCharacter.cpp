@@ -25,9 +25,10 @@
 
 #include "NiagaraComponent.h"
 
+#include "Components/PandolfoComponent.h"
+#include "Components/PanWolfComponent.h"
 #include "Components/PandolFlowerComponent.h"
 
-//#include "UserWidgets/PanwolfwarOverlay.h"
 
 DEFINE_LOG_CATEGORY(LogTemplateCharacter);
 
@@ -81,10 +82,11 @@ APanWolfWarCharacter::APanWolfWarCharacter()
 	MotionWarpingComponent = CreateDefaultSubobject<UMotionWarpingComponent>(TEXT("MotionWarpingComp"));
 
 	Attributes = CreateDefaultSubobject<UAttributeComponent>(TEXT("Attributes"));
-	ClimbingComponent = CreateDefaultSubobject<UClimbingComponent>(TEXT("ClimbingComponent"));
 	InteractComponent = CreateDefaultSubobject<UInteractComponent>(TEXT("InteractComponent"));
 	TransformationComponent = CreateDefaultSubobject<UTransformationComponent>(TEXT("TransformationComponent"));
 
+	PandolfoComponent = CreateDefaultSubobject<UPandolfoComponent>(TEXT("PandolfoComponent"));
+	PanWolfComponent = CreateDefaultSubobject<UPanWolfComponent>(TEXT("PanWolfComponent"));
 	PandolFlowerComponent = CreateDefaultSubobject<UPandolFlowerComponent>(TEXT("PandolFlowerComponent"));
 }
 
@@ -97,12 +99,6 @@ void APanWolfWarCharacter::BeginPlay()
 	AddMappingContext(DefaultMappingContext, 0);
 
 	// Delegates Binding 
-
-	if (ClimbingComponent)
-	{
-		ClimbingComponent->OnEnterClimbStateDelegate.BindUObject(this, &ThisClass::OnPlayerEnterClimbState);
-		ClimbingComponent->OnExitClimbStateDelegate.BindUObject(this, &ThisClass::OnPlayerExitClimbState);
-	}
 
 	if (InteractComponent)
 	{
@@ -152,8 +148,11 @@ void APanWolfWarCharacter::RemoveMappingContext(UInputMappingContext* MappingCon
 void APanWolfWarCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
 	// Set up action bindings
-	if (UEnhancedInputComponent* EnhancedInputComponent = Cast<UEnhancedInputComponent>(PlayerInputComponent)) {
-		
+	if (UEnhancedInputComponent* EnhancedInputComponent = Cast<UEnhancedInputComponent>(PlayerInputComponent)) 
+	{
+
+		#pragma region DefaultAction
+
 		// Moving
 		EnhancedInputComponent->BindAction(MoveAction, ETriggerEvent::Triggered, this, &APanWolfWarCharacter::Move);
 
@@ -161,28 +160,41 @@ void APanWolfWarCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInpu
 		EnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &APanWolfWarCharacter::Look);
 
 		// Jumping
-		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Started, this, &APanWolfWarCharacter::JumpClimbTrace);
+		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Started, this, &ACharacter::Jump);
 		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Completed, this, &ACharacter::StopJumping);
 
 		//Interact
 		EnhancedInputComponent->BindAction(InteractComponent->InteractAction, ETriggerEvent::Started, InteractComponent, &UInteractComponent::Interact);
 		EnhancedInputComponent->BindAction(InteractComponent->InteractMoveAction, ETriggerEvent::Triggered, InteractComponent, &UInteractComponent::InteractMove);
 
+		#pragma endregion
+
+		#pragma region Pandolfo
+
+		//PandolfoAction
+		EnhancedInputComponent->BindAction(PandolfoComponent->Pandolfo_JumpAction, ETriggerEvent::Started, PandolfoComponent, &UPandolfoComponent::Jump);
+
 		// Climbing
-		EnhancedInputComponent->BindAction(ClimbingComponent->ClimbAction, ETriggerEvent::Started, ClimbingComponent, &UClimbingComponent::Climb);
-		EnhancedInputComponent->BindAction(ClimbingComponent->ClimbMoveAction, ETriggerEvent::Triggered, ClimbingComponent, &UClimbingComponent::ClimbMove);
-		EnhancedInputComponent->BindAction(ClimbingComponent->ClimbMoveAction, ETriggerEvent::Completed, ClimbingComponent, &UClimbingComponent::ClimbMoveEnd);
-		EnhancedInputComponent->BindAction(ClimbingComponent->ClimbJumpAction, ETriggerEvent::Started, ClimbingComponent, &UClimbingComponent::ClimbJump);
-		EnhancedInputComponent->BindAction(ClimbingComponent->ClimbDownAction, ETriggerEvent::Started, ClimbingComponent, &UClimbingComponent::ClimbDownActivate);
-		EnhancedInputComponent->BindAction(ClimbingComponent->ClimbDownAction, ETriggerEvent::Completed, ClimbingComponent, &UClimbingComponent::ClimbDownDeActivate);
+		EnhancedInputComponent->BindAction(PandolfoComponent->GetClimbingComponent()->ToggleClimbAction, ETriggerEvent::Started, PandolfoComponent->GetClimbingComponent(), &UClimbingComponent::ToggleClimbing);
+		EnhancedInputComponent->BindAction(PandolfoComponent->GetClimbingComponent()->ClimbMoveAction, ETriggerEvent::Triggered, PandolfoComponent->GetClimbingComponent(), &UClimbingComponent::ClimbMove);
+		EnhancedInputComponent->BindAction(PandolfoComponent->GetClimbingComponent()->ClimbMoveAction, ETriggerEvent::Completed, PandolfoComponent->GetClimbingComponent(), &UClimbingComponent::ClimbMoveEnd);
+		EnhancedInputComponent->BindAction(PandolfoComponent->GetClimbingComponent()->ClimbJumpAction, ETriggerEvent::Started, PandolfoComponent->GetClimbingComponent(), &UClimbingComponent::ClimbJump);
+		EnhancedInputComponent->BindAction(PandolfoComponent->GetClimbingComponent()->ClimbDownAction, ETriggerEvent::Started, PandolfoComponent->GetClimbingComponent(), &UClimbingComponent::ClimbDownActivate);
+		EnhancedInputComponent->BindAction(PandolfoComponent->GetClimbingComponent()->ClimbDownAction, ETriggerEvent::Completed, PandolfoComponent->GetClimbingComponent(), &UClimbingComponent::ClimbDownDeActivate);
 
 		// Transformation
-		EnhancedInputComponent->BindAction(TransformationComponent->TransformationApply, ETriggerEvent::Started, TransformationComponent, &UTransformationComponent::ApplyTrasformation);
-		EnhancedInputComponent->BindAction(TransformationComponent->TransformationSelectRightAction, ETriggerEvent::Started, TransformationComponent, &UTransformationComponent::SelectRightTransformation);
-		EnhancedInputComponent->BindAction(TransformationComponent->TransformationSelectLeftAction, ETriggerEvent::Started, TransformationComponent, &UTransformationComponent::SelectLeftTransformation);
+		EnhancedInputComponent->BindAction(PandolfoComponent->TransformationApply, ETriggerEvent::Started, TransformationComponent, &UTransformationComponent::ApplyTrasformation);
+		EnhancedInputComponent->BindAction(PandolfoComponent->TransformationSelectRightAction, ETriggerEvent::Started, TransformationComponent, &UTransformationComponent::SelectRightTransformation);
+		EnhancedInputComponent->BindAction(PandolfoComponent->TransformationSelectLeftAction, ETriggerEvent::Started, TransformationComponent, &UTransformationComponent::SelectLeftTransformation);
 
-		//PandolFlowerAction
+		#pragma endregion
+
+		#pragma region PandolFlower
+
 		EnhancedInputComponent->BindAction(PandolFlowerComponent->HookAction, ETriggerEvent::Started, PandolFlowerComponent, &UPandolFlowerComponent::Hook);
+
+		#pragma endregion
+
 	}
 	else
 	{
@@ -230,50 +242,18 @@ void APanWolfWarCharacter::Look(const FInputActionValue& Value)
 	}
 }
 
-void APanWolfWarCharacter::JumpClimbTrace()
-{
-	if (!ClimbingComponent || TransformationComponent->IsInTransformingState())
-	{
-		ACharacter::Jump();
-		return;
-	} 
-	
-	if (!TransformationComponent->IsInTransformingState() && ClimbingComponent->ActivateJumpTrace() )
-	{
-		ACharacter::Jump();
-	}
-}
-
 void APanWolfWarCharacter::Landed(const FHitResult& Hit)
 {
 	Super::Landed(Hit);
 
-	if (!ClimbingComponent || TransformationComponent->IsInTransformingState()) return;
-
-	ClimbingComponent->Landed();
-	OnPlayerExitClimbState();
+	if(PandolfoComponent->GetClimbingComponent()->IsActive())
+		PandolfoComponent->GetClimbingComponent()->Landed();
 }
 
 #pragma endregion
 
 //////////////////////////////////////////////////////////////////////////
 // Components Delegates
-
-#pragma region Climbing Delegates
-
-void APanWolfWarCharacter::OnPlayerEnterClimbState()
-{
-	AddMappingContext(ClimbingMappingContext, 1);
-	GetCharacterMovement()->bOrientRotationToMovement = false;
-}
-
-void APanWolfWarCharacter::OnPlayerExitClimbState()
-{
-	RemoveMappingContext(ClimbingMappingContext);
-	GetCharacterMovement()->bOrientRotationToMovement = true;
-}
-
-#pragma endregion
 
 #pragma region Interact Delegates
 
