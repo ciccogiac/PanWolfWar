@@ -26,6 +26,11 @@ public:
 	void SelectLeftTransformation();
 	void ApplyTrasformation();
 
+	void SetTransformation(ETransformationState NewTransformationState, ETransformationState PreviousTransformationState);
+
+	void SetCanRegenFlower(bool Value);
+	void SetCanRegenBird(bool Value);
+
 	UFUNCTION(BlueprintCallable)
 	void SelectDesiredTransformation(int32 TransformationState_ID);
 
@@ -34,12 +39,26 @@ protected:
 
 private:
 	bool CanTrasform(const int32 NewTransformation_ID);
-	void ExecuteTransformation(ETransformationState NewTransformationState , UMaterialInterface* Material1, UMaterialInterface* Material2,UNiagaraSystem* NiagaraTransformation = nullptr );
+	void ExecuteTransformation(ETransformationState NewTransformationState );
 	void HandleComponentActivation(ETransformationState NewTransformationState, ETransformationState PreviousTransformationState);
 
-	void ConsumingBeer();
+	//void ConsumingBeer();
+
+	void ConsumingTransformation(ETransformationState TransfomingState);
+
+	void RegenFlower();
+	void RegenBird();
 
 #pragma region Variables
+
+	bool bCanRegenFlower = false;
+	bool bCanRegenBird = false;
+
+	// Timer handle
+	FTimerHandle Transformation_TimerHandle;
+	FTimerHandle RegenFlower_TimerHandle;
+	FTimerHandle RegenBird_TimerHandle;
+
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Transformation State ", meta = (AllowPrivateAccess = "true"))
 	ETransformationState CurrentTransformationState = ETransformationState::ETS_None;
@@ -62,46 +81,7 @@ private:
 
 
 
-
-
-	#pragma region Transformation Materials
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Transformation Materials ", meta = (AllowPrivateAccess = "true"))
-	UMaterialInterface* Pandolfo_Material1;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Transformation Materials ", meta = (AllowPrivateAccess = "true"))
-	UMaterialInterface* Pandolfo_Material2;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Transformation Materials ", meta = (AllowPrivateAccess = "true"))
-	UMaterialInterface* Panwolf_Material1;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Transformation Materials ", meta = (AllowPrivateAccess = "true"))
-	UMaterialInterface* Panwolf_Material2;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Transformation Materials ", meta = (AllowPrivateAccess = "true"))
-	UMaterialInterface* Pandolflower_Material1;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Transformation Materials ", meta = (AllowPrivateAccess = "true"))
-	UMaterialInterface* Pandolflower_Material2;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Transformation Materials ", meta = (AllowPrivateAccess = "true"))
-	UNiagaraSystem* Pandolflower_Niagara;
-
-	#pragma endregion
-
 #pragma endregion
 
-
-
-#pragma region FORCEINLINE_functions
-public:
-
-
-	FORCEINLINE ETransformationState GetCurrentState() const { return CurrentTransformationState; }
-	FORCEINLINE bool IsInTransformingState() const { return CurrentTransformationState != ETransformationState::ETS_Pandolfo; }
-
-#pragma endregion
-
-
-		
+	
 };

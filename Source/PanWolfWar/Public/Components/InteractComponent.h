@@ -7,15 +7,13 @@
 #include "Interfaces/InteractInterface.h"
 #include "InteractComponent.generated.h"
 
-DECLARE_DELEGATE(FOnEnterInteractState)
-DECLARE_DELEGATE(FOnExitInteractState)
-
 class UCharacterMovementComponent;
 class UCapsuleComponent;
 struct FInputActionValue;
 class UInputAction;
 class AMovableObject;
-class UTransformationComponent;
+class APanWolfWarCharacter;
+class UInputMappingContext;
 
 UENUM(BlueprintType)
 enum class EInteractState : uint8
@@ -30,15 +28,6 @@ class PANWOLFWAR_API UInteractComponent : public UActorComponent
 {
 	GENERATED_BODY()
 
-#pragma region Delegates
-
-public:
-
-	//Delegates
-	FOnEnterInteractState OnEnterInteractStateDelegate;
-	FOnExitInteractState OnExitInteractStateDelegate;
-
-#pragma endregion
 
 public:	
 	UInteractComponent();
@@ -58,14 +47,16 @@ private:
 
 
 	ACharacter* CharacterOwner;
-	UTransformationComponent* TransformationComponent;
-
+	APanWolfWarCharacter* PanWolfCharacter;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Interact State ", meta = (AllowPrivateAccess = "true"))
 	EInteractState InteractState = EInteractState::EIS_NOTinteracting;
 
 	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, Category = "Interact State ", meta = (AllowPrivateAccess = "true"))
 	class AInteractableObject* OverlappingObject;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	UInputMappingContext* MovableObjectMappingContext;
 
 
 #pragma region InputActions

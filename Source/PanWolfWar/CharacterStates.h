@@ -7,5 +7,6 @@ enum class ETransformationState : uint8
 	ETS_Transforming UMETA(DisplayName = "Transforming"),
 	ETS_PanWolf UMETA(DisplayName = "PanWolf"),
 	ETS_PanFlower UMETA(DisplayName = "PanFlower"),
+	ETS_PanBird UMETA(DisplayName = "PanBird"),
 	ETS_None UMETA(DisplayName = "None"),
 };

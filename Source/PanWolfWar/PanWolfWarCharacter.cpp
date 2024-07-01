@@ -28,7 +28,9 @@
 #include "Components/PandolfoComponent.h"
 #include "Components/PanWolfComponent.h"
 #include "Components/PandolFlowerComponent.h"
+#include "Components/PanBirdComponent.h"
 
+#include "Engine/SkinnedAssetCommon.h"
 
 DEFINE_LOG_CATEGORY(LogTemplateCharacter);
 
@@ -88,6 +90,7 @@ APanWolfWarCharacter::APanWolfWarCharacter()
 	PandolfoComponent = CreateDefaultSubobject<UPandolfoComponent>(TEXT("PandolfoComponent"));
 	PanWolfComponent = CreateDefaultSubobject<UPanWolfComponent>(TEXT("PanWolfComponent"));
 	PandolFlowerComponent = CreateDefaultSubobject<UPandolFlowerComponent>(TEXT("PandolFlowerComponent"));
+	PanBirdComponent = CreateDefaultSubobject<UPanBirdComponent>(TEXT("PanBirdComponent"));
 }
 
 void APanWolfWarCharacter::BeginPlay()
@@ -98,18 +101,32 @@ void APanWolfWarCharacter::BeginPlay()
 
 	AddMappingContext(DefaultMappingContext, 0);
 
-	// Delegates Binding 
-
-	if (InteractComponent)
-	{
-		InteractComponent->OnEnterInteractStateDelegate.BindUObject(this, &ThisClass::OnPlayerEnterInteractState);
-		InteractComponent->OnExitInteractStateDelegate.BindUObject(this, &ThisClass::OnPlayerExitInteractState);
-	}
-
 }
 
 #pragma endregion
 
+void APanWolfWarCharacter::SetTransformationCharacter(TObjectPtr<USkeletalMesh> SkeletalMeshAsset, TSubclassOf<UAnimInstance> Anim)
+{
+
+	GetMesh()->SetSkeletalMeshAsset(SkeletalMeshAsset);
+
+	if (SkeletalMeshAsset)
+	{
+		GetMesh()->SetSkeletalMesh(SkeletalMeshAsset);
+
+		// Aggiorna i materiali
+		const TArray<FSkeletalMaterial>& NewMaterials = SkeletalMeshAsset->GetMaterials();
+		for (int32 MaterialIndex = 0; MaterialIndex < NewMaterials.Num(); ++MaterialIndex)
+		{
+			GetMesh()->SetMaterial(MaterialIndex, NewMaterials[MaterialIndex].MaterialInterface);
+		}
+
+	}
+
+	GetMesh()->SetAnimInstanceClass(Anim);
+	GetMesh()->SetRelativeLocation(FVector(0.f, 0.f, -GetCapsuleComponent()->GetScaledCapsuleHalfHeight()));
+
+}
 
 //////////////////////////////////////////////////////////////////////////
 // Input
@@ -195,6 +212,13 @@ void APanWolfWarCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInpu
 
 		#pragma endregion
 
+		#pragma region PanBird
+
+		EnhancedInputComponent->BindAction(PanBirdComponent->BirdMoveAction, ETriggerEvent::Triggered, PanBirdComponent, &UPanBirdComponent::Move);
+
+		#pragma endregion
+
+
 	}
 	else
 	{
@@ -252,22 +276,6 @@ void APanWolfWarCharacter::Landed(const FHitResult& Hit)
 
 #pragma endregion
 
-//////////////////////////////////////////////////////////////////////////
-// Components Delegates
-
-#pragma region Interact Delegates
-
-void APanWolfWarCharacter::OnPlayerEnterInteractState()
-{
-	AddMappingContext(InteractableMappingContext, 1);
-}
-
-void APanWolfWarCharacter::OnPlayerExitInteractState()
-{
-	RemoveMappingContext(InteractableMappingContext);
-}
-
-#pragma endregion
 
 //////////////////////////////////////////////////////////////////////////
 // Interfaces
@@ -276,11 +284,25 @@ void APanWolfWarCharacter::OnPlayerExitInteractState()
 
 bool APanWolfWarCharacter::SetOverlappingObject(AInteractableObject* InteractableObject, bool bEnter)
 {
+	if (InteractableObject->ActorHasTag(FName("Pandolfo_Object")) && !PandolfoComponent->IsActive()) return false;
+	if (InteractableObject->ActorHasTag(FName("PanWolf_Object")) && !PanWolfComponent->IsActive()) return false;
+	if (InteractableObject->ActorHasTag(FName("PandolFlower_Object")) && !PandolFlowerComponent->IsActive()) return false;
+	if (InteractableObject->ActorHasTag(FName("PanBird_Object")) && !PanBirdComponent->IsActive()) return false;
+
 	return InteractComponent->SetOverlappingObject(InteractableObject, bEnter);
 }
 
 #pragma endregion
 
 
+void APanWolfWarCharacter::SetMotionWarpTarget(const FName& InWarpTargetName, const FVector& InTargetPosition, const FRotator& InTargetRotation)
+{
+	if (!MotionWarpingComponent) return;
+
+	if (InTargetRotation != FRotator::ZeroRotator)
+		MotionWarpingComponent->AddOrUpdateWarpTargetFromLocationAndRotation(InWarpTargetName, InTargetPosition, InTargetRotation);
+	else
+		MotionWarpingComponent->AddOrUpdateWarpTargetFromLocation(InWarpTargetName, InTargetPosition);
+}
 
 

@@ -18,6 +18,7 @@ public:
 
 	void SetHealthBarPercent(float Percent);
 	void SetFlowerStaminaBarPercent(float Percent);
+	void SetBirdStaminaBarPercent(float Percent);
 	void SetBeerBarVisibility(bool bVisibility);
 	void SetBeerBarPercent(float Percent);
 	void SetBeers(int32 Beers);
@@ -29,6 +30,9 @@ private:
 
 	UPROPERTY(meta = (BindWidget))
 	class UProgressBar* FlowerStaminaProgressBar;
+
+	UPROPERTY(meta = (BindWidget))
+	class UProgressBar* BirdStaminaProgressBar;
 
 	UPROPERTY(meta = (BindWidget))
 	class UTextBlock* BeerText;

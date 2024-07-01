@@ -11,8 +11,8 @@ class APanWolfWarCharacter;
 class UCameraComponent;
 class AFlowerCable;
 class UAnimMontage;
-class UMotionWarpingComponent;
 class UInputMappingContext;
+class UNiagaraSystem;
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class PANWOLFWAR_API UPandolFlowerComponent : public UActorComponent
@@ -45,7 +45,15 @@ private:
 	ACharacter* CharacterOwner;
 	APanWolfWarCharacter* PanWolfCharacter;
 	UCameraComponent* FollowCamera;
-	UMotionWarpingComponent* MotionWarpingComponent;
+
+	UPROPERTY(Category = Character, EditDefaultsOnly, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<USkeletalMesh> SkeletalMeshAsset;
+
+	UPROPERTY(Category = Character, EditDefaultsOnly, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
+	TSubclassOf<UAnimInstance> Anim;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Transformation Materials ", meta = (AllowPrivateAccess = "true"))
+	UNiagaraSystem* Pandolflower_Niagara;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	UInputMappingContext* PandolFlowerMappingContext;
@@ -93,7 +101,6 @@ private:
 	void SearchHookingPoint();
 	bool SearchHookableObject();
 	void PlayMontage(UAnimMontage* MontageToPlay);
-	void SetMotionWarpTarget(const FName& InWarpTargetName, const FVector& InTargetPosition, const FRotator& InTargetRotation = FRotator::ZeroRotator);
 
 	UFUNCTION()
 	void OnFlowerNotifyStarted(FName NotifyName, const FBranchingPointNotifyPayload& BranchingPointPayload);

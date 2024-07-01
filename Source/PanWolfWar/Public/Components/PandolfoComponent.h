@@ -8,6 +8,8 @@ class UInputMappingContext;
 class APanWolfWarCharacter;
 class UClimbingComponent;
 class UInputAction;
+class UCapsuleComponent;
+class USpringArmComponent;
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class PANWOLFWAR_API UPandolfoComponent : public UActorComponent
@@ -31,6 +33,15 @@ protected:
 private:
 	ACharacter* CharacterOwner;
 	APanWolfWarCharacter* PanWolfCharacter;
+	UCapsuleComponent* Capsule;
+	USpringArmComponent* CameraBoom;
+
+
+	UPROPERTY(Category = Character, EditDefaultsOnly, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<USkeletalMesh> SkeletalMeshAsset;
+
+	UPROPERTY(Category = Character, EditDefaultsOnly, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
+	TSubclassOf<UAnimInstance> Anim;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	UInputMappingContext* PandolfoMappingContext;

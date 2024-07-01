@@ -9,7 +9,6 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "InputActionValue.h"
-#include "MotionWarpingComponent.h"
 #include <PanWolfWar/PanWolfWarCharacter.h>
 
 #include "PanWolfWar/DebugHelper.h"
@@ -31,6 +30,21 @@ UClimbingComponent::UClimbingComponent()
 void UClimbingComponent::Activate(bool bReset)
 {
 	Super::Activate();
+
+
+}
+
+void UClimbingComponent::SetAnimationBindings()
+{
+	OwningPlayerAnimInstance = CharacterOwner->GetMesh()->GetAnimInstance();
+
+	// Add Delegates of animation notify
+
+	if (OwningPlayerAnimInstance)
+	{
+		OwningPlayerAnimInstance->OnPlayMontageNotifyBegin.AddDynamic(this, &UClimbingComponent::OnClimbMontageStartedHanging);
+		OwningPlayerAnimInstance->OnMontageEnded.AddDynamic(this, &UClimbingComponent::OnClimbMontageEnded);
+	}
 }
 
 void UClimbingComponent::Deactivate()
@@ -44,21 +58,6 @@ void UClimbingComponent::BeginPlay()
 
 	MovementComponent = CharacterOwner->GetCharacterMovement();
 	CapsuleComponent = CharacterOwner->GetCapsuleComponent();
-
-	OwningPlayerAnimInstance = CharacterOwner->GetMesh()->GetAnimInstance();
-
-	// Add Delegates of animation notify
-
-	if (OwningPlayerAnimInstance)
-	{
-		OwningPlayerAnimInstance->OnPlayMontageNotifyBegin.AddDynamic(this, &UClimbingComponent::OnClimbMontageStartedHanging);
-		OwningPlayerAnimInstance->OnMontageEnded.AddDynamic(this, &UClimbingComponent::OnClimbMontageEnded);
-	}
-
-	if (PanWolfCharacter) 
-	{
-		MotionWarpingComponent = PanWolfCharacter->GetMotionWarpingComponent();
-	}
 	
 }
 
@@ -106,6 +105,7 @@ void UClimbingComponent::StartClimbing()
 	MovementComponent->bOrientRotationToMovement = false;
 
 	MovementComponent->StopMovementImmediately();
+
 }
 
 void UClimbingComponent::StopClimbing()
@@ -803,8 +803,9 @@ void UClimbingComponent::PlayClimbMontage(UAnimMontage* MontageToPlay)
 		MotionWarpingRotator = FRotator(0.f, ClimbRotation.Yaw, 0.f);
 		MotionWarpingLocation -= CurrentClimbableSurfaceNormal.GetSafeNormal() * CapsuleComponent->GetScaledCapsuleRadius();
 
-		SetMotionWarpTarget(FName("ClimbStartPoint"), CapsuleComponent->GetComponentLocation(), CapsuleComponent->GetComponentRotation());
-		SetMotionWarpTarget(FName("ClimbLandPoint"), MotionWarpingLocation, MotionWarpingRotator);
+		
+		PanWolfCharacter->SetMotionWarpTarget(FName("ClimbStartPoint"), CapsuleComponent->GetComponentLocation(), CapsuleComponent->GetComponentRotation());
+		PanWolfCharacter->SetMotionWarpTarget(FName("ClimbLandPoint"), MotionWarpingLocation, MotionWarpingRotator);
 
 		MovementComponent->MaxFlySpeed = 0.f;
 		MovementComponent->SetMovementMode(EMovementMode::MOVE_Flying, 0);
@@ -859,17 +860,6 @@ void UClimbingComponent::OnClimbMontageEnded(UAnimMontage* Montage, bool bInterr
 
 #pragma region MotionWarping
 
-void UClimbingComponent::SetMotionWarpTarget(const FName& InWarpTargetName, const FVector& InTargetPosition, const FRotator& InTargetRotation)
-{
-	if (!MotionWarpingComponent) return;
-
-	if (InTargetRotation != FRotator::ZeroRotator)
-		MotionWarpingComponent->AddOrUpdateWarpTargetFromLocationAndRotation(InWarpTargetName, InTargetPosition, InTargetRotation);
-	else
-		MotionWarpingComponent->AddOrUpdateWarpTargetFromLocation(InWarpTargetName, InTargetPosition);
-
-}
-
 bool UClimbingComponent::TryStartUponVaulting()
 {
 	FVector VaultStartPosition;
@@ -878,8 +868,8 @@ bool UClimbingComponent::TryStartUponVaulting()
 	if (CanStartUponVaulting(VaultStartPosition, VaultLandPosition))
 	{
 		//Start Vaulting
-		SetMotionWarpTarget(FName("VaultStartPoint"), VaultStartPosition);
-		SetMotionWarpTarget(FName("VaultLandPoint"), VaultLandPosition);
+		PanWolfCharacter->SetMotionWarpTarget(FName("VaultStartPoint"), VaultStartPosition);
+		PanWolfCharacter->SetMotionWarpTarget(FName("VaultLandPoint"), VaultLandPosition);
 	}
 	else return false;
 	ClimbDirection = 0.f;

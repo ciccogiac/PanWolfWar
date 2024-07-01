@@ -1,8 +1,10 @@
 #include "Actors/FlowerRegenerator.h"
 
 #include "Interfaces/CharacterInterface.h"
+#include "Components/TransformationComponent.h"
+
 #include "Components/BoxComponent.h"
-#include "Components/AttributeComponent.h"
+
 
 #include "PanWolfWar/DebugHelper.h"
 
@@ -35,7 +37,7 @@ void AFlowerRegenerator::BoxCollisionEnter(UPrimitiveComponent* OverlappedCompon
 		ICharacterInterface* CharacterInterface = Cast<ICharacterInterface>(OtherActor);
 		if (CharacterInterface)
 		{
-			CharacterInterface->GetAttributeComponent()->SetCanRegenFlower(true);
+			CharacterInterface->GetTransformationComponent()->SetCanRegenFlower(true);
 		}
 	}
 }
@@ -47,7 +49,7 @@ void AFlowerRegenerator::BoxCollisionExit(UPrimitiveComponent* OverlappedCompone
 		ICharacterInterface* CharacterInterface = Cast<ICharacterInterface>(OtherActor);
 		if (CharacterInterface)
 		{
-			CharacterInterface->GetAttributeComponent()->SetCanRegenFlower(false);
+			CharacterInterface->GetTransformationComponent()->SetCanRegenFlower(false);
 		}
 	}
 }

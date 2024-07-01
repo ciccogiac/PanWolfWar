@@ -23,6 +23,7 @@ class UAttributeComponent;
 class UPandolfoComponent;
 class UPanWolfComponent;
 class UPandolFlowerComponent;
+class UPanBirdComponent;
 
 DECLARE_LOG_CATEGORY_EXTERN(LogTemplateCharacter, Log, All);
 
@@ -38,6 +39,9 @@ public:
 
 	void AddMappingContext(UInputMappingContext* MappingContextToAdd, int32 Priority);
 	void RemoveMappingContext(UInputMappingContext* MappingContextToRemove);
+	void SetTransformationCharacter(TObjectPtr<USkeletalMesh> SkeletalMeshAsset, TSubclassOf<UAnimInstance> Anim);
+
+	void SetMotionWarpTarget(const FName& InWarpTargetName, const FVector& InTargetPosition, const FRotator& InTargetRotation = FRotator::ZeroRotator);
 
 #pragma endregion
 
@@ -94,6 +98,9 @@ private:
 	UPanWolfComponent* PanWolfComponent;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Movement, meta = (AllowPrivateAccess = "true"))
+	UPanBirdComponent* PanBirdComponent;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Movement, meta = (AllowPrivateAccess = "true"))
 	UAttributeComponent* Attributes;
 
 	#pragma endregion
@@ -125,12 +132,6 @@ private:
 #pragma region PrivateFunctions
 private:
 
-	// Delegates
-	void OnPlayerEnterInteractState();
-	void OnPlayerExitInteractState();
-
-
-
 	#pragma region InputCallback
 
 	void Move(const FInputActionValue& Value);
@@ -153,13 +154,14 @@ public:
 	FORCEINLINE class UCameraComponent* GetFollowCamera() const { return FollowCamera; }
 	FORCEINLINE UMotionWarpingComponent* GetMotionWarpingComponent() const { return MotionWarpingComponent; }
 	
-	FORCEINLINE virtual UAttributeComponent* GetAttributeComponent()  const override { return Attributes; }
+	FORCEINLINE UAttributeComponent* GetAttributeComponent()  const { return Attributes; }
 	FORCEINLINE UInteractComponent* GetInteractComponent() const { return InteractComponent; }
 
-	FORCEINLINE UTransformationComponent* GetTransformationComponent()  const  { return TransformationComponent; } ;
+	FORCEINLINE virtual UTransformationComponent* GetTransformationComponent()  const override { return TransformationComponent; } ;
 	FORCEINLINE UPandolfoComponent* GetPandolfoComponent() const { return PandolfoComponent; }
 	FORCEINLINE UPanWolfComponent* GetPanWolfComponent() const { return PanWolfComponent; }
 	FORCEINLINE UPandolFlowerComponent* GetPandolFlowerComponent() const { return PandolFlowerComponent; }
+	FORCEINLINE UPanBirdComponent* GetPanBirdComponent() const { return PanBirdComponent; }
 
 	FORCEINLINE UNiagaraComponent* GetNiagaraTransformation() { return NiagaraTransformation; }
 	FORCEINLINE UNiagaraComponent* GetNiagaraTransformationEffect() { return NiagaraApplyTransformationEffect; }

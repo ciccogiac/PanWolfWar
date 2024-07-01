@@ -12,10 +12,9 @@
 #include "GameFramework/CharacterMovementComponent.h"
 
 #include "Components/CapsuleComponent.h"
-
+#include "NiagaraComponent.h"
 #include "CharacterActor/FlowerCable.h"
 
-#include "MotionWarpingComponent.h"
 
 #pragma region EngineFunctions
 
@@ -33,23 +32,11 @@ UPandolFlowerComponent::UPandolFlowerComponent()
 void UPandolFlowerComponent::BeginPlay()
 {
 	Super::BeginPlay();
-
 	
 	if (PanWolfCharacter)
 	{
 		FollowCamera = PanWolfCharacter->GetFollowCamera();
-		MotionWarpingComponent = PanWolfCharacter->GetMotionWarpingComponent();
 	}
-
-	if (MotionWarpingComponent) MotionWarpingComponent->Activate();
-
-	OwningPlayerAnimInstance = CharacterOwner->GetMesh()->GetAnimInstance();
-	if (OwningPlayerAnimInstance)
-	{
-		OwningPlayerAnimInstance->OnPlayMontageNotifyBegin.AddDynamic(this, &UPandolFlowerComponent::OnFlowerNotifyStarted);
-		OwningPlayerAnimInstance->OnMontageEnded.AddDynamic(this, &UPandolFlowerComponent::OnFlowerMontageEnded);
-	}
-
 
 }
 
@@ -72,9 +59,17 @@ void UPandolFlowerComponent::Activate(bool bReset)
 {
 	Super::Activate(bReset);
 
-	Debug::Print(TEXT("PanFlower Activate"));
-
 	PanWolfCharacter->AddMappingContext(PandolFlowerMappingContext, 1);
+
+	PanWolfCharacter->SetTransformationCharacter(SkeletalMeshAsset, Anim);
+	PanWolfCharacter->GetNiagaraTransformation()->SetAsset(Pandolflower_Niagara);
+
+	OwningPlayerAnimInstance = CharacterOwner->GetMesh()->GetAnimInstance();
+	if (OwningPlayerAnimInstance)
+	{
+		OwningPlayerAnimInstance->OnPlayMontageNotifyBegin.AddDynamic(this, &UPandolFlowerComponent::OnFlowerNotifyStarted);
+		OwningPlayerAnimInstance->OnMontageEnded.AddDynamic(this, &UPandolFlowerComponent::OnFlowerMontageEnded);
+	}
 
 	FlowerCable = GetWorld()->SpawnActor<AFlowerCable>(BP_FlowerCable, CharacterOwner->GetActorLocation(), CharacterOwner->GetActorRotation());
 	FlowerCable->SetAttachEndCable(CharacterOwner->GetMesh(), FName("hand_r"));
@@ -85,9 +80,9 @@ void UPandolFlowerComponent::Deactivate()
 {
 	Super::Deactivate();
 
-	Debug::Print(TEXT("PanFlower Deactivate"));
-
 	PanWolfCharacter->RemoveMappingContext(PandolFlowerMappingContext);
+
+	PanWolfCharacter->GetNiagaraTransformation()->SetAsset(nullptr);
 
 	if (FlowerCable)
 		FlowerCable->Destroy();
@@ -168,21 +163,13 @@ void UPandolFlowerComponent::StartHooking()
 	const FVector TargetLocation = SecondTrace.ImpactPoint + FVector(0.f, 0.f, 57.5f);
 	DrawDebugPoint(GetWorld(), TargetLocation, 5.f, FColor::Magenta, false, 10.f);
 
-	//FLatentActionInfo LatentInfo;
-	//LatentInfo.CallbackTarget = this;
-	////FRotator Rotator = FRotator(0.f, ClimbRotation.Yaw, 0.f);
-	//float OverTime = FVector::Distance(TargetLocation, CharacterOwner->GetActorLocation()) / 1000.f;
-	//UKismetSystemLibrary::MoveComponentTo(CharacterOwner->GetCapsuleComponent(), TargetLocation, Hook_TargetRotation, true, false, OverTime, true, EMoveComponentAction::Move, LatentInfo);
-
-	SetMotionWarpTarget(FName("HookTarget"), TargetLocation, Hook_TargetRotation);
+	PanWolfCharacter->SetMotionWarpTarget(FName("HookTarget"), TargetLocation, Hook_TargetRotation);
 	CharacterOwner->GetCharacterMovement()->MaxFlySpeed = 0.f;
 	CharacterOwner->GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Flying, 0);
 
 	CharacterOwner->GetCapsuleComponent()->SetCapsuleHalfHeight(45.f);
 	PlayMontage(HookJump_Montage);
 
-
-	//isHookingState = true;
 }
 
 void UPandolFlowerComponent::EndHooking()
@@ -208,16 +195,6 @@ void UPandolFlowerComponent::PlayMontage(UAnimMontage* MontageToPlay)
 	OwningPlayerAnimInstance->Montage_Play(MontageToPlay);
 }
 
-void UPandolFlowerComponent::SetMotionWarpTarget(const FName& InWarpTargetName, const FVector& InTargetPosition, const FRotator& InTargetRotation)
-{
-	if (!MotionWarpingComponent) return;
-
-	if (InTargetRotation != FRotator::ZeroRotator)
-		MotionWarpingComponent->AddOrUpdateWarpTargetFromLocationAndRotation(InWarpTargetName, InTargetPosition, InTargetRotation);
-	else
-		MotionWarpingComponent->AddOrUpdateWarpTargetFromLocation(InWarpTargetName, InTargetPosition);
-}
-
 void UPandolFlowerComponent::OnFlowerNotifyStarted(FName NotifyName, const FBranchingPointNotifyPayload& BranchingPointPayload)
 {
 	if (NotifyName == FName("StartHooking"))
@@ -235,7 +212,7 @@ void UPandolFlowerComponent::OnFlowerMontageEnded(UAnimMontage* Montage, bool bI
 		StartHooking();
 	}
 
-	if (Montage == HookJump_Montage)
+	else if (Montage == HookJump_Montage)
 	{
 		EndHooking();
 	}

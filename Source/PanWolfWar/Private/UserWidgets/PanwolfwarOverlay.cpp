@@ -21,6 +21,14 @@ void UPanwolfwarOverlay::SetFlowerStaminaBarPercent(float Percent)
 	}
 }
 
+void UPanwolfwarOverlay::SetBirdStaminaBarPercent(float Percent)
+{
+	if (BirdStaminaProgressBar)
+	{
+		BirdStaminaProgressBar->SetPercent(Percent);
+	}
+}
+
 void UPanwolfwarOverlay::SetBeerBarVisibility(bool bVisibility)
 {
 	Beer_ProgressBar->SetVisibility(bVisibility ? ESlateVisibility::Visible : ESlateVisibility::Hidden);

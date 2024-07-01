@@ -5,6 +5,9 @@
 #include <PanWolfWar/PanWolfWarCharacter.h>
 #include "Components/ClimbingComponent.h"
 
+#include "GameFramework/SpringArmComponent.h"
+#include "Components/CapsuleComponent.h"
+#include "GameFramework/CharacterMovementComponent.h"
 
 #include "GameFramework/Character.h"
 
@@ -25,17 +28,27 @@ void UPandolfoComponent::Activate(bool bReset)
 {
 	Super::Activate();
 
-	Debug::Print(TEXT("Pandolfo Activate"));
-
 	PanWolfCharacter->AddMappingContext(PandolfoMappingContext, 1);
 
+
+	Capsule->SetCapsuleRadius(35.f);
+	Capsule->SetCapsuleHalfHeight(90.f);
+	CameraBoom->TargetArmLength = 400.f;
+
+	PanWolfCharacter->bUseControllerRotationPitch = false;
+	PanWolfCharacter->bUseControllerRotationYaw = false;
+
+	PanWolfCharacter->SetTransformationCharacter(SkeletalMeshAsset, Anim);
+
+	PanWolfCharacter->GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Falling);
+	PanWolfCharacter->GetCharacterMovement()->MaxFlySpeed = 0.f;
+
+	ClimbingComponent->SetAnimationBindings();
 }
 
 void UPandolfoComponent::Deactivate()
 {
 	Super::Deactivate();
-
-	Debug::Print(TEXT("Pandolfo Deactivate"));
 
 	PanWolfCharacter->RemoveMappingContext(PandolfoMappingContext);
 	ClimbingComponent->Deactivate();
@@ -44,6 +57,9 @@ void UPandolfoComponent::Deactivate()
 void UPandolfoComponent::BeginPlay()
 {
 	Super::BeginPlay();
+
+	Capsule = PanWolfCharacter->GetCapsuleComponent();
+	CameraBoom = PanWolfCharacter->GetCameraBoom();
 }
 
 void UPandolfoComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)

@@ -16,14 +16,16 @@ UPanWolfComponent::UPanWolfComponent()
 
 void UPanWolfComponent::Activate(bool bReset)
 {
-	Debug::Print(TEXT("PanWolf Activate"));
+	Super::Activate();
 
 	PanWolfCharacter->AddMappingContext(PanWolfMappingContext, 1);
+
+	PanWolfCharacter->SetTransformationCharacter(SkeletalMeshAsset, Anim);
 }
 
 void UPanWolfComponent::Deactivate()
 {
-	Debug::Print(TEXT("PanWolf Deactivate"));
+	Super::Deactivate();
 
 	PanWolfCharacter->RemoveMappingContext(PanWolfMappingContext);
 }

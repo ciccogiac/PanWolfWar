@@ -20,7 +20,7 @@ public:
 
 
 
-	virtual bool Interact( ACharacter* _CharacterOwner = nullptr);
+	virtual bool Interact( ACharacter* _CharacterOwner = nullptr) override;
 	void SetMovingState(const bool state , const float WalkSpeed , const float Mass);
 	virtual void Move(const FInputActionValue& Value) override;
 
@@ -28,9 +28,9 @@ public:
 
 
 private:
-
 	void SetObjectlocation(bool bForwardDirection, float DirectionSpeed, bool bRotate = false);
 	void SetCharacterPosition();
+
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Object Movement", meta = (AllowPrivateAccess = "true"))
 	class UPhysicsConstraintComponent* PhysicsConstraintComponent;

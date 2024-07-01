@@ -7,7 +7,7 @@
 #include "CharacterInterface.generated.h"
 
 class UTransformationComponent;
-class UAttributeComponent;
+//class UAttributeComponent;
 
 // This class does not need to be modified.
 UINTERFACE(MinimalAPI)
@@ -24,6 +24,7 @@ class PANWOLFWAR_API ICharacterInterface
 	GENERATED_BODY()
 
 public:
-	 virtual UAttributeComponent* GetAttributeComponent() const = 0;
+	 //virtual UAttributeComponent* GetAttributeComponent() const = 0;
+	 virtual UTransformationComponent* GetTransformationComponent()  const = 0;
 
 };

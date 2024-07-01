@@ -1,6 +1,3 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
-
 #include "Actors/InteractableObject.h"
 
 #include "Interfaces/InteractInterface.h"
@@ -13,6 +10,8 @@
 
 #include "Components/WidgetComponent.h"
 
+#pragma region Initialization
+
 AInteractableObject::AInteractableObject()
 {
 	PrimaryActorTick.bCanEverTick = false;
@@ -20,7 +19,6 @@ AInteractableObject::AInteractableObject()
 	StaticMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("MeshComponent"));
 	StaticMesh->SetupAttachment(GetRootComponent());
 
-	InitializeBoxComponents();
 }
 
 void AInteractableObject::InitializeBoxComponents()
@@ -53,14 +51,14 @@ void AInteractableObject::InitializeBoxComponents()
 			InteractionWidgetArray[i] = CreateDefaultSubobject<UWidgetComponent>(*FString::Printf(TEXT("InteractionWidget%d"), i));
 			if (InteractionWidgetArray[i])
 			{
-				 InteractionWidgetArray[i]->SetupAttachment(BoxComponentArray[i]);
-				 InteractionWidgetArray[i]->SetRelativeRotation(FQuat(0.f,0.f,180.f,0.f));
-				 const FVector WidgetLocation = InteractionWidgetArray[i]->GetRelativeLocation() + FVector(BoxComponentArray[i]->GetScaledBoxExtent().X, 0.f, 0.f);
-				 InteractionWidgetArray[i]->SetRelativeLocationAndRotation(WidgetLocation,FQuat(0.f, 0.f, 180.f, 0.f));
-				 InteractionWidgetArray[i]->SetWidgetSpace(EWidgetSpace::Screen);
-				 InteractionWidgetArray[i]->SetVisibility(false);
+				InteractionWidgetArray[i]->SetupAttachment(BoxComponentArray[i]);
+				InteractionWidgetArray[i]->SetRelativeRotation(FQuat(0.f, 0.f, 180.f, 0.f));
+				const FVector WidgetLocation = InteractionWidgetArray[i]->GetRelativeLocation() + FVector(BoxComponentArray[i]->GetScaledBoxExtent().X, 0.f, 0.f);
+				InteractionWidgetArray[i]->SetRelativeLocationAndRotation(WidgetLocation, FQuat(0.f, 0.f, 180.f, 0.f));
+				InteractionWidgetArray[i]->SetWidgetSpace(EWidgetSpace::Screen);
+				InteractionWidgetArray[i]->SetVisibility(false);
 			}
-			
+
 		}
 	}
 }
@@ -68,7 +66,7 @@ void AInteractableObject::InitializeBoxComponents()
 void AInteractableObject::BeginPlay()
 {
 	Super::BeginPlay();
-	
+
 	for (int32 i = 0; i < BoxComponentArray.Num(); ++i)
 	{
 		if (BoxComponentArray[i])
@@ -78,46 +76,29 @@ void AInteractableObject::BeginPlay()
 		}
 	}
 
+	Tags.Add(FName(GetSelectedFName()));
+
 }
 
-
-bool AInteractableObject::Interact(ACharacter* _CharacterOwner)
+FName AInteractableObject::GetSelectedFName() const
 {
-	CharacterOwner = _CharacterOwner;
-	return true;
+	switch (TransformationObjectType)
+	{
+	case ETransformationObjectTypes::ETOT_Pandolfo_Object:
+		return FName(TEXT("Pandolfo_Object"));
+	case ETransformationObjectTypes::ETOT_PanWolf_Object:
+		return FName(TEXT("PanWolf_Object"));
+	case ETransformationObjectTypes::ETOT_PandolFlower_Object:
+		return FName(TEXT("PandolFlower_Object"));
+	case ETransformationObjectTypes::ETOT_PanBird_Object:
+		return FName(TEXT("PanBird_Object"));
+	default:
+		return FName(TEXT("Pandolfo_Object"));
+	}
 }
 
-void AInteractableObject::Move(const FInputActionValue& Value)
-{
-}
+#pragma endregion
 
-void AInteractableObject::BoxCollisionEnter(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
-{
-		
-		IInteractInterface* InteractInterface = Cast<IInteractInterface>(OtherActor);
-		if (InteractInterface && InteractInterface->SetOverlappingObject(this))
-		{
-			//if (BoxComponent) { BoxComponent->GetChildComponent(1)->SetVisibility(false); }
-				BoxComponent = Cast<UBoxComponent>(OverlappedComponent);
-				SetInteractWidget(BoxComponent->GetChildComponent(1));
-				SetInteractWidgetVisibility(true);
-				//BoxComponent->GetChildComponent(1)->SetVisibility(true);
-		}
-}
-
-void AInteractableObject::BoxCollisionExit(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
-{
-		//if(BoxComponent)BoxComponent->GetChildComponent(1)->SetVisibility(false);
-		SetInteractWidgetVisibility(false);
-
-		IInteractInterface* InteractInterface = Cast<IInteractInterface>(OtherActor);
-		if (InteractInterface && InteractInterface->SetOverlappingObject(this, false))
-		{		
-			    SetInteractWidget(nullptr);
-				BoxComponent = nullptr;
-				
-		}
-}
 
 FVector2D AInteractableObject::Get8DirectionVector(const FVector2D& InputVector)
 {
@@ -168,3 +149,46 @@ FVector2D AInteractableObject::Get8DirectionVector(const FVector2D& InputVector)
 
 	return FVector2D(0.0f, 0.0f);  // Default, should not be reached
 }
+
+bool AInteractableObject::Interact(ACharacter* _CharacterOwner)
+{
+	CharacterOwner = _CharacterOwner;
+	return true;
+}
+
+void AInteractableObject::Move(const FInputActionValue& Value)
+{
+}
+
+#pragma region Collision
+
+void AInteractableObject::BoxCollisionEnter(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
+{
+
+	IInteractInterface* InteractInterface = Cast<IInteractInterface>(OtherActor);
+	if (InteractInterface && InteractInterface->SetOverlappingObject(this))
+	{
+		BoxComponent = Cast<UBoxComponent>(OverlappedComponent);
+		SetInteractWidget(BoxComponent->GetChildComponent(1));
+		SetInteractWidgetVisibility(true);
+	}
+}
+
+void AInteractableObject::BoxCollisionExit(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
+{
+	SetInteractWidgetVisibility(false);
+
+	IInteractInterface* InteractInterface = Cast<IInteractInterface>(OtherActor);
+	if (InteractInterface && InteractInterface->SetOverlappingObject(this, false))
+	{
+		SetInteractWidget(nullptr);
+		BoxComponent = nullptr;
+
+	}
+}
+
+#pragma endregion
+
+
+
+

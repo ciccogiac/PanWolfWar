@@ -7,15 +7,6 @@
 #include "AttributeComponent.generated.h"
 
 class UPanwolfwarOverlay;
-class UTransformationComponent;
-
-UENUM(BlueprintType)
-enum class EAttributeState : uint8
-{
-	EAS_Normal UMETA(DisplayName = "Normal"),
-	EAS_ConsumingBeer UMETA(DisplayName = "ConsumingBeer"),
-	EAS_ConsumingFlower UMETA(DisplayName = "ConsumingFlower"),
-};
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class PANWOLFWAR_API UAttributeComponent : public UActorComponent
@@ -24,34 +15,41 @@ class PANWOLFWAR_API UAttributeComponent : public UActorComponent
 
 public:	
 	UAttributeComponent();
-	
+
+	float GetHealthPercent();
+	bool IsAlive();
+	void AddHealth(float healthToAdd);
+	void ReceiveDamage(float Damage);
+
+	void AddBeers(int32 NumberOfBeers);
+	bool ConsumeBeer();
+	bool ConsumingBeer();
+
+	float GetFlowerStaminaPercent();
+	bool ConsumeFlowerStamina();
+	bool ConsumingFlowerStamina();
+	void RegenFlowerStamina();
+
+	float GetBirdStaminaPercent();
+	bool ConsumeBirdStamina();
+	bool ConsumingBirdStamina();
+	void RegenBirdStamina();
 
 protected:
 	virtual void BeginPlay() override;
-	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
 private:
 
-	EAttributeState AttributeState = EAttributeState::EAS_Normal;
+	#pragma region Variables
 
-	// Timer handle
-	FTimerHandle TimerHandle;
-	FTimerHandle RegenFlower_TimerHandle;
-
-	void ConsumingBeer();
-	void ConsumingFlowerStamina();
-	void RegenFlowerStamina();
-
-#pragma region Variables
-
-	//Current Health
+	// Health
 	UPROPERTY(EditAnywhere, Category = "Actor Attributes")
 	float Health;
 
 	UPROPERTY(EditAnywhere, Category = "Actor Attributes")
 	float MaxHealth;
 
-	//Current Stamina
+	//Flower Stamina
 	UPROPERTY(EditAnywhere, Category = "Actor Attributes")
 	float FlowerStamina;
 
@@ -61,6 +59,23 @@ private:
 	UPROPERTY(EditAnywhere, Category = "Actor Attributes")
 	float FlowerStaminaRegenRate = 0.4f;
 
+	UPROPERTY(EditAnywhere, Category = "Actor Attributes")
+	float FlowerStaminaCost = 0.25f;
+
+	//Bird Stamina
+	UPROPERTY(EditAnywhere, Category = "Actor Attributes")
+	float BirdStamina;
+
+	UPROPERTY(EditAnywhere, Category = "Actor Attributes")
+	float MaxBirdStamina;
+
+	UPROPERTY(EditAnywhere, Category = "Actor Attributes")
+	float BirdStaminaRegenRate = 0.4f;
+
+	UPROPERTY(EditAnywhere, Category = "Actor Attributes")
+	float BirdStaminaCost = 0.25f;
+
+	//Beers
 	UPROPERTY(EditAnywhere, Category = "Actor Attributes")
 	int32 Beers;
 
@@ -76,38 +91,18 @@ private:
 	float BeerConsumingMAX = 100.f;
 
 	
-	UPROPERTY(EditAnywhere, Category = "Actor Attributes")
-	float FlowerStaminaCost = 0.25f;
 
-#pragma endregion
 
+	#pragma endregion
+
+	#pragma region HUD
 
 	UPanwolfwarOverlay* PanwolfwarOverlay;
 
 	UPROPERTY(EditDefaultsOnly, Category = HUD)
 	TSubclassOf<UPanwolfwarOverlay> PanwolfwarOverlayClass;
 
-	UTransformationComponent* TransformationComponent;
+	#pragma endregion
 
-	bool bCanRegenFlower = false;
-
-public:
-	void ReceiveDamage(float Damage);
-	bool ConsumeFlowerStamina();
-	float GetHealthPercent();
-	float GetFlowerStaminaPercent();
-	bool IsAlive();
-	void AddBeers(int32 NumberOfBeers);
-	bool ConsumeBeer();
-	void AddHealth(float healthToAdd);
-
-	void SetCanRegenFlower(bool Value);
-
-	FORCEINLINE int32 GetBeers() const { return Beers; }
-	FORCEINLINE float GetFlowerStamina() const { return FlowerStamina; }
-
-	FORCEINLINE void SetTransformationComponent(UTransformationComponent* _TransformationComponent) { TransformationComponent = _TransformationComponent; }
-	FORCEINLINE bool IsInConsumingState() const { return AttributeState != EAttributeState::EAS_Normal; }
-	FORCEINLINE EAttributeState GetAttributeState() const { return AttributeState; }
 		
 };

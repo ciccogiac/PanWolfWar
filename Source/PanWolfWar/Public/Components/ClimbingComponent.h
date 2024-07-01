@@ -7,7 +7,6 @@
 #include "ClimbingComponent.generated.h"
 
 class UCharacterMovementComponent;
-class UMotionWarpingComponent;
 class UCapsuleComponent;
 class UAnimMontage;
 struct FInputActionValue;
@@ -51,6 +50,8 @@ public:
 	void ClimbDownActivate();
 	void ClimbDownDeActivate();
 	void Landed();
+
+	void SetAnimationBindings();
 
 	#pragma endregion
 
@@ -157,7 +158,6 @@ private:
 
 	#pragma region MotionWarping
 
-	void SetMotionWarpTarget(const FName& InWarpTargetName, const FVector& InTargetPosition, const FRotator& InTargetRotation = FRotator::ZeroRotator);
 	bool TryStartUponVaulting();
 	bool CanStartUponVaulting(FVector& OutVaultStartPosition, FVector& OutVaultLandPosition);
 
@@ -176,7 +176,6 @@ private:
 	APanWolfWarCharacter* PanWolfCharacter;
 	UCharacterMovementComponent* MovementComponent;
 	UCapsuleComponent* CapsuleComponent;
-	UMotionWarpingComponent* MotionWarpingComponent;
 
 	UPROPERTY()
 	UAnimInstance* OwningPlayerAnimInstance;
