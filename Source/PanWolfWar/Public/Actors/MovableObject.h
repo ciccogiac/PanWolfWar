@@ -26,6 +26,8 @@ public:
 
 	void MoveObject(FVector2D& MovementVector);
 
+protected:
+	virtual void BeginPlay() override;
 
 private:
 	void SetObjectlocation(bool bForwardDirection, float DirectionSpeed, bool bRotate = false);

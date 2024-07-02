@@ -4,20 +4,12 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
+#include "Interfaces/InteractInterface.h"
 #include "InteractableObject.generated.h"
 
 class UCharacterMovementComponent;
 class UCapsuleComponent;
 struct FInputActionValue;
-
-UENUM(BlueprintType)
-enum class ETransformationObjectTypes : uint8
-{
-	ETOT_Pandolfo_Object UMETA(DisplayName = "Pandolfo_Object"),
-	ETOT_PanWolf_Object UMETA(DisplayName = "PanWolf_Object"),
-	ETOT_PandolFlower_Object UMETA(DisplayName = "PandolFlower_Object"),
-	ETOT_PanBird_Object UMETA(DisplayName = "PanBird_Object")
-};
 
 UCLASS()
 class PANWOLFWAR_API AInteractableObject : public AActor
@@ -34,7 +26,6 @@ protected:
 	virtual void BeginPlay() override;
 
 	void InitializeBoxComponents();
-	FName GetSelectedFName() const;
 	FVector2D Get8DirectionVector(const FVector2D& InputVector);
 
 	ACharacter* CharacterOwner;
@@ -63,10 +54,10 @@ protected:
 	int N_InteractBox=4;
 
 	UFUNCTION()
-	void BoxCollisionEnter(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
+	virtual void BoxCollisionEnter(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
 
 	UFUNCTION()
-	void BoxCollisionExit(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
+	virtual void BoxCollisionExit(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
 
 	FORCEINLINE void SetInteractWidget(USceneComponent* _InteractWidget) { InteractWidget = _InteractWidget; };
 

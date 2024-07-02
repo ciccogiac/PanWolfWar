@@ -6,6 +6,15 @@
 #include "UObject/Interface.h"
 #include "InteractInterface.generated.h"
 
+UENUM(BlueprintType)
+enum class ETransformationObjectTypes : uint8
+{
+	ETOT_Pandolfo_Object UMETA(DisplayName = "Pandolfo_Object"),
+	ETOT_PanWolf_Object UMETA(DisplayName = "PanWolf_Object"),
+	ETOT_PandolFlower_Object UMETA(DisplayName = "PandolFlower_Object"),
+	ETOT_PanBird_Object UMETA(DisplayName = "PanBird_Object")
+};
+
 // This class does not need to be modified.
 UINTERFACE(MinimalAPI)
 class UInteractInterface : public UInterface
@@ -20,7 +29,8 @@ class PANWOLFWAR_API IInteractInterface
 {
 	GENERATED_BODY()
 
-	// Add interface functions to this class. This is the class that will be inherited to implement this interface.
 public:
 	virtual bool SetOverlappingObject(class AInteractableObject* InteractableObject, bool bEnter=true) = 0;
+
+	static FName GetSelectedFName(ETransformationObjectTypes TransformationObjectType);
 };

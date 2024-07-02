@@ -25,11 +25,13 @@ void UAttributeComponent::BeginPlay()
 
 	if (PanwolfwarOverlayClass)
 	{
-		PanwolfwarOverlay->SetBeers(MaxBeers);
+		PanwolfwarOverlay->SetBeers(Beers);
 		PanwolfwarOverlay->SetHealthBarPercent(0.f);
-		PanwolfwarOverlay->SetFlowerStaminaBarPercent(MaxFlowerStamina);
-		PanwolfwarOverlay->SetBirdStaminaBarPercent(MaxBirdStamina);
-		PanwolfwarOverlay->SetBeerBarPercent(1.f);
+		PanwolfwarOverlay->SetFlowerStaminaBarPercent(FlowerStamina);
+		PanwolfwarOverlay->SetBirdStaminaBarPercent(BirdStamina);
+
+	    Beers > 0 ? PanwolfwarOverlay->SetBeerBarPercent(1.f) : PanwolfwarOverlay->SetBeerBarPercent(0.f);
+		
 	}
 
 }
@@ -63,25 +65,40 @@ void UAttributeComponent::AddHealth(float healthToAdd)
 
 #pragma region Wolf
 
+bool UAttributeComponent::IsBeerInventoryFull()
+{
+	return Beers >= MaxBeers;
+}
+
 void UAttributeComponent::AddBeers(int32 NumberOfBeers)
 {
 	Beers = FMath::Clamp(Beers + NumberOfBeers, 0.f, MaxBeers);
 
 	if (PanwolfwarOverlay)
+	{
 		PanwolfwarOverlay->SetBeers(Beers);
+		PanwolfwarOverlay->SetBeerBarPercent(1);
+	}
+		
 
 }
 
 bool UAttributeComponent::ConsumeBeer()
 {
-	if (Beers <= 0) return false;
+	if (Beers < 0) return false;
 
-	Beers = FMath::Clamp(Beers - 1, 0.f, MaxHealth);
+	if (BeerConsuming < 8.f && Beers >0)
+	{
+		Beers = FMath::Clamp(Beers - 1, 0.f, MaxHealth);
+		BeerConsuming = BeerConsumingMAX;
+	}
+	else if (BeerConsuming < 8.f &&  Beers == 0)
+		return false;
+		
+
 	if (PanwolfwarOverlay)
 	{
 		PanwolfwarOverlay->SetBeers(Beers);
-		BeerConsuming = BeerConsumingMAX;
-		PanwolfwarOverlay->SetBeerBarPercent(1);
 	}
 
 	return true;
@@ -101,6 +118,11 @@ bool UAttributeComponent::ConsumingBeer()
 		return true;
 }
 
+void UAttributeComponent::AddBeerStamina(float Value)
+{
+	BeerConsuming = FMath::Clamp(BeerConsuming + Value, 0.f, BeerConsumingMAX);
+	PanwolfwarOverlay->SetBeerBarPercent(BeerConsuming / BeerConsumingMAX);
+}
 
 #pragma endregion
 
@@ -138,6 +160,12 @@ bool UAttributeComponent::ConsumingFlowerStamina()
 	return true;
 }
 
+void UAttributeComponent::AddFlowerStamina(float Value)
+{
+	FlowerStamina = FMath::Clamp(FlowerStamina + Value, 0.f, MaxFlowerStamina);
+	PanwolfwarOverlay->SetFlowerStaminaBarPercent(FlowerStamina / MaxFlowerStamina);
+}
+
 #pragma endregion
 
 #pragma region Bird
@@ -173,7 +201,17 @@ bool UAttributeComponent::ConsumingBirdStamina()
 	return true;
 }
 
+void UAttributeComponent::AddBirdStamina(float Value)
+{
+	BirdStamina = FMath::Clamp(BirdStamina + Value, 0.f, MaxBirdStamina);
+	PanwolfwarOverlay->SetBirdStaminaBarPercent(BirdStamina / MaxBirdStamina);
+}
 #pragma endregion
 
+
+void UAttributeComponent::SetTransformationIcon(bool bVisibility, bool bRight)
+{
+	PanwolfwarOverlay->SetTransformationIcon(bVisibility, bRight);
+}
 
 

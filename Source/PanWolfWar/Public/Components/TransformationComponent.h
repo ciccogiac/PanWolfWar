@@ -4,7 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
-
+#include "Interfaces/InteractInterface.h"
 #include <PanWolfWar/CharacterStates.h>
 
 #include "TransformationComponent.generated.h"
@@ -13,6 +13,7 @@
 class UTransformationWidget;
 class UNiagaraSystem;
 class UPandolFlowerComponent;
+class UInputAction;
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class PANWOLFWAR_API UTransformationComponent : public UActorComponent
@@ -24,12 +25,16 @@ public:
 
 	void SelectRightTransformation();
 	void SelectLeftTransformation();
+	void SelectUPTransformation();
 	void ApplyTrasformation();
+	void AnnulTrasnformation();
 
 	void SetTransformation(ETransformationState NewTransformationState, ETransformationState PreviousTransformationState);
 
 	void SetCanRegenFlower(bool Value);
 	void SetCanRegenBird(bool Value);
+
+	bool AddItemStamina(ETransformationObjectTypes TransformationItemType,float Value);
 
 	UFUNCTION(BlueprintCallable)
 	void SelectDesiredTransformation(int32 TransformationState_ID);
@@ -83,5 +88,9 @@ private:
 
 #pragma endregion
 
+public:
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	UInputAction* AnnulTransformationAction;
 	
 };

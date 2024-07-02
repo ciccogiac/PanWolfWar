@@ -22,6 +22,7 @@ public:
 	void SetBeerBarVisibility(bool bVisibility);
 	void SetBeerBarPercent(float Percent);
 	void SetBeers(int32 Beers);
+	void SetTransformationIcon(bool bVisibility,bool bRight);
 
 private:
 
@@ -39,5 +40,11 @@ private:
 
 	UPROPERTY(meta = (BindWidget))
 	class UProgressBar* Beer_ProgressBar;
+
+	UPROPERTY(meta = (BindWidget))
+	class UImage* Right_TR_Icon;
+
+	UPROPERTY(meta = (BindWidget))
+	class UImage* Left_TR_Icon;
 	
 };

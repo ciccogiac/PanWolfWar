@@ -30,7 +30,6 @@ class PANWOLFWAR_API UTransformationWidget : public UUserWidget
 	GENERATED_BODY()
 
 public:
-	void SelectTransformation(const ETransformationState SelectedState);
 	void SetTransformation(const ETransformationState SelectedState);
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "TransformationMap")
@@ -45,11 +44,6 @@ protected:
 	UPROPERTY(meta = (BindWidget))
 	class UImage* Transformation_Image;
 
-	UPROPERTY(meta = (BindWidget))
-	class UImage* Arrow_Left;
-
-	UPROPERTY(meta = (BindWidget))
-	class UImage* Arrow_Right;
 
 private:
 	FTransformationImage* GetTransformationInfo(const ETransformationState SelectedState);

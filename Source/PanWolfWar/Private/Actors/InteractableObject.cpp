@@ -1,6 +1,5 @@
 #include "Actors/InteractableObject.h"
 
-#include "Interfaces/InteractInterface.h"
 #include "Components/BoxComponent.h"
 #include "Components/ArrowComponent.h"
 
@@ -76,26 +75,10 @@ void AInteractableObject::BeginPlay()
 		}
 	}
 
-	Tags.Add(FName(GetSelectedFName()));
+	Tags.Add(FName(IInteractInterface::GetSelectedFName(TransformationObjectType)));
 
 }
 
-FName AInteractableObject::GetSelectedFName() const
-{
-	switch (TransformationObjectType)
-	{
-	case ETransformationObjectTypes::ETOT_Pandolfo_Object:
-		return FName(TEXT("Pandolfo_Object"));
-	case ETransformationObjectTypes::ETOT_PanWolf_Object:
-		return FName(TEXT("PanWolf_Object"));
-	case ETransformationObjectTypes::ETOT_PandolFlower_Object:
-		return FName(TEXT("PandolFlower_Object"));
-	case ETransformationObjectTypes::ETOT_PanBird_Object:
-		return FName(TEXT("PanBird_Object"));
-	default:
-		return FName(TEXT("Pandolfo_Object"));
-	}
-}
 
 #pragma endregion
 
@@ -171,7 +154,9 @@ void AInteractableObject::BoxCollisionEnter(UPrimitiveComponent* OverlappedCompo
 		BoxComponent = Cast<UBoxComponent>(OverlappedComponent);
 		SetInteractWidget(BoxComponent->GetChildComponent(1));
 		SetInteractWidgetVisibility(true);
+
 	}
+
 }
 
 void AInteractableObject::BoxCollisionExit(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
@@ -185,6 +170,7 @@ void AInteractableObject::BoxCollisionExit(UPrimitiveComponent* OverlappedCompon
 		BoxComponent = nullptr;
 
 	}
+
 }
 
 #pragma endregion

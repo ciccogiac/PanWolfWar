@@ -4,6 +4,7 @@
 #include "UserWidgets/PanwolfwarOverlay.h"
 #include "Components/ProgressBar.h"
 #include "Components/TextBlock.h"
+#include "Components/Image.h"
 
 void UPanwolfwarOverlay::SetHealthBarPercent(float Percent)
 {
@@ -50,4 +51,10 @@ void UPanwolfwarOverlay::SetBeers(int32 Beer)
 		const FText Text = FText::FromString(String);
 		BeerText->SetText(Text);
 	}
+}
+
+void UPanwolfwarOverlay::SetTransformationIcon(bool bVisibility, bool bRight)
+{
+	ESlateVisibility NewVisibility = bVisibility ? ESlateVisibility::Visible : ESlateVisibility::Hidden;
+	bRight ? Right_TR_Icon->SetVisibility(NewVisibility) : Left_TR_Icon-> SetVisibility(NewVisibility);
 }

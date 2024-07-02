@@ -60,7 +60,7 @@ public:
 	UInputAction* TransformationSelectLeftAction;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input| Transformation")
-	UInputAction* TransformationApply;
+	UInputAction* TransformationSelectUPAction;
 
 public:
 	FORCEINLINE UClimbingComponent* GetClimbingComponent()  const { return ClimbingComponent; }

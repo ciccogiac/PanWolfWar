@@ -51,16 +51,18 @@ void UTransformationComponent::BeginPlay()
 
 void UTransformationComponent::SelectRightTransformation()
 {
-	DesiredTransformationState_ID = (DesiredTransformationState_ID + 1) % PossibleTransformationState.Num();
-	TransformationWidget->SelectTransformation(PossibleTransformationState[DesiredTransformationState_ID]);
+	SelectDesiredTransformation(3);
 }
 
 void UTransformationComponent::SelectLeftTransformation()
 {
-	DesiredTransformationState_ID -= 1;
-	if (DesiredTransformationState_ID < 0) { DesiredTransformationState_ID = PossibleTransformationState.Num() - 1; }
 
-	TransformationWidget->SelectTransformation(PossibleTransformationState[DesiredTransformationState_ID]);
+	SelectDesiredTransformation(2);
+}
+
+void UTransformationComponent::SelectUPTransformation()
+{
+	SelectDesiredTransformation(1);
 }
 
 void UTransformationComponent::SelectDesiredTransformation(int32 TransformationState_ID)
@@ -105,6 +107,8 @@ void UTransformationComponent::SetTransformation(ETransformationState NewTransfo
 
 		ExecuteTransformation(NewTransformationState);
 		HandleComponentActivation(NewTransformationState, PreviousTransformationState);
+		Attributes->SetTransformationIcon(false, false);
+		Attributes->SetTransformationIcon(false, true);
 		break;
 
 	case ETransformationState::ETS_Transforming:
@@ -121,6 +125,7 @@ void UTransformationComponent::SetTransformation(ETransformationState NewTransfo
 	case ETransformationState::ETS_PanFlower:
 
 		if (!bCanRegenFlower || !Attributes->ConsumeFlowerStamina()) { CurrentTransformationState = PreviousTransformationState; break; }
+		//if (!Attributes->ConsumeFlowerStamina()) { CurrentTransformationState = PreviousTransformationState; break; }
 		ExecuteTransformation(NewTransformationState);
 		HandleComponentActivation(NewTransformationState, PreviousTransformationState);
 		GetWorld()->GetTimerManager().SetTimer(Transformation_TimerHandle, [this, NewTransformationState]() {this->ConsumingTransformation(NewTransformationState); }, 0.05f, true);
@@ -128,6 +133,7 @@ void UTransformationComponent::SetTransformation(ETransformationState NewTransfo
 
 	case ETransformationState::ETS_PanBird:
 		if (!bCanRegenBird || !Attributes->ConsumeBirdStamina()) { CurrentTransformationState = PreviousTransformationState; break; }
+		//if (!Attributes->ConsumeBirdStamina()) { CurrentTransformationState = PreviousTransformationState; break; }
 		ExecuteTransformation(NewTransformationState);
 		HandleComponentActivation(NewTransformationState, PreviousTransformationState);
 		GetWorld()->GetTimerManager().SetTimer(Transformation_TimerHandle, [this, NewTransformationState]() {this->ConsumingTransformation(NewTransformationState); }, 0.05f, true);
@@ -233,6 +239,14 @@ void UTransformationComponent::HandleComponentActivation(ETransformationState Ne
 	}
 }
 
+void UTransformationComponent::AnnulTrasnformation()
+{
+	if (CurrentTransformationState == ETransformationState::ETS_Pandolfo || CurrentTransformationState == ETransformationState::ETS_Transforming) return;
+
+	GetWorld()->GetTimerManager().ClearTimer(Transformation_TimerHandle);
+	SelectDesiredTransformation(0);
+}
+
 #pragma endregion
 
 #pragma region FlowerRegeneration
@@ -241,17 +255,28 @@ void UTransformationComponent::SetCanRegenFlower(bool Value)
 {
 	bCanRegenFlower = Value;
 
+
 	if (bCanRegenFlower)
 		GetWorld()->GetTimerManager().SetTimer(RegenFlower_TimerHandle, this, &UTransformationComponent::RegenFlower, 0.05f, true);
 	else
+	{
 		GetWorld()->GetTimerManager().ClearTimer(RegenFlower_TimerHandle);
+
+		if (CurrentTransformationState != ETransformationState::ETS_PanFlower)
+			Attributes->SetTransformationIcon(false, false);
+	}
+
 
 }
 
 void UTransformationComponent::RegenFlower()
 {
 	if (CurrentTransformationState == ETransformationState::ETS_Pandolfo || CurrentTransformationState == ETransformationState::ETS_PanFlower)
+	{
 		Attributes->RegenFlowerStamina();
+		Attributes->SetTransformationIcon(bCanRegenFlower, false);
+	}
+
 }
 
 #pragma endregion
@@ -265,16 +290,49 @@ void UTransformationComponent::SetCanRegenBird(bool Value)
 	if (bCanRegenBird)
 		GetWorld()->GetTimerManager().SetTimer(RegenBird_TimerHandle, this, &UTransformationComponent::RegenBird, 0.05f, true);
 	else
+	{
 		GetWorld()->GetTimerManager().ClearTimer(RegenBird_TimerHandle);
+
+		if (CurrentTransformationState != ETransformationState::ETS_PanBird)
+			Attributes->SetTransformationIcon(false, true);
+	}
+
 
 }
 
 void UTransformationComponent::RegenBird()
 {
 	if (CurrentTransformationState == ETransformationState::ETS_Pandolfo || CurrentTransformationState == ETransformationState::ETS_PanBird)
+	{
 		Attributes->RegenBirdStamina();
+		Attributes->SetTransformationIcon(bCanRegenBird, true);
+	}
+
 }
 
 #pragma endregion
 
+
+bool UTransformationComponent::AddItemStamina(ETransformationObjectTypes TransformationItemType,  float Value)
+{
+	switch (TransformationItemType) 
+	{
+	case ETransformationObjectTypes::ETOT_PanWolf_Object :
+		if (CurrentTransformationState != ETransformationState::ETS_PanWolf) return false;
+		Attributes->AddBeerStamina(Value);
+		return true;
+
+	case ETransformationObjectTypes::ETOT_PandolFlower_Object :
+		if (CurrentTransformationState != ETransformationState::ETS_PanFlower) return false;
+		Attributes->AddFlowerStamina(Value);
+		return true;
+
+	case ETransformationObjectTypes::ETOT_PanBird_Object :
+		if (CurrentTransformationState != ETransformationState::ETS_PanBird) return false;
+		Attributes->AddBirdStamina(Value);
+		return true;
+
+	}
+	return false;
+}
 

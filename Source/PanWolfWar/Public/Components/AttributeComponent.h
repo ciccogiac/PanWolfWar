@@ -22,18 +22,24 @@ public:
 	void ReceiveDamage(float Damage);
 
 	void AddBeers(int32 NumberOfBeers);
+	bool IsBeerInventoryFull();
 	bool ConsumeBeer();
 	bool ConsumingBeer();
+	void AddBeerStamina(float Value);
 
 	float GetFlowerStaminaPercent();
 	bool ConsumeFlowerStamina();
 	bool ConsumingFlowerStamina();
 	void RegenFlowerStamina();
+	void AddFlowerStamina(float Value);
 
 	float GetBirdStaminaPercent();
 	bool ConsumeBirdStamina();
 	bool ConsumingBirdStamina();
 	void RegenBirdStamina();
+	void AddBirdStamina(float Value);
+
+	void SetTransformationIcon(bool bVisibility, bool bRight);
 
 protected:
 	virtual void BeginPlay() override;

@@ -3,4 +3,20 @@
 
 #include "Interfaces/InteractInterface.h"
 
-// Add default functionality here for any IInteractInterface functions that are not pure virtual.
+
+FName IInteractInterface::GetSelectedFName(ETransformationObjectTypes TransformationObjectType)
+{
+		switch (TransformationObjectType)
+	{
+	case ETransformationObjectTypes::ETOT_Pandolfo_Object:
+		return FName(TEXT("Pandolfo_Object"));
+	case ETransformationObjectTypes::ETOT_PanWolf_Object:
+		return FName(TEXT("PanWolf_Object"));
+	case ETransformationObjectTypes::ETOT_PandolFlower_Object:
+		return FName(TEXT("PandolFlower_Object"));
+	case ETransformationObjectTypes::ETOT_PanBird_Object:
+		return FName(TEXT("PanBird_Object"));
+	default:
+		return FName(TEXT("Pandolfo_Object"));
+	}
+}

@@ -35,13 +35,20 @@ AMovableObject::AMovableObject()
 	PhysicsConstraintComponent->SetAngularTwistLimit(EAngularConstraintMotion::ACM_Locked, 45.f);
 
 	StaticMesh->SetSimulatePhysics(true);
-	StaticMesh->SetMassOverrideInKg(NAME_None, 10000.f);
+	//StaticMesh->SetMassOverrideInKg(NAME_None, 10000.f);
 
 	Tags.Add(FName("Movable_Object"));
 
 	N_InteractBox = 4;
 	InitializeBoxComponents();
 
+}
+
+void AMovableObject::BeginPlay()
+{
+	Super::BeginPlay();
+
+	StaticMesh->SetMassOverrideInKg(NAME_None, 10000.f);
 }
 
 bool AMovableObject::Interact(ACharacter* _CharacterOwner  )
