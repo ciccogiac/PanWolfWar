@@ -12,7 +12,7 @@
 
 ABeerMachine::ABeerMachine()
 {
-	PrimaryActorTick.bCanEverTick = false;
+	//PrimaryActorTick.bCanEverTick = false;
 
 	N_InteractBox = 1;
 	InitializeBoxComponents();

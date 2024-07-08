@@ -12,6 +12,16 @@ AFlowerCable::AFlowerCable()
 	CableComponent->SetupAttachment(GetRootComponent());
 }
 
+void AFlowerCable::SetCableLength(float Length)
+{
+	CableComponent->CableLength = Length;
+}
+
+void AFlowerCable::SetCableVisibility(bool NewVisibility)
+{
+	CableComponent->SetVisibility(NewVisibility);
+}
+
 void AFlowerCable::HookCable(const FVector Hook_TargetLocation, const FRotator Hook_TargetRotation, const FVector CharacterLocation)
 {
 	CableComponent->bAttachStart = true;

@@ -15,6 +15,9 @@
 #include "NiagaraComponent.h"
 #include "CharacterActor/FlowerCable.h"
 
+#include "Actors/GrapplePoint.h"
+
+#include "Kismet/GameplayStatics.h"
 
 #pragma region EngineFunctions
 
@@ -44,11 +47,28 @@ void UPandolFlowerComponent::TickComponent(float DeltaTime, ELevelTick TickType,
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
-	if (!bIsHooking)
+	CheckForGrapplePoint();
+
+	if (bInGrapplingAnimation)
 	{
-		SearchHookingPoint();
+		MoveRope();
+		if (bMovingWithGrapple) GrapplingMovement();
 	}
 
+}
+
+void UPandolFlowerComponent::Move(const FInputActionValue& Value)
+{
+	if (bInGrapplingAnimation) return;
+
+	PanWolfCharacter->Move(Value);
+}
+
+void UPandolFlowerComponent::Jump()
+{
+	if (bInGrapplingAnimation) return;
+
+	CharacterOwner->Jump();
 }
 
 #pragma endregion
@@ -58,8 +78,11 @@ void UPandolFlowerComponent::TickComponent(float DeltaTime, ELevelTick TickType,
 void UPandolFlowerComponent::Activate(bool bReset)
 {
 	Super::Activate(bReset);
-
+	//Debug::Print(TEXT("OVA"));
 	PanWolfCharacter->AddMappingContext(PandolFlowerMappingContext, 1);
+
+	PanWolfCharacter->bUseControllerRotationPitch = false;
+	PanWolfCharacter->bUseControllerRotationYaw = false;
 
 	PanWolfCharacter->SetTransformationCharacter(SkeletalMeshAsset, Anim);
 	PanWolfCharacter->GetNiagaraTransformation()->SetAsset(Pandolflower_Niagara);
@@ -71,8 +94,19 @@ void UPandolFlowerComponent::Activate(bool bReset)
 		OwningPlayerAnimInstance->OnMontageEnded.AddDynamic(this, &UPandolFlowerComponent::OnFlowerMontageEnded);
 	}
 
+	//EndCable = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("EndCable"));
+
+	EndCable = NewObject<UStaticMeshComponent>(this, UStaticMeshComponent::StaticClass(), TEXT("EndCable"));
+	EndCable->AttachToComponent(CharacterOwner->GetRootComponent(), FAttachmentTransformRules::SnapToTargetIncludingScale);
+	EndCable->RegisterComponent();
+	EndCable->SetStaticMesh(FlowerCable_EndMesh);
+	EndCable->AddWorldRotation(FQuat(0.f,-90.f,0.f,0.f));
+	EndCable->SetWorldScale3D(FVector(1.5f, 1.5f, 1.5f));
+
 	FlowerCable = GetWorld()->SpawnActor<AFlowerCable>(BP_FlowerCable, CharacterOwner->GetActorLocation(), CharacterOwner->GetActorRotation());
-	FlowerCable->SetAttachEndCable(CharacterOwner->GetMesh(), FName("hand_r"));
+	FAttachmentTransformRules AttachmentRules(EAttachmentRule::SnapToTarget, true);
+	FlowerCable->AttachToComponent(CharacterOwner->GetMesh(), AttachmentRules, FName("hand_l"));
+	FlowerCable->SetAttachEndCable(EndCable);
 
 }
 
@@ -94,92 +128,179 @@ void UPandolFlowerComponent::Deactivate()
 
 void UPandolFlowerComponent::Hook()
 {
-	if (!IsActive()) return;
+	if (!GrapplePointRef) return;
 
-	if (bIsHooking) return;
+	const float DistanceFromGrapplePoint = (CharacterOwner->GetActorLocation() - GrapplePointRef->GetActorLocation()).Length();
 
-	if (!bDidHit) { Debug::Print(TEXT("Noo Hooking Point Find")); return; }
+	if (DistanceFromGrapplePoint <= GrappleThrowDistance && CurrentGrapplePoint != GrapplePointRef)
+	{
+		if (bMovingWithGrapple)
+		{
+			const FVector LaunchVelocity = UKismetMathLibrary::GetDirectionUnitVector(CharacterOwner->GetActorLocation(), GrapplingDestination) * 200.f;
+			CharacterOwner->LaunchCharacter(LaunchVelocity, false, false);
+		}
 
-	if (!SearchHookableObject()) return;
+		bInGrapplingAnimation = true;
+		bMovingWithGrapple = false;
+		CurrentGrapplePoint = GrapplePointRef;
+		GrapplingDestination = CurrentGrapplePoint->GetLandingZone() + FVector(0.f, 0.f, 110.f);
 
-	bIsHooking = true;
-	//Face to HookingTarget
-	const FRotator NewRotation = FRotator(CharacterOwner->GetActorRotation().Pitch, Hook_TargetRotation.Yaw, CharacterOwner->GetActorRotation().Roll);
-	CharacterOwner->SetActorRotation(NewRotation);
-	CharacterOwner->GetCharacterMovement()->DisableMovement();
+		const FRotator NewRotation = UKismetMathLibrary::FindLookAtRotation(CharacterOwner->GetActorLocation(), GrapplingDestination);
+		CharacterOwner->SetActorRotation(FRotator(0.f, NewRotation.Yaw,0.f));
 
-	PlayMontage(ThrowFlowerCable_Montage);
+		RopeBaseLenght = (CharacterOwner->GetActorLocation() - GrapplingDestination).Length();
 
+		CurrentGrapplePoint->Use();
+
+		UAnimMontage* GrappleMontage = CharacterOwner->GetCharacterMovement()->IsFalling() ? GrappleAir_Montage : GrappleGround_Montage;
+		PlayMontage(GrappleMontage);
+	}
 }
 
-void UPandolFlowerComponent::SearchHookingPoint()
+void UPandolFlowerComponent::CheckForGrapplePoint()
 {
-	const FVector CameraForward = FollowCamera->GetForwardVector();
-	const FVector CameraLocation = FollowCamera->GetComponentLocation();
-	const FVector ActorUP = CharacterOwner->GetActorUpVector();
+	const FVector Start = CharacterOwner->GetActorLocation();
+	const FVector End = Start;
 
-	const FVector Start = CameraLocation + CameraForward * 820.f + ActorUP * 44.f;
-	const FVector End = CameraLocation + CameraForward * 1555.f + ActorUP * 333.f;
+	EDrawDebugTrace::Type DebugTraceType = ShowDebugTrace ? EDrawDebugTrace::ForOneFrame : EDrawDebugTrace::None;
+	TArray<FHitResult> outHits;
+	bool bBlockingHits = UKismetSystemLibrary::SphereTraceMultiForObjects(this,Start,End, DetectionRadius, GrapplingObjectTypes,false,TArray<AActor*>(), DebugTraceType, outHits,true);
+
+	if (bBlockingHits)
+	{
+		float HighestDotProduct = 0.7f;
+		AActor* DetectedActor = nullptr;
+
+		for (const FHitResult& hit : outHits)
+		{
+			const FVector CameraForward = FollowCamera->GetForwardVector();
+			const FVector CameraLocation = FollowCamera->GetComponentLocation();
+			const FVector HitActorLocation = hit.GetActor()->GetActorLocation();
+
+			const FVector Direction = UKismetMathLibrary::GetDirectionUnitVector(CameraLocation, HitActorLocation);
+			const double Dot = FVector::DotProduct(CameraForward, Direction);
+
+			if (Dot > HighestDotProduct)
+			{
+				DetectedActor = hit.GetActor();
+				HighestDotProduct = Dot;
+			}
+
+			else
+			{
+				//Deactivate Grapple Point Ref
+				DeactivateGrapplePoint();
+			}
+
+		}
+
+		//Activate Grapple Point Ref
+		ActivateGrapplePoint(DetectedActor);
+	}
+	else
+	{
+		//Deactivate Grapple Point Ref
+		DeactivateGrapplePoint();
+	}
+}
+
+void UPandolFlowerComponent::MoveRope()
+{
+	UAnimMontage* CurrentMontage = OwningPlayerAnimInstance->GetCurrentActiveMontage();
+	float MontagePosition = OwningPlayerAnimInstance->Montage_GetPosition(CurrentMontage);
+
+	UCurveFloat* RopeLength_Curve = CurrentMontage == GrappleGround_Montage ? GroundRopeLength_Curve : AirRopeLength_Curve;
+	const float CableLength = RopeLength_Curve->GetFloatValue(MontagePosition) * RopeBaseLenght;
+	FlowerCable->SetCableLength(CableLength);
+	//Set Cable Length
+
+	UCurveFloat* RopePosition_Curve = CurrentMontage == GrappleGround_Montage ? GroundRopePosition_Curve : AirRopePosition_Curve;
+	const float AlphaLerp = RopePosition_Curve->GetFloatValue(MontagePosition);
+	const FVector HandLocation = CharacterOwner->GetMesh()->GetSocketLocation(FName("hand_r"));
+	const FVector GrappleLocation = CurrentGrapplePoint->GetActorLocation();
+	const FVector NewLocation =  UKismetMathLibrary::VLerp(HandLocation, GrappleLocation, AlphaLerp);
+	//Set Kunai Location
+	EndCable->SetWorldLocation(NewLocation);
+}
+
+void UPandolFlowerComponent::GrapplingMovement()
+{
+	UAnimMontage* CurrentMontage = OwningPlayerAnimInstance->GetCurrentActiveMontage();
+	float MontagePosition = OwningPlayerAnimInstance->Montage_GetPosition(CurrentMontage);
+
+	UCurveFloat* Speed_Curve = CurrentMontage == GrappleGround_Montage ? GroundSpeed_Curve : AirSpeed_Curve;
+	const float AlphaLerp = Speed_Curve->GetFloatValue(MontagePosition);
+	const FVector LerpedVector = UKismetMathLibrary::VLerp(StartingPosition, GrapplingDestination, AlphaLerp);
+
+	UCurveFloat* HeightOffset_Curve = CurrentMontage == GrappleGround_Montage ? GroundHeightOffset_Curve : AirHeightOffset_Curve;
+	const float HeightOffset = HeightOffset_Curve->GetFloatValue(MontagePosition);
+	const FVector NewLocation = LerpedVector + FVector(0.f,0.f, HeightOffset);
+	CharacterOwner->SetActorLocation(NewLocation);
+}
+
+void UPandolFlowerComponent::ActivateGrapplePoint(AActor* DetectedActor)
+{
+	if (!DetectedActor) return;
+
+	const FVector Start = FollowCamera->GetComponentLocation();
+	const FVector End = DetectedActor->GetActorLocation();
 
 	EDrawDebugTrace::Type DebugTraceType = ShowDebugTrace ? EDrawDebugTrace::ForOneFrame : EDrawDebugTrace::None;
 
-	UKismetSystemLibrary::SphereTraceSingle(this, Start, End, SearchHook_Radius, HookingTraceType, false, TArray<AActor*>(), DebugTraceType, FirstTrace, true);
+	FHitResult hit;
+	UKismetSystemLibrary::LineTraceSingle(this, Start, End, HookingTraceType, false, TArray<AActor*>(), DebugTraceType, hit,true);
 
-	if (FirstTrace.bBlockingHit)
+	if (hit.GetActor() != DetectedActor) { DeactivateGrapplePoint(); return; }
+	if (DetectedActor == GrapplePointRef) return;
+
+	AGrapplePoint* GrapplePoint = Cast<AGrapplePoint>(DetectedActor);
+	if (GrapplePoint)
 	{
-		bDidHit = true;
-		DrawDebugPoint(GetWorld(), FirstTrace.ImpactPoint, 25.f, FColor::White);
+		DeactivateGrapplePoint();
+		GrapplePointRef = GrapplePoint;
+		GrapplePointRef->Activate(this);
 	}
-	else
-		bDidHit = false;
+
 }
 
-bool UPandolFlowerComponent::SearchHookableObject()
+void UPandolFlowerComponent::DeactivateGrapplePoint()
 {
-	const FVector Start = FirstTrace.ImpactPoint + FVector(0.f, 0.f, 33.f);
-	const FVector End = FirstTrace.ImpactPoint + FVector(0.f, 0.f, -150.f);
-
-	EDrawDebugTrace::Type DebugTraceType = ShowDebugTrace ? EDrawDebugTrace::ForDuration : EDrawDebugTrace::None;
-
-	UKismetSystemLibrary::SphereTraceSingleForObjects(this, Start, End, SearchObjectHookable_Radius, HookableObjectTypes, false, TArray<AActor*>(), DebugTraceType, SecondTrace, true);
-
-	if (SecondTrace.bBlockingHit)
+	if (GrapplePointRef)
 	{
-
-		if (UKismetMathLibrary::Vector_Distance(CharacterOwner->GetActorLocation(), SecondTrace.ImpactPoint) <= Min_HookingDistance)
-		{
-			Debug::Print(TEXT("Target Too Close"));
-			return false;
-		}
-		Hook_TargetLocation = SecondTrace.ImpactPoint;
-		Hook_TargetRotation = UKismetMathLibrary::FindLookAtRotation(CharacterOwner->GetActorLocation(), Hook_TargetLocation);
-		return true;
+		GrapplePointRef->Deactivate();
+		GrapplePointRef = nullptr;
 	}
-	return false;
 }
 
-void UPandolFlowerComponent::StartHooking()
+void UPandolFlowerComponent::RopeVisibility(bool NewVisibility)
 {
-	const FVector TargetLocation = SecondTrace.ImpactPoint + FVector(0.f, 0.f, 57.5f);
-	DrawDebugPoint(GetWorld(), TargetLocation, 5.f, FColor::Magenta, false, 10.f);
-
-	PanWolfCharacter->SetMotionWarpTarget(FName("HookTarget"), TargetLocation, Hook_TargetRotation);
-	CharacterOwner->GetCharacterMovement()->MaxFlySpeed = 0.f;
-	CharacterOwner->GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Flying, 0);
-
-	CharacterOwner->GetCapsuleComponent()->SetCapsuleHalfHeight(45.f);
-	PlayMontage(HookJump_Montage);
-
+	//SetCableVisibility
+	FlowerCable->SetCableVisibility(NewVisibility);
+	//SetKunaiVisibility
+	EndCable->SetVisibility(NewVisibility);
 }
 
-void UPandolFlowerComponent::EndHooking()
+void UPandolFlowerComponent::ResetMovement()
 {
-	bIsHooking = false;
-	//isHookingState = false;
+	bMovingWithGrapple = false;
+	CurrentGrapplePoint = nullptr;
+	bInGrapplingAnimation = false;
+	CharacterOwner->GetCharacterMovement()->GravityScale = 2.2f;
+}
+
+void UPandolFlowerComponent::ThrowRope()
+{
+	UGameplayStatics::PlaySound2D(this, ThrowRope_Sound);
+}
+
+void UPandolFlowerComponent::StartGrapplingMovement()
+{
+	UGameplayStatics::PlaySound2D(this, GrappleJump_Sound);
+	CharacterOwner->GetCharacterMovement()->GravityScale = 0.0f;
 	CharacterOwner->GetCharacterMovement()->StopMovementImmediately();
-	CharacterOwner->GetCapsuleComponent()->SetCapsuleHalfHeight(90.f);
-	CharacterOwner->GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Walking);
-	FlowerCable->SetAttachStartCable(false);
+	StartingPosition = CharacterOwner->GetActorLocation();
+	CharacterOwner->GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Falling);
+	bMovingWithGrapple = true;
 }
 
 #pragma endregion
@@ -199,7 +320,7 @@ void UPandolFlowerComponent::OnFlowerNotifyStarted(FName NotifyName, const FBran
 {
 	if (NotifyName == FName("StartHooking"))
 	{
-		FlowerCable->HookCable(Hook_TargetLocation, Hook_TargetRotation, CharacterOwner->GetActorLocation());
+		//FlowerCable->HookCable(Hook_TargetLocation, Hook_TargetRotation, CharacterOwner->GetActorLocation());
 
 	}
 
@@ -207,7 +328,7 @@ void UPandolFlowerComponent::OnFlowerNotifyStarted(FName NotifyName, const FBran
 
 void UPandolFlowerComponent::OnFlowerMontageEnded(UAnimMontage* Montage, bool bInterrupted)
 {
-	if (Montage == ThrowFlowerCable_Montage)
+	/*if (Montage == ThrowFlowerCable_Montage)
 	{
 		StartHooking();
 	}
@@ -215,7 +336,7 @@ void UPandolFlowerComponent::OnFlowerMontageEnded(UAnimMontage* Montage, bool bI
 	else if (Montage == HookJump_Montage)
 	{
 		EndHooking();
-	}
+	}*/
 }
 
 #pragma endregion

@@ -18,7 +18,8 @@ public:
 
 	void HookCable(const FVector Hook_TargetLocation, const FRotator Hook_TargetRotation, const FVector CharacterLocation);
 
-
+	void SetCableLength(float Length);
+	void SetCableVisibility(bool NewVisibility);
 	void SetAttachEndCable(USceneComponent* Component, FName SocketName = NAME_None);
 	void SetAttachStartCable(bool Value);
 

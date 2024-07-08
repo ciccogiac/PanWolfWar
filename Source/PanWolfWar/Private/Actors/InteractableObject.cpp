@@ -79,7 +79,6 @@ void AInteractableObject::BeginPlay()
 
 }
 
-
 #pragma endregion
 
 
@@ -147,29 +146,30 @@ void AInteractableObject::Move(const FInputActionValue& Value)
 
 void AInteractableObject::BoxCollisionEnter(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
-
-	IInteractInterface* InteractInterface = Cast<IInteractInterface>(OtherActor);
-	if (InteractInterface && InteractInterface->SetOverlappingObject(this))
+	if (OtherActor->Implements<UInteractInterface>())
 	{
-		BoxComponent = Cast<UBoxComponent>(OverlappedComponent);
-		SetInteractWidget(BoxComponent->GetChildComponent(1));
-		SetInteractWidgetVisibility(true);
-
+		InteractInterface = Cast<IInteractInterface>(OtherActor);
+		if (InteractInterface && InteractInterface->SetOverlappingObject(this))
+		{
+			BoxComponent = Cast<UBoxComponent>(OverlappedComponent);
+			SetInteractWidget(BoxComponent->GetChildComponent(1));
+			SetInteractWidgetVisibility(true);				
+		}
 	}
-
 }
 
 void AInteractableObject::BoxCollisionExit(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
 {
 	SetInteractWidgetVisibility(false);
 
-	IInteractInterface* InteractInterface = Cast<IInteractInterface>(OtherActor);
 	if (InteractInterface && InteractInterface->SetOverlappingObject(this, false))
 	{
 		SetInteractWidget(nullptr);
 		BoxComponent = nullptr;
 
 	}
+
+	InteractInterface = nullptr;
 
 }
 

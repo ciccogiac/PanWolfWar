@@ -11,7 +11,9 @@
 
 ATransformationItem::ATransformationItem()
 {
-	PrimaryActorTick.bCanEverTick = false;
+	PrimaryActorTick.bCanEverTick = true;
+	PrimaryActorTick.bStartWithTickEnabled = false;
+	PrimaryActorTick.SetTickFunctionEnable(false);
 
 	StaticMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("MeshComponent"));
 	StaticMesh->SetupAttachment(GetRootComponent());
@@ -36,23 +38,47 @@ void ATransformationItem::BeginPlay()
 
 }
 
+void ATransformationItem::Tick(float DeltaTime)
+{
+	Super::Tick(DeltaTime);
+
+	//Debug::Print(TEXT("Tickkettio"));
+
+	if (bIsCharacterInside && CharacterInterface && !bRightState)
+	{
+		bRightState = CharacterInterface->GetTransformationComponent()->AddItemStamina(TransformationItemType, StaminaToAdd);
+		if (bRightState)
+			CollectObject();
+	}
+}
+
 
 void ATransformationItem::BoxCollisionEnter(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
 	if (OtherActor->Implements<UCharacterInterface>())
 	{
-		ICharacterInterface* CharacterInterface = Cast<ICharacterInterface>(OtherActor);
+		CharacterInterface = Cast<ICharacterInterface>(OtherActor);
 		if (CharacterInterface)
 		{
-			if (CharacterInterface->GetTransformationComponent()->AddItemStamina(TransformationItemType, StaminaToAdd))
+			bIsCharacterInside = true;
+			bRightState = CharacterInterface->GetTransformationComponent()->AddItemStamina(TransformationItemType, StaminaToAdd);
+			if(bRightState)
 				CollectObject();
+			else
+				PrimaryActorTick.SetTickFunctionEnable(true);
+			//if (CharacterInterface->GetTransformationComponent()->AddItemStamina(TransformationItemType, StaminaToAdd))
+			//	CollectObject();
 		}
 	}
 }
 
 void ATransformationItem::BoxCollisionExit(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
 {
+	CharacterInterface = nullptr;
+	bIsCharacterInside = false;
+	bRightState = false;
 	OverlappedComponent->Deactivate();
+	PrimaryActorTick.SetTickFunctionEnable(false);
 }
 
 void ATransformationItem::CollectObject()

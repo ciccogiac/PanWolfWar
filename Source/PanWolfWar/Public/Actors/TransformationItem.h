@@ -6,6 +6,7 @@
 #include "TransformationItem.generated.h"
 
 class UNiagaraComponent;
+class ICharacterInterface;
 
 UCLASS()
 class PANWOLFWAR_API ATransformationItem : public AActor
@@ -17,6 +18,7 @@ public:
 
 protected:
 	virtual void BeginPlay() override;
+	virtual void Tick(float DeltaTime);
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
 	UStaticMeshComponent* StaticMesh;
@@ -49,5 +51,9 @@ private:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
 	UNiagaraComponent* NiagaraCollectObjectEffect;
+
+	bool bIsCharacterInside=false;
+	ICharacterInterface* CharacterInterface=nullptr;
+	bool bRightState=false;
 
 };

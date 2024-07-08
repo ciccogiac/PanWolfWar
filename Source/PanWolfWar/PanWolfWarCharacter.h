@@ -43,6 +43,13 @@ public:
 
 	void SetMotionWarpTarget(const FName& InWarpTargetName, const FVector& InTargetPosition, const FRotator& InTargetRotation = FRotator::ZeroRotator);
 
+	#pragma region InputCallback
+
+	void Move(const FInputActionValue& Value);
+	void Look(const FInputActionValue& Value);
+
+	#pragma endregion
+
 #pragma endregion
 
 #pragma region ProtectedFunctions
@@ -132,17 +139,13 @@ private:
 #pragma region PrivateFunctions
 private:
 
-	#pragma region InputCallback
-
-	void Move(const FInputActionValue& Value);
-	void Look(const FInputActionValue& Value);
 
 
 	//Interfaces
 
 	virtual bool SetOverlappingObject(AInteractableObject* InteractableObject, bool bEnter = true) override;
 
-	#pragma endregion
+
 
 #pragma endregion
 

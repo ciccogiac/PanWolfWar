@@ -177,7 +177,7 @@ void APanWolfWarCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInpu
 		EnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &APanWolfWarCharacter::Look);
 
 		// Jumping
-		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Started, this, &ACharacter::Jump);
+		//EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Started, this, &ACharacter::Jump);
 		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Completed, this, &ACharacter::StopJumping);
 
 		//Interact
@@ -211,7 +211,9 @@ void APanWolfWarCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInpu
 
 		#pragma region PandolFlower
 
+		EnhancedInputComponent->BindAction(PandolFlowerComponent->MoveAction, ETriggerEvent::Triggered, PandolFlowerComponent, &UPandolFlowerComponent::Move);
 		EnhancedInputComponent->BindAction(PandolFlowerComponent->HookAction, ETriggerEvent::Started, PandolFlowerComponent, &UPandolFlowerComponent::Hook);
+		EnhancedInputComponent->BindAction(PandolFlowerComponent->JumpAction, ETriggerEvent::Started, PandolFlowerComponent, &UPandolFlowerComponent::Jump);
 
 		#pragma endregion
 

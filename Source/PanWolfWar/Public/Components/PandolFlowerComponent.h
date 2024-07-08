@@ -13,6 +13,8 @@ class AFlowerCable;
 class UAnimMontage;
 class UInputMappingContext;
 class UNiagaraSystem;
+class AGrapplePoint;
+struct FInputActionValue;
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class PANWOLFWAR_API UPandolFlowerComponent : public UActorComponent
@@ -25,18 +27,57 @@ public:
 	virtual void Activate(bool bReset = false) override;
 	virtual void Deactivate() override;
 
+	void Move(const FInputActionValue& Value);
+	void Hook();
+	void Jump();
+
 protected:
 	virtual void BeginPlay() override;
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
 
 
-public:
 
-	void Hook();
+
+private:
+
+	void CheckForGrapplePoint();
+	void ActivateGrapplePoint(AActor* DetectedActor);
+	void DeactivateGrapplePoint();
+	void MoveRope();
+	void GrapplingMovement();
+
+	void PlayMontage(UAnimMontage* MontageToPlay);
+
+	UFUNCTION()
+	void OnFlowerNotifyStarted(FName NotifyName, const FBranchingPointNotifyPayload& BranchingPointPayload);
+
+	UFUNCTION()
+	void OnFlowerMontageEnded(UAnimMontage* Montage, bool bInterrupted);
+
+	UFUNCTION(BlueprintCallable)
+	void RopeVisibility(bool NewVisibility);
+
+	UFUNCTION(BlueprintCallable)
+	void ResetMovement();
+
+	UFUNCTION(BlueprintCallable)
+	void ThrowRope();
+
+	UFUNCTION(BlueprintCallable)
+	void StartGrapplingMovement();
+
+public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	UInputAction* HookAction;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	UInputAction* JumpAction;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	UInputAction* MoveAction;
+
 
 private:
 	UPROPERTY()
@@ -58,65 +99,91 @@ private:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	UInputMappingContext* PandolFlowerMappingContext;
 
+
+
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Hooking Params", meta = (AllowPrivateAccess = "true"))
 	bool ShowDebugTrace = false;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Hooking Params", meta = (AllowPrivateAccess = "true"))
 	TEnumAsByte<ETraceTypeQuery> HookingTraceType;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Hooking Params", meta = (AllowPrivateAccess = "true"))
-	TArray<TEnumAsByte<EObjectTypeQuery> > HookableObjectTypes;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Hooking Params", meta = (AllowPrivateAccess = "true"))
-	float SearchHook_Radius = 366.f;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Hooking Params", meta = (AllowPrivateAccess = "true"))
-	float SearchObjectHookable_Radius = 33.f;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Hooking Params", meta = (AllowPrivateAccess = "true"))
-	float Min_HookingDistance = 200.f;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Hooking Params", meta = (AllowPrivateAccess = "true"))
 	TSubclassOf<AFlowerCable> BP_FlowerCable;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Hooking Montages", meta = (AllowPrivateAccess = "true"))
-	UAnimMontage* ThrowFlowerCable_Montage;
+	UAnimMontage* GrappleAir_Montage;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Hooking Montages", meta = (AllowPrivateAccess = "true"))
-	UAnimMontage* HookJump_Montage;
+	UAnimMontage* GrappleGround_Montage;
 
 
 	AFlowerCable* FlowerCable;
 
-	FHitResult FirstTrace;
-	FHitResult SecondTrace;
-	bool bDidHit = false;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Hooking ", meta = (AllowPrivateAccess = "true"))
+	UStaticMesh* FlowerCable_EndMesh;
 
-	bool bIsHooking = false;
-	//bool isHookingState = false;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Hooking ", meta = (AllowPrivateAccess = "true"))
+	UStaticMeshComponent* EndCable;
 
-	FVector  Hook_TargetLocation;
-	FRotator Hook_TargetRotation;
+	bool bInGrapplingAnimation = false;
+	bool bMovingWithGrapple = false;
+	FVector GrapplingDestination;
+	float RopeBaseLenght;
+	FVector StartingPosition;
 
-	void SearchHookingPoint();
-	bool SearchHookableObject();
-	void PlayMontage(UAnimMontage* MontageToPlay);
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Hooking Params", meta = (AllowPrivateAccess = "true"))
+	float DetectionRadius = 2000.f;
 
-	UFUNCTION()
-	void OnFlowerNotifyStarted(FName NotifyName, const FBranchingPointNotifyPayload& BranchingPointPayload);
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Hooking Params", meta = (AllowPrivateAccess = "true"))
+	float GrappleThrowDistance = 1200.f;
 
-	UFUNCTION()
-	void OnFlowerMontageEnded(UAnimMontage* Montage, bool bInterrupted);
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Hooking Params", meta = (AllowPrivateAccess = "true"))
+	TArray<TEnumAsByte<EObjectTypeQuery> > GrapplingObjectTypes;
+	
+	AGrapplePoint* GrapplePointRef;
+	AGrapplePoint* CurrentGrapplePoint;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Hooking Params", meta = (AllowPrivateAccess = "true"))
+	USoundBase* ThrowRope_Sound;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Hooking Params", meta = (AllowPrivateAccess = "true"))
+	USoundBase* GrappleJump_Sound;
+
+	#pragma region Curves
+
+	/** Rope */
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Hooking Params| Curves", meta = (AllowPrivateAccess = "true"))
+	UCurveFloat* AirRopeLength_Curve;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Hooking Params| Curves", meta = (AllowPrivateAccess = "true"))
+	UCurveFloat* GroundRopeLength_Curve;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Hooking Params| Curves", meta = (AllowPrivateAccess = "true"))
+	UCurveFloat* AirRopePosition_Curve;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Hooking Params| Curves", meta = (AllowPrivateAccess = "true"))
+	UCurveFloat* GroundRopePosition_Curve;
+
+	/** Character Movement */
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Hooking Params| Curves", meta = (AllowPrivateAccess = "true"))
+	UCurveFloat* AirSpeed_Curve;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Hooking Params| Curves", meta = (AllowPrivateAccess = "true"))
+	UCurveFloat* GroundSpeed_Curve;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Hooking Params| Curves", meta = (AllowPrivateAccess = "true"))
+	UCurveFloat* AirHeightOffset_Curve;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Hooking Params| Curves", meta = (AllowPrivateAccess = "true"))
+	UCurveFloat* GroundHeightOffset_Curve;
+
+	#pragma endregion
+
 
 public:
-
-	UFUNCTION(BlueprintCallable, Category = "Hooking")
-	void StartHooking();
-
-	UFUNCTION(BlueprintCallable, Category = "Hooking")
-	void EndHooking();
-
-	UFUNCTION(BlueprintCallable, Category = "Hooking")
-	//FORCEINLINE bool GetIsHooking() const { return bIsHooking && !isHookingState; }
-	FORCEINLINE bool GetIsHooking() const { return bIsHooking; }
+	FORCEINLINE float GetDetectionRadius() const { return DetectionRadius; }
+	FORCEINLINE float GetGrappleThrowDistance() const { return GrappleThrowDistance; }
 };

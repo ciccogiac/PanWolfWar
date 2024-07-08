@@ -10,6 +10,7 @@
 class UCharacterMovementComponent;
 class UCapsuleComponent;
 struct FInputActionValue;
+class IInteractInterface;
 
 UCLASS()
 class PANWOLFWAR_API AInteractableObject : public AActor
@@ -31,6 +32,7 @@ protected:
 	ACharacter* CharacterOwner;
 
 	USceneComponent* InteractWidget;
+	IInteractInterface* InteractInterface;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Interact Params", meta = (AllowPrivateAccess = "true"))
 	ETransformationObjectTypes TransformationObjectType = ETransformationObjectTypes::ETOT_Pandolfo_Object;

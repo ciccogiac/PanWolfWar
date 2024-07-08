@@ -19,7 +19,7 @@
 
 AMovableObject::AMovableObject()
 {
-	PrimaryActorTick.bCanEverTick = true;
+	//PrimaryActorTick.bCanEverTick = true;
 
 	PhysicsConstraintComponent = CreateDefaultSubobject<UPhysicsConstraintComponent>(TEXT("PhysicsConstraintComponent"));
 	PhysicsConstraintComponent->SetupAttachment(StaticMesh);

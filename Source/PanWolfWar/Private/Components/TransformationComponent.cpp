@@ -124,8 +124,8 @@ void UTransformationComponent::SetTransformation(ETransformationState NewTransfo
 
 	case ETransformationState::ETS_PanFlower:
 
-		if (!bCanRegenFlower || !Attributes->ConsumeFlowerStamina()) { CurrentTransformationState = PreviousTransformationState; break; }
-		//if (!Attributes->ConsumeFlowerStamina()) { CurrentTransformationState = PreviousTransformationState; break; }
+		//if (!bCanRegenFlower || !Attributes->ConsumeFlowerStamina()) { CurrentTransformationState = PreviousTransformationState; break; }
+		if (!Attributes->ConsumeFlowerStamina()) { CurrentTransformationState = PreviousTransformationState; break; }
 		ExecuteTransformation(NewTransformationState);
 		HandleComponentActivation(NewTransformationState, PreviousTransformationState);
 		GetWorld()->GetTimerManager().SetTimer(Transformation_TimerHandle, [this, NewTransformationState]() {this->ConsumingTransformation(NewTransformationState); }, 0.05f, true);
