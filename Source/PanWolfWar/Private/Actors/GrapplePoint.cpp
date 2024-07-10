@@ -10,6 +10,10 @@
 
 #include "Components/PandolFlowerComponent.h"
 
+#include "PanWolfWar/DebugHelper.h"
+
+#pragma region EngineFunctions
+
 AGrapplePoint::AGrapplePoint()
 {
 	PrimaryActorTick.bCanEverTick = true;
@@ -30,7 +34,7 @@ AGrapplePoint::AGrapplePoint()
 void AGrapplePoint::BeginPlay()
 {
 	Super::BeginPlay();
-	
+
 	DeactivateZone_Box->OnComponentBeginOverlap.AddDynamic(this, &AGrapplePoint::BoxCollisionEnter);
 	DeactivateZone_Box->OnComponentEndOverlap.AddDynamic(this, &AGrapplePoint::BoxCollisionExit);
 
@@ -41,6 +45,8 @@ void AGrapplePoint::BeginPlay()
 		WidgetRef->SetVisibility(ESlateVisibility::Hidden);
 	}
 
+	LandingZone_StartPos = LandingZone_Mesh->GetComponentLocation();
+
 }
 
 void AGrapplePoint::Tick(float DeltaTime)
@@ -49,6 +55,10 @@ void AGrapplePoint::Tick(float DeltaTime)
 
 	if (bActive && !bUsed) CheckDistanceFromPlayer();
 }
+
+#pragma endregion
+
+
 
 void AGrapplePoint::Activate(UPandolFlowerComponent* Player)
 {
@@ -104,6 +114,13 @@ void AGrapplePoint::Reactivate()
 	bUsed = false;
 }
 
+const FVector AGrapplePoint::GetLandingZone()
+{
+	return LandingZone_Mesh->GetComponentLocation();
+}
+
+#pragma region BoxCollision
+
 void AGrapplePoint::BoxCollisionEnter(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
 	if (!PlayerRef || OtherActor != PlayerRef->GetOwner()) return;
@@ -119,7 +136,13 @@ void AGrapplePoint::BoxCollisionExit(UPrimitiveComponent* OverlappedComponent, A
 
 }
 
-const FVector AGrapplePoint::GetLandingZone()
+#pragma endregion
+
+void AGrapplePoint::ResetLandingZone()
 {
-	return LandingZone_Mesh->GetComponentLocation();
+	LandingZone_Mesh->SetSimulatePhysics(false);
+	//Debug::Print(TEXT("LandingZone_HeightOffset: ") + FString::SanitizeFloat(LandingZone_HeightOffset));
+	//const FVector Pos = Detection_Mesh->GetComponentLocation() + FVector(0.f, 0.f, LandingZone_HeightOffset);
+	LandingZone_Mesh->SetWorldRotation(FRotator(0.f, 0.f, 0.f));
+	LandingZone_Mesh->SetWorldLocation(LandingZone_StartPos);
 }
