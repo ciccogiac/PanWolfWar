@@ -138,6 +138,9 @@ private:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Grappling Params", meta = (AllowPrivateAccess = "true"))
 	float GrappleThrowDistance = 1200.f;
 
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Grappling Params", meta = (AllowPrivateAccess = "true"))
+	float SwingForce = 100000.f;
+
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Grappling Params", meta = (AllowPrivateAccess = "true"))
 	TArray<TEnumAsByte<EObjectTypeQuery> > GrapplingObjectTypes;
 

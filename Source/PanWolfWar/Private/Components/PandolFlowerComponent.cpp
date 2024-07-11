@@ -57,11 +57,6 @@ void UPandolFlowerComponent::TickComponent(float DeltaTime, ELevelTick TickType,
 		if (bMovingWithGrapple) GrapplingMovement();
 	}
 
-	//if (CurrentGrapplePoint && CurrentGrapplePoint->GrapplePointType == EGrapplePointType::EGPT_Swing)
-	//{	
-	//	//Debug::Print(TEXT("Velocity: ") + FString::SanitizeFloat(CurrentGrapplePoint->LandingZone_Mesh->ComponentVelocity.Length()));
-	//	Debug::Print(TEXT("Velocity: ") + FString::SanitizeFloat(PanWolfCharacter->GetVelocity().Length()));
-	//}
 }
 
 void UPandolFlowerComponent::Move(const FInputActionValue& Value)
@@ -71,39 +66,15 @@ void UPandolFlowerComponent::Move(const FInputActionValue& Value)
 	if (!bSwinging) { PanWolfCharacter->Move(Value); }
 	else
 	{
-		FVector2D MovementVector = Value.Get<FVector2D>();
+		FVector2D MovementVector = Value.Get<FVector2D>().GetSafeNormal();
 
-		//const float ForceX = UKismetMathLibrary::MapRangeClamped(MovementVector.X, -1, 1, -40000.f, 40000.f);
-		const float ForceY = UKismetMathLibrary::MapRangeClamped(MovementVector.Y, -1, 1, -100000.f, 100000.f);
+		const float ForceY = UKismetMathLibrary::MapRangeClamped(MovementVector.Y, -1, 1, -SwingForce, SwingForce);
 
-		CurrentGrapplePoint->LandingZone_Mesh->AddForce(CurrentGrapplePoint->LandingZone_Mesh->GetForwardVector() * ForceY);
-		//CurrentGrapplePoint->LandingZone_Mesh->AddForce(CurrentGrapplePoint->LandingZone_Mesh->GetRightVector() * ForceX);
-		
-		//Debug::Print(TEXT("V: ") + FString::SanitizeFloat(CurrentGrapplePoint->LandingZone_Mesh->GetComponentRotation().Pitch));
-		//const float X = CurrentGrapplePoint->LandingZone_Mesh->GetComponentRotation().Pitch > -25.f ? MovementVector.X : -MovementVector.X;
+		CurrentGrapplePoint->LandingZone_Mesh->AddForce(CurrentGrapplePoint->LandingZone_Mesh->GetForwardVector() * ForceY );
+
 		const float X = MovementVector.Y >= 0.f ? MovementVector.X : -MovementVector.X;
 		CurrentGrapplePoint->LandingZone_Mesh->AddWorldRotation(FRotator(0.f,X, 0.f));
 	}
-	//	if (CharacterOwner->Controller == nullptr) return;
-	//	
-	//	// find out which way is forward
-	//	const FRotator Rotation = CharacterOwner->Controller->GetControlRotation();
-	//	const FRotator YawRotation(0, Rotation.Yaw, 0);
-
-	//	// get forward vector
-	//	const FVector ForwardDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X) ;
-
-	//	// get right vector 
-	//	const FVector RightDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y) ;
-
-	//	const float ForceX = UKismetMathLibrary::MapRangeClamped(MovementVector.X, -1, 1, -40000.f, 40000.f);
-	//	const float ForceY = UKismetMathLibrary::MapRangeClamped(MovementVector.Y, -1, 1, -40000.f, 40000.f);
-	//	//CurrentGrapplePoint->LandingZone_Mesh->AddImpulse(FVector(ForceX, ForceY,0.f));
-	//	CurrentGrapplePoint->LandingZone_Mesh->AddForce(-CurrentGrapplePoint->LandingZone_Mesh->GetForwardVector() * ForceY);
-	//	CurrentGrapplePoint->LandingZone_Mesh->AddForce(CurrentGrapplePoint->LandingZone_Mesh->GetRightVector() * ForceX);
-	//	//CurrentGrapplePoint->LandingZone_Mesh->AddForce(CurrentGrapplePoint->LandingZone_Mesh->GetRightVector() * RightDirection * ForceX);
-
-	//}
 	
 }
 
@@ -120,16 +91,12 @@ void UPandolFlowerComponent::Jump()
 		CharacterOwner->GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Falling);
 
 
-		Debug::Print(TEXT("V: ") + v.ToString());
-		//CharacterOwner->LaunchCharacter(v * 50.f, true, true);
-
 		CurrentGrapplePoint->ResetLandingZone();
 
 		ResetMovement(); RopeVisibility(false);
 
 		
-		CharacterOwner->LaunchCharacter(v *2 , false, false);
-		//CharacterOwner->LaunchCharacter(CharacterOwner->GetActorForwardVector() * 2000.f, true, true);
+		CharacterOwner->LaunchCharacter(v *2.15 , false, false);
 	}
 
 	CharacterOwner->Jump();
@@ -170,6 +137,14 @@ void UPandolFlowerComponent::Deactivate()
 
 	if (FlowerCable)
 		FlowerCable->Destroy();
+
+	if (bSwinging) {
+		PanWolfCharacter->DetachRootComponentFromParent();
+		CurrentGrapplePoint->ResetLandingZone();
+		ResetMovement(); 
+	}
+
+	DeactivateGrapplePoint();
 }
 
 #pragma endregion
@@ -194,6 +169,9 @@ void UPandolFlowerComponent::Hook()
 		{
 			PanWolfCharacter->DetachRootComponentFromParent();
 			CurrentGrapplePoint->ResetLandingZone();
+			CharacterOwner->GetCharacterMovement()->GravityScale = 2.2f;
+			CharacterOwner->GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Falling);
+			CharacterOwner->Jump();
 		}
 
 		bInGrapplingAnimation = true;
@@ -228,12 +206,19 @@ void UPandolFlowerComponent::Hook()
 
 void UPandolFlowerComponent::CheckForGrapplePoint()
 {
-	const FVector Start = CharacterOwner->GetActorLocation();
-	const FVector End = Start;
+	 const FVector CameraLocation2 = PanWolfCharacter->GetFollowCamera()->GetComponentLocation();
+	 const FVector CameraForward2 = PanWolfCharacter->GetFollowCamera()->GetForwardVector();
+
+	const FVector Start = CameraLocation2;
+	const FVector End = Start + CameraForward2 * DetectionRadius;
+
+	//const FVector Start = CharacterOwner->GetActorLocation();
+	//const FVector End = Start;
+
 
 	EDrawDebugTrace::Type DebugTraceType = ShowDebugTrace ? EDrawDebugTrace::ForOneFrame : EDrawDebugTrace::None;
 	TArray<FHitResult> outHits;
-	bool bBlockingHits = UKismetSystemLibrary::SphereTraceMultiForObjects(this,Start,End, DetectionRadius, GrapplingObjectTypes,false,TArray<AActor*>(), DebugTraceType, outHits,true);
+	bool bBlockingHits = UKismetSystemLibrary::SphereTraceMultiForObjects(this,Start,End, 1500.f, GrapplingObjectTypes,false,TArray<AActor*>(), DebugTraceType, outHits,true);
 
 	if (bBlockingHits)
 	{
@@ -251,8 +236,13 @@ void UPandolFlowerComponent::CheckForGrapplePoint()
 
 			if (Dot > HighestDotProduct)
 			{
-				DetectedActor = hit.GetActor();
-				HighestDotProduct = Dot;
+				AGrapplePoint* GrapplePoint = Cast<AGrapplePoint>(hit.GetActor());
+				if ((GrapplePoint && CurrentGrapplePoint && GrapplePoint!=CurrentGrapplePoint) || CurrentGrapplePoint==nullptr)
+				{
+
+					DetectedActor = hit.GetActor();
+					HighestDotProduct = Dot;
+				}
 			}
 
 			else
@@ -360,6 +350,9 @@ void UPandolFlowerComponent::ResetMovement()
 	bInGrapplingAnimation = false;
 	bSwinging = false;
 	CharacterOwner->GetCharacterMovement()->GravityScale = 2.2f;
+
+	CharacterOwner->GetCapsuleComponent()->SetCollisionResponseToChannel(ECollisionChannel::ECC_WorldStatic, ECollisionResponse::ECR_Block);
+	//CharacterOwner->GetCapsuleComponent()->SetCapsuleHalfHeight(90.f);
 }
 
 void UPandolFlowerComponent::ThrowRope()
@@ -385,7 +378,8 @@ void UPandolFlowerComponent::StartSwinging()
 	//CharacterOwner->GetCharacterMovement()->GravityScale = 0.2f;
 
 	CharacterOwner->GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Flying);
-	//CharacterOwner->GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	//CharacterOwner->GetCapsuleComponent()->SetCapsuleHalfHeight(35.f);
+	CharacterOwner->GetCapsuleComponent()->SetCollisionResponseToChannel(ECollisionChannel::ECC_WorldStatic, ECollisionResponse::ECR_Ignore);
 	//CharacterOwner->GetMesh()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	CharacterOwner->GetCharacterMovement()->StopMovementImmediately();
 
@@ -395,7 +389,7 @@ void UPandolFlowerComponent::StartSwinging()
 	PanWolfCharacter->AttachToComponent(CurrentGrapplePoint->LandingZone_Mesh, AttachmentRules);
 	
 	CurrentGrapplePoint->LandingZone_Mesh->SetSimulatePhysics(true);
-	CurrentGrapplePoint->LandingZone_Mesh->AddImpulse(CurrentGrapplePoint->LandingZone_Mesh->GetForwardVector() * 150000.f);
+	CurrentGrapplePoint->LandingZone_Mesh->AddImpulse(CurrentGrapplePoint->LandingZone_Mesh->GetForwardVector() * SwingForce *2);
 }
 	#pragma endregion
 

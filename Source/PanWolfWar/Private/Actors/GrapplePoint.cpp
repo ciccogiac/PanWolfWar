@@ -5,7 +5,6 @@
 #include "UserWidgets/GrapplePointWidget.h"
 #include "Components/Image.h"
 
-
 #include "Kismet/KismetMathLibrary.h"
 
 #include "Components/PandolFlowerComponent.h"
@@ -96,6 +95,7 @@ void AGrapplePoint::CheckDistanceFromPlayer()
 		WidgetRef->Filling_Image->SetDesiredSizeOverride(NewSize);
 		FLinearColor NewColor = ClimbedSize == 80.f ? FLinearColor::Green : FLinearColor::Gray;
 		WidgetRef->Filling_Image->SetColorAndOpacity(NewColor);
+
 	}
 }
 

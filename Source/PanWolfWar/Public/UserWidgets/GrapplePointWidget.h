@@ -21,4 +21,5 @@ public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Transient, meta = (BindWidgetAnim))
 	UWidgetAnimation* NodeUse ;
 
+
 };
