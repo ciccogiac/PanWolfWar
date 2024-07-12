@@ -268,6 +268,15 @@ private:
 	float BaseEyeHeightOffset_Landing = 2.5f;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Climb Params | First Trace", meta = (AllowPrivateAccess = "true"))
+	float BaseEyeHeightOffset_Landing_NoClimb = 2.5f;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Climb Params | First Trace", meta = (AllowPrivateAccess = "true"))
+	float MantleLineDownLength_Climb = 100.f;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Climb Params | First Trace", meta = (AllowPrivateAccess = "true"))
+	float MantleLineDownLength_NoClimb = 130.f;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Climb Params | First Trace", meta = (AllowPrivateAccess = "true"))
 	float ForwardOffset = 100.f;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Climb Params | First Trace", meta = (AllowPrivateAccess = "true"))
@@ -376,6 +385,33 @@ private:
 
 	#pragma endregion
 
+	#pragma region VaultParameters
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Vault Params ", meta = (AllowPrivateAccess = "true"))
+	float Distance_FirstTrace = 100.f;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Vault Params ", meta = (AllowPrivateAccess = "true"))
+	float HeightOffset_FirstTrace = 30.f;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Vault Params ", meta = (AllowPrivateAccess = "true"))
+	int Iteration_FirstTrace = 4;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Vault Params ", meta = (AllowPrivateAccess = "true"))
+	float Height_SecondTrace = 120.f;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Vault Params ", meta = (AllowPrivateAccess = "true"))
+	float ForwardOffset_SecondTrace = 30.f;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Vault Params ", meta = (AllowPrivateAccess = "true"))
+	int Iteration_SecondTrace = 6;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Vault Params ", meta = (AllowPrivateAccess = "true"))
+	float ForwardOffset_LandingLine = 80.f;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Vault Params ", meta = (AllowPrivateAccess = "true"))
+	float InRangeMeshPosition = 150.f;
+
+	#pragma endregion
 
 
 #pragma endregion

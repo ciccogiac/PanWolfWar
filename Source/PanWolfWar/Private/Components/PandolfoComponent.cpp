@@ -74,7 +74,7 @@ const bool UPandolfoComponent::IsClimbing()
 
 void UPandolfoComponent::Jump()
 {
-	if (!ClimbingComponent->TryClimbing()  && !ClimbingComponent->TryVault() && !ClimbingComponent->TryMantle())
+	if (!ClimbingComponent->TryClimbing()  && !ClimbingComponent->TryMantle() && !ClimbingComponent->TryVault())
 	{		
 		CharacterOwner->Jump();
 	}
