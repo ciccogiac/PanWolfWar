@@ -13,6 +13,8 @@
 
 #include "PanWolfWar/DebugHelper.h"
 
+#include "GameFramework/SpringArmComponent.h"
+
 #pragma region EngineFunctions
 
 UClimbingComponent::UClimbingComponent()
@@ -68,7 +70,7 @@ void UClimbingComponent::TickComponent(float DeltaTime, ELevelTick TickType, FAc
 	switch (ClimbingState)
 	{
 	case  EClimbingState::ECS_NOTClimbing :
-		if (CheckTryClimbingConditions()) { TryClimbing(); }
+		if (CheckTryClimbingConditions() &&!TryClimbing()) { TryMantle(); }
 		break;
 
 	case EClimbingState::ECS_Falling :
@@ -334,23 +336,26 @@ void UClimbingComponent::HandleRightMove(const FHitResult& outClimbableObjectHit
 
 bool UClimbingComponent::CanClimbUpon()
 {
-	if (ClimbingState == EClimbingState::ECS_Falling) return false;
 
 	const FHitResult LandingObstacleHit = DoClimbUponTrace();
 
-	if (!LandingObstacleHit.bBlockingHit)
+	if (LandingObstacleHit.bBlockingHit) return false;
+
+	FVector FirstPoint; FVector SecondPoint;
+
+	if (DoMantleTrace(LandingObstacleHit.TraceStart,FirstPoint,SecondPoint) &&  CheckCapsuleSpaceCondition(SecondPoint, true))
 	{
-		FHitResult hit = DoClimbUponLineDownTrace(LandingObstacleHit.TraceEnd);
-		
-		if (hit.bBlockingHit && CheckCapsuleSpaceCondition(hit.ImpactPoint, true))
-		{
-			ClimbedObject = nullptr;
-			SavedClimbedObject = nullptr;
-			return true;
-		}
+		PanWolfCharacter->SetMotionWarpTarget(FName("LedgeClimbUP"),  FirstPoint + CharacterOwner->GetActorForwardVector() * 15.f);
+		PanWolfCharacter->SetMotionWarpTarget(FName("LedgeClimbForward"), SecondPoint + CharacterOwner->GetActorForwardVector()*25.f);
+		CapsuleComponent->SetCapsuleHalfHeight(90);
+		CapsuleComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+		UAnimMontage* MantleMontage = IsClimbing() ? ClimbToTopMontage : MantleNoClimbMontage;
+		PlayClimbMontage(MantleMontage);
+		return true;
 	}
 
-	return false;
+	else
+		return false;
 }
 
 bool UClimbingComponent::CanClimbDownLedge()
@@ -507,13 +512,16 @@ bool UClimbingComponent::LedgeUpMove(const FVector2D& Direction)
 
 bool UClimbingComponent::TryClimbUpon()
 {
-	if (!( LastClimb_MovementVector.Y >= 0.0f)) return false;
+	if (!( LastClimb_MovementVector.Y >= 0.0f) || OwningPlayerAnimInstance->IsAnyMontagePlaying() || ClimbingState == EClimbingState::ECS_Falling ) return false;
 
-	if (!OwningPlayerAnimInstance->IsAnyMontagePlaying() && CanClimbUpon())
-	{
-		return TryStartUponVaulting();
-	}
-	return false;
+	return CanClimbUpon();
+}
+
+bool UClimbingComponent::TryMantle()
+{
+	if (OwningPlayerAnimInstance->IsAnyMontagePlaying()) return false;
+
+	return CanClimbUpon();
 }
 
 bool UClimbingComponent::TryJumping()
@@ -580,14 +588,24 @@ const FHitResult UClimbingComponent::DoLineTraceSingleByChannel(const FVector& S
 	return OutHit;
 }
 
-const FHitResult UClimbingComponent::DoSphereTraceSingleForObjects(const FVector& Start, const FVector& End, float Radius)
+const FHitResult UClimbingComponent::DoLineTraceSingleByWorldStatic(const FVector& Start, const FVector& End)
 {
 	FHitResult OutHit;
 	EDrawDebugTrace::Type DebugTraceType = ShowDebugTrace ? EDrawDebugTrace::ForOneFrame : EDrawDebugTrace::None;
+	UKismetSystemLibrary::LineTraceSingleForObjects(this, Start, End, WorldStaticObjectTypes, false, TArray<AActor*>(), DebugTraceType, OutHit, false);
+
+	return OutHit;
+}
+
+const FHitResult UClimbingComponent::DoSphereTraceSingleForObjects(const FVector& Start, const FVector& End, float Radius, bool TraceWorldStatic)
+{
+	FHitResult OutHit;
+	EDrawDebugTrace::Type DebugTraceType = ShowDebugTrace ? EDrawDebugTrace::ForDuration : EDrawDebugTrace::None;
 	TArray<AActor*> ActorsToIgnoreArray;
 	if(ClimbingState == EClimbingState::ECS_Falling)  ActorsToIgnoreArray.Add(ClimbedObject);
 
-	UKismetSystemLibrary::SphereTraceSingleForObjects(this, Start, End, Radius, ClimbableObjectTypes, false, ActorsToIgnoreArray, DebugTraceType, OutHit, true);
+	TArray<TEnumAsByte<EObjectTypeQuery>> ObjectType = TraceWorldStatic ? WorldStaticObjectTypes : ClimbableObjectTypes;
+	UKismetSystemLibrary::SphereTraceSingleForObjects(this, Start, End, Radius, ObjectType, false, ActorsToIgnoreArray, DebugTraceType, OutHit, true);
 
 	return OutHit;
 }
@@ -769,17 +787,56 @@ const FHitResult UClimbingComponent::DoClimbUponTrace()
 	const FVector EyeHeightOffset = ActorOwner->GetActorUpVector() * (CharacterOwner->BaseEyeHeight * BaseEyeHeightOffset_Landing);
 
 	const FVector Start = ComponentLocation + EyeHeightOffset;
-	const FVector End = Start + ActorOwner->GetActorForwardVector() * ForwardOffset_Landing;
+	const float Offset = IsClimbing() ? ForwardOffset_Landing : ForwardOffset_NoClimbLanding;
+	const FVector End = Start + ActorOwner->GetActorForwardVector() * Offset;
 
 	return DoSphereTraceSingleForChannel(Start, End, Radius_FirstTrace);
 }
 
-const FHitResult UClimbingComponent::DoClimbUponLineDownTrace(const FVector Start_Height)
+const bool UClimbingComponent::DoMantleTrace(const FVector TraceStart, FVector& FirstPoint, FVector& SecondPoint)
 {
-	const FVector DownVector = -ActorOwner->GetActorUpVector();
-	const FVector End_Height = Start_Height + DownVector * ClimbingTraceHeight_Jumping *1.5f;
 
-	return DoLineTraceSingleByChannel(Start_Height, End_Height);
+	FVector Start; FVector End; FHitResult hit;
+
+	bool FirstPointFound = false;
+	bool SecondPointFound = false;
+
+	const float Offset = IsClimbing() ? ForwardOffset_Landing : ForwardOffset_NoClimbLanding;
+
+	for (size_t i = 0; i < Offset /3 ; i++)
+	{
+		Start = TraceStart + CharacterOwner->GetActorForwardVector() * i * 3;
+		End = Start - FVector(0.f, 0.f, 100.f);
+
+		if (!FirstPointFound)
+		{
+			hit = DoLineTraceSingleByChannel(Start, End);
+
+			if (hit.bBlockingHit)
+			{
+				//DrawDebugSphere(GetWorld(), hit.Location, 15, 12, FColor::Cyan,true);
+				FirstPoint = hit.Location;
+				FirstPointFound = true;
+				continue;
+			}
+
+		}
+		else
+		{
+			hit = DoLineTraceSingleByWorldStatic(Start, End);
+
+			if (hit.bBlockingHit)
+			{
+				//DrawDebugSphere(GetWorld(), hit.Location, 15, 12, FColor::Magenta,true);
+				SecondPoint = hit.Location;
+				SecondPointFound = true;
+				break;
+			}
+		}
+
+	}
+
+	return FirstPointFound && SecondPointFound;
 }
 
 #pragma endregion
@@ -792,11 +849,18 @@ void UClimbingComponent::PlayClimbMontage(UAnimMontage* MontageToPlay)
 	if (!OwningPlayerAnimInstance) return;
 	if (OwningPlayerAnimInstance->IsAnyMontagePlaying()) return;
 
-	if (MontageToPlay == TopToClimbMontage || MontageToPlay == VaultMontage || MontageToPlay == ClimbToTopMontage)
+	if (MontageToPlay == TopToClimbMontage || MontageToPlay == VaultMontage || MontageToPlay == ClimbToTopMontage )
 	{
 		OwningPlayerAnimInstance->Montage_Play(MontageToPlay);
 	}
 
+	else if (MontageToPlay == MantleNoClimbMontage)
+	{
+		MovementComponent->MaxFlySpeed = 0.f;
+		MovementComponent->SetMovementMode(EMovementMode::MOVE_Flying, 0);
+		MovementComponent->StopMovementImmediately();
+		OwningPlayerAnimInstance->Montage_Play(MontageToPlay);
+	}
 	else
 	{
 		MotionWarpingLocation = (LedgeLocation - FVector(0.f, 0.f, CapsuleComponent->GetScaledCapsuleHalfHeight() * 2));
@@ -819,9 +883,15 @@ void UClimbingComponent::OnClimbMontageStartedHanging(FName NotifyName, const FB
 {
 	if (NotifyName == FName("StartHanging"))
 	{
+		Activate();
 		StartClimbing();
 		CharacterOwner->Jump();
 		MoveToLedgeLocation();
+	}
+
+	if (NotifyName == FName("StopHanging"))
+	{
+		StopClimbing();
 	}
 
 }
@@ -830,16 +900,22 @@ void UClimbingComponent::OnClimbMontageEnded(UAnimMontage* Montage, bool bInterr
 {
 	if (Montage == ClimbToTopMontage)
 	{
+		CapsuleComponent->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+
 		StopClimbing();
 
 		MovementComponent->SetMovementMode(MOVE_Walking);
 		MovementComponent->StopMovementImmediately();
+		
+
 
 	}
 
 	else if (Montage == VaultMontage)
 	{
 		MovementComponent->SetMovementMode(MOVE_Walking);
+		CharacterOwner->SetActorEnableCollision(true);
+
 	}
 
 	else if (Montage == TopToClimbMontage)
@@ -852,73 +928,14 @@ void UClimbingComponent::OnClimbMontageEnded(UAnimMontage* Montage, bool bInterr
 		MoveToLedgeLocation();
 		MovementComponent->StopMovementImmediately();
 	}
-
-
-}
-
-#pragma endregion
-
-#pragma region MotionWarping
-
-bool UClimbingComponent::TryStartUponVaulting()
-{
-	FVector VaultStartPosition;
-	FVector VaultLandPosition;
-
-	if (CanStartUponVaulting(VaultStartPosition, VaultLandPosition))
+	else if (Montage == MantleNoClimbMontage)
 	{
-		//Start Vaulting
-		PanWolfCharacter->SetMotionWarpTarget(FName("VaultStartPoint"), VaultStartPosition);
-		PanWolfCharacter->SetMotionWarpTarget(FName("VaultLandPoint"), VaultLandPosition);
-	}
-	else return false;
-	ClimbDirection = 0.f;
-	ClimbingState = EClimbingState::ECS_NOTClimbing;
-	CapsuleComponent->SetCapsuleHalfHeight(90);
-	PlayClimbMontage(ClimbToTopMontage);
-	return true;
-
-}
-
-bool UClimbingComponent::CanStartUponVaulting(FVector& OutVaultStartPosition, FVector& OutVaultLandPosition)
-{
-	if (MovementComponent->IsFalling()) return false;
-
-	OutVaultStartPosition = FVector::ZeroVector;
-	OutVaultLandPosition = FVector::ZeroVector;
-
-	const FVector ComponentLocation = ActorOwner->GetActorLocation();
-	const FVector ComponentForward = ActorOwner->GetActorForwardVector();
-	const FVector UpVector = ActorOwner->GetActorUpVector();
-	const FVector DownVector = -ActorOwner->GetActorUpVector();
-
-	for (int32 i = 0; i < 5; i++)
-	{
-		const FVector Start = ComponentLocation + UpVector * 125.f + ComponentForward * 40.f + ComponentForward * 20.f * (i + 1);
-		const FVector End = Start + DownVector * 100.f * (i + 1);
-
-		//FHitResult VaultTraceHit = DoLineTraceSingleByObject(Start, End);
-		FHitResult VaultTraceHit = DoLineTraceSingleByChannel(Start, End);
-
-		if (i == 0 && VaultTraceHit.bBlockingHit)
-		{
-			OutVaultStartPosition = VaultTraceHit.ImpactPoint + UpVector * 45.f;
-		}
-
-		if (i == 4 && VaultTraceHit.bBlockingHit)
-		{
-			OutVaultLandPosition = VaultTraceHit.ImpactPoint;
-		}
+		CapsuleComponent->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+		MovementComponent->SetMovementMode(MOVE_Walking);
+		MovementComponent->StopMovementImmediately();
+		
 	}
 
-	if (OutVaultStartPosition != FVector::ZeroVector && OutVaultLandPosition != FVector::ZeroVector)
-	{
-		return true;
-	}
-	else
-	{
-		return false;
-	}
 }
 
 #pragma endregion
@@ -1047,6 +1064,8 @@ void UClimbingComponent::ClimbDownActivate()
 
 void UClimbingComponent::ClimbDownDeActivate()
 {
+	if (IsClimbing()) return;
+
 	Deactivate();
 	ClimbingState = EClimbingState::ECS_NOTClimbing;
 }
@@ -1054,8 +1073,89 @@ void UClimbingComponent::ClimbDownDeActivate()
 #pragma endregion
 
 
+bool UClimbingComponent::TryVault()
+{
+	FHitResult hit;
+	FVector Start;
+	FVector End;
+
+	FVector VaultStartPos;
+	FVector VaultMiddlePos;
+	FVector VaultLandPos;
+	bool CanWarp = false;
+
+	for (size_t y = 0; y < 4; y++)
+	{
+		Start = CharacterOwner->GetActorLocation() + FVector(0.f, 0.f, y * 30) + FVector(0.f, 0.f, -30.f);
+		End = Start + CharacterOwner->GetActorForwardVector() * 180;
+		hit = DoSphereTraceSingleForObjects(Start, End, 5, true);
+
+		//if (hit.bBlockingHit)
+		//	break;
 
 
+		if (!hit.bBlockingHit) continue;
+
+		const FVector HitLocation = hit.Location + FVector(0.f, 0.f, 100.f);
+
+		for (size_t i = 0; i < 6; i++)
+		{
+			Start = HitLocation + CharacterOwner->GetActorForwardVector() * i * 30;
+			End = Start - FVector(0.f, 0.f, 100.f);
+			hit = DoSphereTraceSingleForObjects(Start, End, 10, true);
+
+			if (hit.bBlockingHit)
+			{
+				if (hit.bStartPenetrating) { CanWarp = false; VaultLandPos = FVector(0.f, 0.f, 20000.f); break; }
+				if (i == 0) { VaultStartPos = hit.Location; DrawDebugSphere(GetWorld(), VaultStartPos, 10, 12, FColor::Magenta); }
+				VaultMiddlePos = hit.Location; DrawDebugSphere(GetWorld(), VaultMiddlePos, 10, 12, FColor::Yellow);
+				/*if (i == 5) CanWarp = false;
+				else CanWarp = true;*/
+
+				if (i == 5) VaultLandPos = hit.Location;
+				CanWarp = true;
+			}
+			else
+			{
+				const FVector Starting = hit.TraceStart + CharacterOwner->GetActorForwardVector() * 80.f;
+				const FVector Ending = Starting - FVector(0.f, 0.f, 1000.f);
+				FHitResult LineHit = DoLineTraceSingleByWorldStatic(Starting, Ending);
+				if (LineHit.bBlockingHit)
+				{
+					VaultLandPos = LineHit.Location;
+					break;
+				}
+			}
+
+		}
+
+		if (CanWarp) break;
+	}
+
+	if (CanWarp)
+	{
+		const FVector MeshLocation = CharacterOwner->GetMesh()->GetComponentLocation();
+		bool bInRange = UKismetMathLibrary::InRange_FloatFloat(VaultLandPos.Z, MeshLocation.Z - 150, MeshLocation.Z + 150);
+		if (!bInRange) return false;
+		VaultMotionWarp(VaultStartPos, VaultMiddlePos, VaultLandPos);
+		return true;
+	}
+	else
+		return false;
+
+}
+
+void UClimbingComponent::VaultMotionWarp(const FVector VaultStartPos, const FVector VaultMiddlePos, const FVector VaultLandPos)
+{
+	
+	MovementComponent->SetMovementMode(EMovementMode::MOVE_Flying, 0);
+	CharacterOwner->SetActorEnableCollision(false);
+	const FRotator ActorRotation = CharacterOwner->GetActorRotation();
+	PanWolfCharacter->SetMotionWarpTarget(FName("VaultStart"), VaultStartPos , ActorRotation);
+	PanWolfCharacter->SetMotionWarpTarget(FName("VaultMiddle"), VaultMiddlePos, ActorRotation);
+	PanWolfCharacter->SetMotionWarpTarget(FName("VaultLand"), VaultLandPos, ActorRotation);
+	PlayClimbMontage(VaultMontage);
+}
 
 
 

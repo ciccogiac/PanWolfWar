@@ -50,6 +50,8 @@ public:
 	void ClimbDownActivate();
 	void ClimbDownDeActivate();
 	void Landed();
+	bool TryMantle();
+	bool TryVault();
 
 	void SetAnimationBindings();
 
@@ -69,6 +71,8 @@ protected:
 #pragma region PrivateFunctions
 
 private:
+
+	void VaultMotionWarp(const FVector VaultStartPos,const FVector VaultMiddlePos,const FVector VaultLandPos);
 
 	FVector2D Get8DirectionVector(const FVector2D& InputVector);
 
@@ -125,7 +129,8 @@ private:
 	#pragma region ClimbTraces
 
 	const FHitResult DoLineTraceSingleByChannel(const FVector& Start, const FVector& End);
-	const FHitResult DoSphereTraceSingleForObjects(const FVector& Start, const FVector& End, float Radius);
+	const FHitResult DoLineTraceSingleByWorldStatic(const FVector& Start, const FVector& End);
+	const FHitResult DoSphereTraceSingleForObjects(const FVector& Start, const FVector& End, float Radius, bool TraceWorldStatic = false);
 	const FHitResult DoSphereTraceSingleForChannel(const FVector& Start, const FVector& End, float Radius);
 	const FHitResult DoCapsuleTraceSingleForObjects(const FVector& Start, const FVector& End, float Radius, float HalfHeight);
 	const FHitResult DoCapsuleTraceSingleForChannel(const FVector& Start, const FVector& End, float Radius, float HalfHeight);
@@ -140,7 +145,7 @@ private:
 	const FHitResult DoClimbDirectionalJumpTrace(size_t i, float Direction, float UP_Offset);
 	const FHitResult DoClimbBackJumpTrace(size_t i);
 	const FHitResult DoClimbUponTrace();
-	const FHitResult DoClimbUponLineDownTrace(const FVector Start_Height);
+	const bool DoMantleTrace(const FVector TraceStart , FVector& FirstPoint ,FVector& SecondPoint);
 
 	#pragma endregion
 
@@ -156,12 +161,6 @@ private:
 
 	#pragma endregion
 
-	#pragma region MotionWarping
-
-	bool TryStartUponVaulting();
-	bool CanStartUponVaulting(FVector& OutVaultStartPosition, FVector& OutVaultLandPosition);
-
-	#pragma endregion
 
 #pragma endregion
 
@@ -219,6 +218,9 @@ private:
 	TArray<TEnumAsByte<EObjectTypeQuery> > ClimbableObjectTypes;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Climb Params", meta = (AllowPrivateAccess = "true"))
+	TArray<TEnumAsByte<EObjectTypeQuery> > WorldStaticObjectTypes;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Climb Params", meta = (AllowPrivateAccess = "true"))
 	TEnumAsByte<ETraceTypeQuery> TraceType;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Climb Params", meta = (AllowPrivateAccess = "true"))
@@ -269,7 +271,10 @@ private:
 	float ForwardOffset = 100.f;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Climb Params | First Trace", meta = (AllowPrivateAccess = "true"))
-	float ForwardOffset_Landing = 90.f;
+	float ForwardOffset_Landing = 150.f;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Climb Params | First Trace", meta = (AllowPrivateAccess = "true"))
+	float ForwardOffset_NoClimbLanding = 50.f;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Climb Params | First Trace", meta = (AllowPrivateAccess = "true"))
 	float Radius_Corner = 10.f;
@@ -337,6 +342,10 @@ private:
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Climb Montages", meta = (AllowPrivateAccess = "true"))
 	UAnimMontage* TopToClimbMontage;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Climb Montages", meta = (AllowPrivateAccess = "true"))
+	UAnimMontage* MantleNoClimbMontage;
+
 
 	/** Corner */
 
