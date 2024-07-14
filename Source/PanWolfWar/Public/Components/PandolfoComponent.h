@@ -10,6 +10,7 @@ class UClimbingComponent;
 class UInputAction;
 class UCapsuleComponent;
 class USpringArmComponent;
+class UAnimMontage;
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class PANWOLFWAR_API UPandolfoComponent : public UActorComponent
@@ -25,10 +26,23 @@ public:
 	const bool IsClimbing();
 
 	void Jump();
+	void Sliding();
+
+
 
 protected:
 	virtual void BeginPlay() override;
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
+
+private:
+
+	void SetSlidingValues(bool IsReverse = false);
+
+	UFUNCTION(BlueprintCallable)
+	void StartSliding();
+
+	UFUNCTION(BlueprintCallable)
+	void EndSliding();
 
 private:
 	ACharacter* CharacterOwner;
@@ -49,9 +63,29 @@ private:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Movement, meta = (AllowPrivateAccess = "true"))
 	UClimbingComponent* ClimbingComponent;
 
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Sliding", meta = (AllowPrivateAccess = "true"))
+	UAnimMontage* SlidingMontage;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Sliding", meta = (AllowPrivateAccess = "true"))
+	UCurveFloat* CapsuleSize_Curve;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Sliding", meta = (AllowPrivateAccess = "true"))
+	UCurveFloat* MeshPosition_Curve;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Sliding", meta = (AllowPrivateAccess = "true"))
+	UCurveFloat* CameraHeight_Curve;
+
+	FTimerHandle Sliding_TimerHandle;
+	float TimeElapsed = 0.f;
+
 public:
+
+
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
 	UInputAction* Pandolfo_JumpAction;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
+	UInputAction* Pandolfo_SlidingAction;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input| Transformation")
 	UInputAction* TransformationSelectRightAction;
