@@ -32,6 +32,8 @@
 
 #include "Engine/SkinnedAssetCommon.h"
 
+#include "Components/KiteComponent.h"
+
 DEFINE_LOG_CATEGORY(LogTemplateCharacter);
 
 //////////////////////////////////////////////////////////////////////////
@@ -208,6 +210,9 @@ void APanWolfWarCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInpu
 		EnhancedInputComponent->BindAction(PandolfoComponent->TransformationSelectRightAction, ETriggerEvent::Started, TransformationComponent, &UTransformationComponent::SelectRightTransformation);
 		EnhancedInputComponent->BindAction(PandolfoComponent->TransformationSelectLeftAction, ETriggerEvent::Started, TransformationComponent, &UTransformationComponent::SelectLeftTransformation);
 
+		// Kite
+		EnhancedInputComponent->BindAction(PandolfoComponent->GetKiteComponent()->KiteMoveAction, ETriggerEvent::Triggered, PandolfoComponent->GetKiteComponent(), &UKiteComponent::KiteMove);	
+		EnhancedInputComponent->BindAction(PandolfoComponent->GetKiteComponent()->KiteJumpAction, ETriggerEvent::Started, PandolfoComponent->GetKiteComponent(), &UKiteComponent::KiteJump);
 		#pragma endregion
 
 		#pragma region PandolFlower

@@ -14,6 +14,7 @@
 AInteractableObject::AInteractableObject()
 {
 	PrimaryActorTick.bCanEverTick = false;
+	
 
 	StaticMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("MeshComponent"));
 	StaticMesh->SetupAttachment(GetRootComponent());

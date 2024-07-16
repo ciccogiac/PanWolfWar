@@ -11,6 +11,8 @@ class UInputAction;
 class UCapsuleComponent;
 class USpringArmComponent;
 class UAnimMontage;
+class UKiteComponent;
+class AKiteBoard;
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class PANWOLFWAR_API UPandolfoComponent : public UActorComponent
@@ -28,6 +30,7 @@ public:
 	void Jump();
 	void Sliding();
 
+	void EnterKiteMode(AKiteBoard* KiteBoard);
 
 
 protected:
@@ -43,6 +46,22 @@ private:
 
 	UFUNCTION(BlueprintCallable)
 	void EndSliding();
+
+	bool PredictJump();
+
+	UFUNCTION()
+	void StartPredictJump(FName NotifyName, const FBranchingPointNotifyPayload& BranchingPointPayload);
+	UFUNCTION()
+	void EndPredictJump(UAnimMontage* Montage, bool bInterrupted);
+	UFUNCTION()
+	void StopPredictJump(FName NotifyName, const FBranchingPointNotifyPayload& BranchingPointPayload);
+
+	void DoPredictJump();
+	const FHitResult TraceIsOnGround(const FVector RootLocation, const FVector ForwardVector);
+	const FHitResult PredictProjectileTrace(const FVector ActorLocation, const FVector ForwardVector, AActor* OnGroundActor);
+	const FHitResult TraceLandConditions(const FVector ImpactPoint, const FVector ForwardVector);
+	const FHitResult TraceObstacles(const FVector ActorLocation, const FVector ImpactPoint);
+	void LoadPredictJump(const FVector ActorLocation, UAnimInstance* OwningPlayerAnimInstance);
 
 private:
 	ACharacter* CharacterOwner;
@@ -63,8 +82,14 @@ private:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Movement, meta = (AllowPrivateAccess = "true"))
 	UClimbingComponent* ClimbingComponent;
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Movement, meta = (AllowPrivateAccess = "true"))
+	UKiteComponent* KiteComponent;
+
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Sliding", meta = (AllowPrivateAccess = "true"))
 	UAnimMontage* SlidingMontage;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Sliding", meta = (AllowPrivateAccess = "true"))
+	UAnimMontage* PredictJumpMontage;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Sliding", meta = (AllowPrivateAccess = "true"))
 	UCurveFloat* CapsuleSize_Curve;
@@ -75,8 +100,15 @@ private:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Sliding", meta = (AllowPrivateAccess = "true"))
 	UCurveFloat* CameraHeight_Curve;
 
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Sliding", meta = (AllowPrivateAccess = "true"))
+	UCurveFloat* PredictJump_Curve;
+
 	FTimerHandle Sliding_TimerHandle;
+	FTimerHandle PredictJump_TimerHandle;
 	float TimeElapsed = 0.f;
+
+	FVector LandPredictLocation;
+	FVector LandPredictStartLocation;
 
 public:
 
@@ -98,5 +130,6 @@ public:
 
 public:
 	FORCEINLINE UClimbingComponent* GetClimbingComponent()  const { return ClimbingComponent; }
+	FORCEINLINE UKiteComponent* GetKiteComponent()  const { return KiteComponent; }
 	
 };
