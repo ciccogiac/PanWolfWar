@@ -21,6 +21,8 @@
 
 #include "Kismet/GameplayStatics.h"
 
+#include "Components/SneakCoverComponent.h"
+
 UPandolfoComponent::UPandolfoComponent()
 {
 	PrimaryComponentTick.bCanEverTick = true;
@@ -32,6 +34,7 @@ UPandolfoComponent::UPandolfoComponent()
 	PanWolfCharacter = Cast<APanWolfWarCharacter>(CharacterOwner);
 
 	ClimbingComponent = CreateDefaultSubobject<UClimbingComponent>(TEXT("ClimbingComponent"));
+	SneakCoverComponent = CreateDefaultSubobject<USneakCoverComponent>(TEXT("SneakCoverComponent"));
 	KiteComponent = CreateDefaultSubobject<UKiteComponent>(TEXT("KiteComponent"));
 }
 

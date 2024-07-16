@@ -13,6 +13,7 @@ class USpringArmComponent;
 class UAnimMontage;
 class UKiteComponent;
 class AKiteBoard;
+class USneakCoverComponent;
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class PANWOLFWAR_API UPandolfoComponent : public UActorComponent
@@ -83,6 +84,9 @@ private:
 	UClimbingComponent* ClimbingComponent;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Movement, meta = (AllowPrivateAccess = "true"))
+	USneakCoverComponent* SneakCoverComponent;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Movement, meta = (AllowPrivateAccess = "true"))
 	UKiteComponent* KiteComponent;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Sliding", meta = (AllowPrivateAccess = "true"))
@@ -130,6 +134,7 @@ public:
 
 public:
 	FORCEINLINE UClimbingComponent* GetClimbingComponent()  const { return ClimbingComponent; }
+	FORCEINLINE USneakCoverComponent* GetSneakCoverComponent()  const { return SneakCoverComponent; }
 	FORCEINLINE UKiteComponent* GetKiteComponent()  const { return KiteComponent; }
 	
 };
