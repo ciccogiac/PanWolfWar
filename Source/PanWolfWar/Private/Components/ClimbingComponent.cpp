@@ -15,6 +15,9 @@
 
 #include "GameFramework/SpringArmComponent.h"
 
+#include "Components/PandolfoComponent.h"
+#include "Components/SneakCoverComponent.h"
+
 #pragma region EngineFunctions
 
 UClimbingComponent::UClimbingComponent()
@@ -60,6 +63,7 @@ void UClimbingComponent::BeginPlay()
 
 	MovementComponent = CharacterOwner->GetCharacterMovement();
 	CapsuleComponent = CharacterOwner->GetCapsuleComponent();
+	PandolfoComponent = PanWolfCharacter->GetPandolfoComponent();
 	
 }
 
@@ -160,12 +164,12 @@ bool UClimbingComponent::CheckClimbableSpaceCondition(const FHitResult& Climbabl
 	return FMath::IsNearlyEqual(FVector::DotProduct(PointNormal, ActorForward), 1.0f, Max_Cos_value_PointToObject);
 }
 
-bool UClimbingComponent::CheckCapsuleSpaceCondition(const FVector& CLimbablePoint, bool FullHeight)
+bool UClimbingComponent::CheckCapsuleSpaceCondition(const FVector& CLimbablePoint, bool FullHeight, float CapsuleDivisor )
 {
 	float CapsuleHalfHeight = FullHeight ? 90.f : 45.f;
 	float CapsuleRadius = CapsuleComponent->GetScaledCapsuleRadius();
 	const FVector Start = CLimbablePoint + FVector(0.f, 0.f, 1.f + CapsuleHalfHeight);
-	return !DoCapsuleTraceSingleForChannel(Start, Start, CapsuleRadius, CapsuleHalfHeight).bBlockingHit;
+	return !DoCapsuleTraceSingleForChannel(Start, Start, CapsuleRadius/ CapsuleDivisor, CapsuleHalfHeight).bBlockingHit;
 }
 
 bool UClimbingComponent::CheckClimbableDownLedgeTrace(const FHitResult& ClimbableSurfaceHit)
@@ -339,13 +343,24 @@ bool UClimbingComponent::CanClimbUpon()
 
 	const FHitResult LandingObstacleHit = DoClimbUponTrace();
 
-	if (LandingObstacleHit.bBlockingHit) return false;
+	//if (LandingObstacleHit.bBlockingHit) return false;
 
 	FVector FirstPoint; FVector SecondPoint;
 
-	if (DoMantleTrace(LandingObstacleHit.TraceStart,FirstPoint,SecondPoint) &&  CheckCapsuleSpaceCondition(SecondPoint, true))
+	if (DoMantleTrace(LandingObstacleHit.TraceStart,FirstPoint,SecondPoint) )
 	{
-		PanWolfCharacter->SetMotionWarpTarget(FName("LedgeClimbUP"),  FirstPoint + CharacterOwner->GetActorForwardVector() * 15.f);
+		if (!CheckCapsuleSpaceCondition(SecondPoint, true)) 
+		{
+			if (!CheckCapsuleSpaceCondition(FirstPoint, true,2))
+			{
+				Debug::Print(TEXT("NOSPACE")); return false;
+			}
+			else
+			{
+				Debug::Print(TEXT("CanDoSneak")); 
+			}
+		}
+		PanWolfCharacter->SetMotionWarpTarget(FName("LedgeClimbUP"),  FirstPoint + CharacterOwner->GetActorForwardVector() * 5.f + CharacterOwner->GetActorUpVector() * 7.5f);
 		PanWolfCharacter->SetMotionWarpTarget(FName("LedgeClimbForward"), SecondPoint + CharacterOwner->GetActorForwardVector()*25.f);
 		CapsuleComponent->SetCapsuleHalfHeight(90);
 		CapsuleComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
@@ -642,7 +657,7 @@ const FHitResult UClimbingComponent::DoCapsuleTraceSingleForObjects(const FVecto
 const FHitResult UClimbingComponent::DoCapsuleTraceSingleForChannel(const FVector& Start, const FVector& End, float Radius, float HalfHeight)
 {
 	FHitResult OutHit;
-	EDrawDebugTrace::Type DebugTraceType = ShowDebugTrace ? EDrawDebugTrace::ForOneFrame : EDrawDebugTrace::None;
+	EDrawDebugTrace::Type DebugTraceType = ShowDebugTrace ? EDrawDebugTrace::ForDuration : EDrawDebugTrace::None;
 	UKismetSystemLibrary::CapsuleTraceSingle(this, Start, End, Radius, HalfHeight, TraceType, false, TArray<AActor*>(), DebugTraceType, OutHit, true, FLinearColor::Yellow);
 
 	return OutHit;
@@ -863,6 +878,7 @@ void UClimbingComponent::PlayClimbMontage(UAnimMontage* MontageToPlay)
 	if (MontageToPlay == TopToClimbMontage ||  MontageToPlay == ClimbToTopMontage )
 	{
 		OwningPlayerAnimInstance->Montage_Play(MontageToPlay);
+		PanWolfCharacter->GetCameraBoom()->bDoCollisionTest = false;
 	}
 
 	else if (MontageToPlay == MantleNoClimbMontage)
@@ -871,6 +887,7 @@ void UClimbingComponent::PlayClimbMontage(UAnimMontage* MontageToPlay)
 		MovementComponent->SetMovementMode(EMovementMode::MOVE_Flying, 0);
 		MovementComponent->StopMovementImmediately();
 		OwningPlayerAnimInstance->Montage_Play(MontageToPlay);
+		PanWolfCharacter->GetCameraBoom()->bDoCollisionTest = false;
 	}
 	else if (MontageToPlay == VaultMontage)
 	{
@@ -923,8 +940,8 @@ void UClimbingComponent::OnClimbMontageEnded(UAnimMontage* Montage, bool bInterr
 		MovementComponent->SetMovementMode(MOVE_Walking);
 		MovementComponent->StopMovementImmediately();
 		
-
-
+		PandolfoComponent->GetSneakCoverComponent()->StartCover();
+		PanWolfCharacter->GetCameraBoom()->bDoCollisionTest = true;
 	}
 
 	else if (Montage == VaultMontage)
@@ -937,6 +954,7 @@ void UClimbingComponent::OnClimbMontageEnded(UAnimMontage* Montage, bool bInterr
 	else if (Montage == TopToClimbMontage)
 	{
 		MovementComponent->StopMovementImmediately();
+		PanWolfCharacter->GetCameraBoom()->bDoCollisionTest = true;
 	}
 
 	else if(IsClimbing())
@@ -950,6 +968,8 @@ void UClimbingComponent::OnClimbMontageEnded(UAnimMontage* Montage, bool bInterr
 		MovementComponent->SetMovementMode(MOVE_Walking);
 		MovementComponent->StopMovementImmediately();
 		
+		PandolfoComponent->GetSneakCoverComponent()->StartCover();
+		PanWolfCharacter->GetCameraBoom()->bDoCollisionTest = true;
 	}
 
 }

@@ -30,9 +30,10 @@ protected:
 
 private:
 
-	const FHitResult DoWalltrace();
+	const FHitResult DoWalltrace(float TraceRadius = 20.f);
 	void SetCharRotation(const FVector ImpactNormal);
-	void SetCharLocation();
+	void SetCharLocation(const FVector HitLocation, const FVector HitNormal);
+	void CheckCrouchHeight(const FVector Direction);
 
 #pragma region InputActions
 

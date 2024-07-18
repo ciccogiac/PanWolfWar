@@ -13,6 +13,7 @@ struct FInputActionValue;
 class UInputAction;
 class APanWolfWarCharacter;
 class UInputMappingContext;
+class UPandolfoComponent;
 
 UENUM(BlueprintType)
 enum class EClimbingState : uint8
@@ -84,7 +85,7 @@ private:
 	bool CheckCapsuleEndPositionCollision();
 	bool CheckClimbableObjectTrace(const FHitResult& outClimbableObjectHit);
 	bool CheckClimbableSpaceCondition(const FHitResult& CLimbablePointHit);
-	bool CheckCapsuleSpaceCondition(const FVector& CLimbablePoint, bool FullHeight = false);
+	bool CheckCapsuleSpaceCondition(const FVector& CLimbablePoint, bool FullHeight = false,float CapsuleDivisor = 1.f);
 
 	#pragma endregion
 
@@ -174,6 +175,7 @@ private:
 	ACharacter* CharacterOwner;
 	APanWolfWarCharacter* PanWolfCharacter;
 	UCharacterMovementComponent* MovementComponent;
+	UPandolfoComponent* PandolfoComponent;
 	UCapsuleComponent* CapsuleComponent;
 
 	UPROPERTY()
