@@ -64,9 +64,17 @@ void USneakCoverComponent::CoverMove(const FInputActionValue& Value)
 		CoverDirection = MovementVector.X > 0.25f ?
 			1.f : (MovementVector.X < -0.25f ? -1.f : 0.f);
 
-		const FHitResult hit = DoWalltrace(20.f);
+		if (CoverDirection == 0.f && MovementVector.Y > 0.25f)
+			CoverDirection = LastCoverDirection;
+		else if (CoverDirection == 0.f && MovementVector.Y < -0.25f)
+			CoverDirection = -LastCoverDirection;
+		else
+		LastCoverDirection = CoverDirection;
+
+		const FHitResult hit = DoWalltrace(40.f, CoverDirection);
 		if (!hit.bBlockingHit)
 		{
+			Debug::Print(TEXT("Esco"));
 			ExitCover();
 			return;
 		}
@@ -86,16 +94,17 @@ void USneakCoverComponent::CoverMove(const FInputActionValue& Value)
 
 		//FindWall to Block Movement
 		const FVector CrouchStart = CharacterOwner->GetActorLocation() + CharacterOwner->GetActorForwardVector() * 17.5f;
-		const FVector CrouchEnd = CrouchStart + MoveDirection * CoverDirection * 37.5f * 2;
+		//const FVector CrouchEnd = CrouchStart + MoveDirection * CoverDirection * 37.5f * 2;
 		FHitResult Crouchhit;
-		UKismetSystemLibrary::LineTraceSingle(this, CrouchStart, CrouchEnd, ETraceTypeQuery::TraceTypeQuery1, false, TArray<AActor*>(), EDrawDebugTrace::ForOneFrame, Crouchhit, true);
-		if (Crouchhit.bBlockingHit)
-			return;
+		//UKismetSystemLibrary::LineTraceSingle(this, CrouchStart, CrouchEnd, ETraceTypeQuery::TraceTypeQuery1, false, TArray<AActor*>(), EDrawDebugTrace::ForOneFrame, Crouchhit, true);
+		//if (Crouchhit.bBlockingHit)
+		//	return;
 
 		//Find NoFloor To block Movement
-		const FVector FloorStart = CrouchStart + MoveDirection * CoverDirection * 30.f + CharacterOwner->GetActorForwardVector() * 10.f;
+		//const FVector FloorStart = CrouchStart + MoveDirection * CoverDirection * 30.f + CharacterOwner->GetActorForwardVector() * 10.f;
+		const FVector FloorStart = CrouchStart + CharacterOwner->GetActorRightVector() * CoverDirection * 30.f ;
 		const FVector FloorEnd = FloorStart - CharacterOwner->GetActorUpVector() * (CharacterOwner->GetCapsuleComponent()->GetScaledCapsuleHalfHeight() + 25.f);
-		UKismetSystemLibrary::SphereTraceSingle(this, FloorStart, FloorEnd,10.f, ETraceTypeQuery::TraceTypeQuery1, false, TArray<AActor*>(), EDrawDebugTrace::ForOneFrame, Crouchhit, true);
+		UKismetSystemLibrary::SphereTraceSingle(this, FloorStart, FloorEnd,15.f, ETraceTypeQuery::TraceTypeQuery1, false, TArray<AActor*>(), EDrawDebugTrace::ForOneFrame, Crouchhit, true);
 		if (!Crouchhit.bBlockingHit)
 			return;
 
@@ -135,7 +144,8 @@ void USneakCoverComponent::CoverMove(const FInputActionValue& Value)
 		//	}
 		//}
 
-		CheckCrouchHeight(MoveDirection * CoverDirection);
+		if (!CheckCrouchHeight(CoverDirection))
+			return;
 
 		CharacterOwner->AddMovementInput(MoveDirection, CoverDirection);
 
@@ -149,10 +159,8 @@ void USneakCoverComponent::StartCover()
 {
 	//Debug::Print(TEXT("Start Cover"));
 
-	CharacterOwner->DisableInput(CharacterOwner->GetLocalViewingPlayerController());
-
-	FHitResult hit = DoWalltrace(60.f);
-	if (!hit.bBlockingHit) {CharacterOwner->EnableInput(CharacterOwner->GetLocalViewingPlayerController()); return;}
+	FHitResult hit = DoWalltrace(40.f);
+	if (!hit.bBlockingHit) { return;}
 
 	SetCharRotation(hit.Normal);
 
@@ -162,9 +170,44 @@ void USneakCoverComponent::StartCover()
 	IsCovering = true;
 	PanWolfCharacter->AddMappingContext(SneakCoverMappingContext, 2);
 
-	CharacterOwner->EnableInput(CharacterOwner->GetLocalViewingPlayerController());
 	PandolfoComponent->PandolfoState = EPandolfoState::EPS_Covering;
 
+	LastCoverDirection = 0.f;
+}
+
+void USneakCoverComponent::EnterCover()
+{
+	CharacterOwner->GetCharacterMovement()->bOrientRotationToMovement = false;
+	CharacterOwner->GetCharacterMovement()->MaxWalkSpeed = 100.f;
+
+	IsCovering = true;
+	PanWolfCharacter->AddMappingContext(SneakCoverMappingContext, 2);
+
+	PandolfoComponent->PandolfoState = EPandolfoState::EPS_Covering;
+
+	LastCoverDirection = 0.f;
+
+	SetCharRotation(SavedAttachNormal);
+	SetCharLocation(SavedAttachPoint, SavedAttachNormal);
+
+	CharacterOwner->EnableInput(CharacterOwner->GetLocalViewingPlayerController());
+
+}
+
+bool USneakCoverComponent::CanEnterCover(const FVector StartPoint)
+{
+	const FVector Start = StartPoint + CharacterOwner->GetActorForwardVector() * 35.f ;
+	const FVector End = Start + CharacterOwner->GetActorForwardVector() * 0.1f;
+	FHitResult hit;
+
+	UKismetSystemLibrary::SphereTraceSingleForObjects(this, Start, End, 40.f, WorldStaticObjectTypes, false, TArray<AActor*>(), EDrawDebugTrace::ForOneFrame, hit, true);
+	if (hit.bBlockingHit)
+	{
+		SavedAttachNormal = hit.Normal;
+		SavedAttachPoint = hit.ImpactPoint;
+	}
+		
+	return hit.bBlockingHit;
 }
 
 void USneakCoverComponent::StopCover()
@@ -222,9 +265,9 @@ void USneakCoverComponent::ExitCover()
 	PandolfoComponent->PandolfoState = EPandolfoState::EPS_Pandolfo;
 }
 
-const FHitResult USneakCoverComponent::DoWalltrace(float TraceRadius)
+const FHitResult USneakCoverComponent::DoWalltrace(float TraceRadius, float Direction)
 {
-	const FVector Start = CharacterOwner->GetActorLocation() + CharacterOwner->GetActorForwardVector() * 35.f ;
+	const FVector Start = CharacterOwner->GetActorLocation() + CharacterOwner->GetActorForwardVector() * 35.f + CharacterOwner->GetActorRightVector() * Direction * 20.f;
 	const FVector End = Start + CharacterOwner->GetActorForwardVector() * 0.1f;
 	FHitResult hit;
 
@@ -232,41 +275,79 @@ const FHitResult USneakCoverComponent::DoWalltrace(float TraceRadius)
 	return hit;
 }
 
-void USneakCoverComponent::CheckCrouchHeight(const FVector Direction)
+bool USneakCoverComponent::CheckCanTurn(const FVector TurnPoint)
 {
+	const FVector End = TurnPoint + CharacterOwner->GetActorRightVector() * 0.1f;
+	FHitResult hit;
+
+	UKismetSystemLibrary::SphereTraceSingleForObjects(this, TurnPoint, End, 20.f, WorldStaticObjectTypes, false, TArray<AActor*>(), EDrawDebugTrace::ForOneFrame, hit, true);
+	SetCharRotation(hit.Normal);
+	SetCharLocation(hit.ImpactPoint, hit.Normal);
+	return false;
+}
+
+bool USneakCoverComponent::CheckCrouchHeight(const float Direction)
+{
+
+	const FVector CrouchStart = CharacterOwner->GetActorLocation() + CharacterOwner->GetActorForwardVector() * 17.5f;
+	const FVector CrouchEnd = CrouchStart + CharacterOwner->GetActorRightVector() * Direction * 37.5f * 2;
+	FHitResult Crouchhit;
+	UKismetSystemLibrary::LineTraceSingle(this, CrouchStart, CrouchEnd, ETraceTypeQuery::TraceTypeQuery1, false, TArray<AActor*>(), EDrawDebugTrace::ForOneFrame, Crouchhit, true);
+	if (Crouchhit.bBlockingHit)
+	{
+		//Check if can turn
+		CheckCanTurn(Crouchhit.ImpactPoint);
+		return false;
+	}
+
 	if (!CharacterOwner->GetCharacterMovement()->IsCrouching() && !CharacterOwner->GetCharacterMovement()->bWantsToCrouch)
 	{
 		FVector loc; FRotator Rot;
 		CharacterOwner->GetActorEyesViewPoint(loc,Rot);
 		const FVector Start = loc;
-		const FVector End = Start + Direction * 37.5f;
+		const FVector End = Start + CharacterOwner->GetActorRightVector()* Direction * 37.5f;
 		FHitResult hit;
 
 		UKismetSystemLibrary::LineTraceSingle(this, Start, End, ETraceTypeQuery::TraceTypeQuery1, false, TArray<AActor*>(), EDrawDebugTrace::ForOneFrame, hit, true);
 
-		if(hit.bBlockingHit)
+		if (hit.bBlockingHit)
+		{
 			CharacterOwner->GetCharacterMovement()->bWantsToCrouch = true;
+			return true;			
+		}
+			
 	}
 
 	else if (CharacterOwner->GetCharacterMovement()->IsCrouching() && CharacterOwner->GetCharacterMovement()->bWantsToCrouch)
 	{
 		//Debug::Print(TEXT("TryUnCrouch"));
 		CharacterOwner->GetCharacterMovement()->bWantsToCrouch = false;
+		return true;
 	}
 
+	return true;
 }
 
 void USneakCoverComponent::SetCharRotation(const FVector ImpactNormal)
 {
 	const float FixCharRot = UKismetMathLibrary::MakeRotFromX(ImpactNormal).Yaw + 180.f;
-	CharacterOwner->SetActorRotation(FRotator(0.f, FixCharRot, 0.f));
+	//CharacterOwner->SetActorRotation(FRotator(0.f, FixCharRot, 0.f));
+
+	FRotator NewRotation = UKismetMathLibrary::RInterpTo(CharacterOwner->GetActorRotation(), FRotator(0.f, FixCharRot, 0.f), GetWorld()->GetDeltaSeconds(), 1.5f);
+	CharacterOwner->SetActorRotation(NewRotation);
 }
 
 void USneakCoverComponent::SetCharLocation(const FVector HitLocation, const FVector HitNormal)
 {
-	const FVector NewLocation = HitLocation + UKismetMathLibrary::GetForwardVector(UKismetMathLibrary::MakeRotFromX(HitNormal)) * 45.f;
-	CharacterOwner->SetActorLocation(FVector(NewLocation.X, NewLocation.Y, CharacterOwner->GetActorLocation().Z));
+	 FVector NewLocation = HitLocation + UKismetMathLibrary::GetForwardVector(UKismetMathLibrary::MakeRotFromX(HitNormal)) * 45.f;
+	//CharacterOwner->SetActorLocation(FVector(NewLocation.X, NewLocation.Y, CharacterOwner->GetActorLocation().Z));
 
+	//FRotator Rotator = FRotator(Rotation.Roll, Rotation.Yaw - 180, Rotation.Roll);
+
+	 NewLocation = UKismetMathLibrary::VInterpTo(CharacterOwner->GetActorLocation(), NewLocation, GetWorld()->GetDeltaSeconds(), 1.f);
+	//FRotator NewRotation = UKismetMathLibrary::RInterpTo(CharacterOwner->GetActorRotation(), Rotator, GetWorld()->GetDeltaSeconds(), 5.f);
+
+	CharacterOwner->SetActorLocation(NewLocation);
 }
 
 void USneakCoverComponent::JumpCover()

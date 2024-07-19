@@ -207,6 +207,8 @@ private:
 	float ClimbDirection = 0;
 	FVector2D LastClimb_MovementVector = FVector2D(0.0f, 0.0f);
 
+	bool bCoveringSaved = false;
+
 	#pragma endregion
 
 	#pragma region ClimbBPVariables

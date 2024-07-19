@@ -24,6 +24,8 @@ public:
 	void CoverMove(const FInputActionValue& Value);
 	void StartCover();
 	void StopCover();
+	bool CanEnterCover(const FVector StartPoint);
+	void EnterCover();
 	void ExitCover();
 	void JumpCover();
 
@@ -33,10 +35,11 @@ protected:
 
 private:
 
-	const FHitResult DoWalltrace(float TraceRadius = 20.f);
+	const FHitResult DoWalltrace(float TraceRadius = 20.f,float Direction = 0.f);
 	void SetCharRotation(const FVector ImpactNormal);
 	void SetCharLocation(const FVector HitLocation, const FVector HitNormal);
-	void CheckCrouchHeight(const FVector Direction);
+	bool CheckCrouchHeight(const float Direction);
+	bool CheckCanTurn(const FVector TurnPoint);
 
 #pragma region InputActions
 
@@ -72,4 +75,8 @@ private:
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Cover State ", meta = (AllowPrivateAccess = "true"))
 	float CoverDirection = 0.f;
+
+	float LastCoverDirection = 0.f;
+	FVector SavedAttachPoint;
+	FVector SavedAttachNormal;
 };

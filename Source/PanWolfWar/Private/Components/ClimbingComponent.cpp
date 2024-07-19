@@ -362,21 +362,52 @@ bool UClimbingComponent::CanClimbUpon()
 	//if (LandingObstacleHit.bBlockingHit) return false;
 
 	FVector FirstPoint; FVector SecondPoint;
-
+	bCoveringSaved = false;
 	if (DoMantleTrace(LandingObstacleHit.TraceStart,FirstPoint,SecondPoint) )
 	{
-		if (!CheckCapsuleSpaceCondition(SecondPoint, true)) 
+		//if (!CheckCapsuleSpaceCondition(SecondPoint, true)) 
+		//{
+		//	if (!CheckCapsuleSpaceCondition(FirstPoint, true,2))
+		//	{
+		//		//Debug::Print(TEXT("NOSPACE"));
+		//		return false;
+		//	}
+		//	else
+		//	{
+		//		//Debug::Print(TEXT("CanDoSneak")); 
+		//		if(!PandolfoComponent->GetSneakCoverComponent()->CanEnterCover(FirstPoint + FVector(0.f,0.f,90.f)))
+		//		return false;
+
+		//		bCoveringSaved = true;
+		//	}
+		//}
+
+		if (LandingObstacleHit.bBlockingHit )
 		{
-			if (!CheckCapsuleSpaceCondition(FirstPoint, true,2))
-			{
-				//Debug::Print(TEXT("NOSPACE"));
+			const bool WallDetected = PandolfoComponent->GetSneakCoverComponent()->CanEnterCover(FirstPoint + FVector(0.f, 0.f, 90.f));
+
+			if (!WallDetected && !CheckCapsuleSpaceCondition(SecondPoint, true))
 				return false;
-			}
-			else
-			{
-				//Debug::Print(TEXT("CanDoSneak")); 
+				
+			if (WallDetected) {
+				if (!CheckCapsuleSpaceCondition(FirstPoint, true, 2))
+				{
+					//Debug::Print(TEXT("NOSPACE"));
+					return false;
+				}
+				else
+				{
+					//Debug::Print(TEXT("CanDoSneak")); 
+					bCoveringSaved = true;
+				}
 			}
 		}
+		else
+		{
+			if (!CheckCapsuleSpaceCondition(SecondPoint, true))
+				return false;
+		}
+
 		PanWolfCharacter->SetMotionWarpTarget(FName("LedgeClimbUP"),  FirstPoint + CharacterOwner->GetActorForwardVector() * 5.f + CharacterOwner->GetActorUpVector() * 7.5f);
 		PanWolfCharacter->SetMotionWarpTarget(FName("LedgeClimbForward"), SecondPoint + CharacterOwner->GetActorForwardVector()*25.f);
 		CapsuleComponent->SetCapsuleHalfHeight(90);
@@ -904,10 +935,20 @@ void UClimbingComponent::PlayClimbMontage(UAnimMontage* MontageToPlay)
 	if (!OwningPlayerAnimInstance) return;
 	if (OwningPlayerAnimInstance->IsAnyMontagePlaying()) return;
 
-	if (MontageToPlay == TopToClimbMontage ||  MontageToPlay == ClimbToTopMontage )
+	if (MontageToPlay == TopToClimbMontage)
 	{
 		OwningPlayerAnimInstance->Montage_Play(MontageToPlay);
 		PanWolfCharacter->GetCameraBoom()->bDoCollisionTest = false;
+	}
+	else if (MontageToPlay == ClimbToTopMontage)
+	{
+		OwningPlayerAnimInstance->Montage_Play(MontageToPlay);
+		PanWolfCharacter->GetCameraBoom()->bDoCollisionTest = false;
+
+		if (bCoveringSaved)
+		{
+			CharacterOwner->DisableInput(CharacterOwner->GetLocalViewingPlayerController());
+		}
 	}
 
 	else if (MontageToPlay == MantleNoClimbMontage)
@@ -917,6 +958,12 @@ void UClimbingComponent::PlayClimbMontage(UAnimMontage* MontageToPlay)
 		MovementComponent->StopMovementImmediately();
 		OwningPlayerAnimInstance->Montage_Play(MontageToPlay);
 		PanWolfCharacter->GetCameraBoom()->bDoCollisionTest = false;
+
+		if (bCoveringSaved)
+		{
+			CharacterOwner->DisableInput(CharacterOwner->GetLocalViewingPlayerController());
+		}
+
 	}
 	else if (MontageToPlay == VaultMontage)
 	{
@@ -968,9 +1015,12 @@ void UClimbingComponent::OnClimbMontageEnded(UAnimMontage* Montage, bool bInterr
 
 		MovementComponent->SetMovementMode(MOVE_Walking);
 		MovementComponent->StopMovementImmediately();
-		
-		PandolfoComponent->GetSneakCoverComponent()->StartCover();
 		PanWolfCharacter->GetCameraBoom()->bDoCollisionTest = true;
+
+		if (bCoveringSaved)
+		{
+			PandolfoComponent->GetSneakCoverComponent()->EnterCover();
+		}
 	}
 
 	else if (Montage == VaultMontage)
@@ -995,10 +1045,13 @@ void UClimbingComponent::OnClimbMontageEnded(UAnimMontage* Montage, bool bInterr
 	{
 		CapsuleComponent->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
 		MovementComponent->SetMovementMode(MOVE_Walking);
-		MovementComponent->StopMovementImmediately();
-		
-		PandolfoComponent->GetSneakCoverComponent()->StartCover();
+		MovementComponent->StopMovementImmediately();		
 		PanWolfCharacter->GetCameraBoom()->bDoCollisionTest = true;
+
+		if (bCoveringSaved)
+		{
+			PandolfoComponent->GetSneakCoverComponent()->EnterCover();
+		}
 	}
 
 }
