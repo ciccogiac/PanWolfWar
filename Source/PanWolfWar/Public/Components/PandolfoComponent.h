@@ -15,6 +15,14 @@ class UKiteComponent;
 class AKiteBoard;
 class USneakCoverComponent;
 
+UENUM(BlueprintType)
+enum class EPandolfoState : uint8
+{
+	EPS_Pandolfo UMETA(DisplayName = "Pandolfo"),
+	EPS_Climbing UMETA(DisplayName = "Climbing"),
+	EPS_Covering UMETA(DisplayName = "Covering"),
+};
+
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class PANWOLFWAR_API UPandolfoComponent : public UActorComponent
 {
@@ -29,6 +37,7 @@ public:
 	const bool IsClimbing();
 
 	void Jump();
+	bool TryClimbOrMantle();
 	void Sliding();
 
 	void EnterKiteMode(AKiteBoard* KiteBoard);
@@ -69,6 +78,7 @@ private:
 	APanWolfWarCharacter* PanWolfCharacter;
 	UCapsuleComponent* Capsule;
 	USpringArmComponent* CameraBoom;
+
 
 
 	UPROPERTY(Category = Character, EditDefaultsOnly, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
@@ -116,6 +126,8 @@ private:
 
 public:
 
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Pandolfo State ")
+	EPandolfoState PandolfoState = EPandolfoState::EPS_Pandolfo;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
 	UInputAction* Pandolfo_JumpAction;

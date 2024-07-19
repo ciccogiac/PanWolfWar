@@ -112,6 +112,10 @@ void UClimbingComponent::StartClimbing()
 
 	MovementComponent->StopMovementImmediately();
 
+	if (PandolfoComponent->PandolfoState == EPandolfoState::EPS_Covering)
+		PandolfoComponent->GetSneakCoverComponent()->ExitCover();
+
+	PandolfoComponent->PandolfoState = EPandolfoState::EPS_Climbing;
 }
 
 void UClimbingComponent::StopClimbing()
@@ -132,6 +136,8 @@ void UClimbingComponent::StopClimbing()
 
 	CapsuleComponent->SetCapsuleHalfHeight(90);
 	CapsuleComponent->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+
+	PandolfoComponent->PandolfoState = EPandolfoState::EPS_Pandolfo;
 }
 
 #pragma endregion
@@ -174,8 +180,18 @@ bool UClimbingComponent::CheckCapsuleSpaceCondition(const FVector& CLimbablePoin
 
 bool UClimbingComponent::CheckClimbableDownLedgeTrace(const FHitResult& ClimbableSurfaceHit)
 {
-	return ClimbableSurfaceHit.bBlockingHit && std::abs(ClimbableSurfaceHit.ImpactNormal.Z) < MaxImpactNormal_Z_value &&
-		FMath::IsNearlyEqual(FVector::DotProduct(ClimbableSurfaceHit.ImpactNormal, ActorOwner->GetActorForwardVector()), 1.0f, MaxImpactNormal_Cos_value);
+	if (PandolfoComponent->PandolfoState == EPandolfoState::EPS_Covering)
+	{
+		return ClimbableSurfaceHit.bBlockingHit && std::abs(ClimbableSurfaceHit.ImpactNormal.Z) < MaxImpactNormal_Z_value &&
+			FMath::IsNearlyEqual(FVector::DotProduct(ClimbableSurfaceHit.ImpactNormal, ActorOwner->GetActorForwardVector()), -1.0f, MaxImpactNormal_Cos_value);
+	}
+	else
+	{
+		return ClimbableSurfaceHit.bBlockingHit && std::abs(ClimbableSurfaceHit.ImpactNormal.Z) < MaxImpactNormal_Z_value &&
+			FMath::IsNearlyEqual(FVector::DotProduct(ClimbableSurfaceHit.ImpactNormal, ActorOwner->GetActorForwardVector()), 1.0f, MaxImpactNormal_Cos_value);
+	}
+
+	
 }
 
 bool UClimbingComponent::CheckCapsuleEndPositionCollision()
@@ -353,11 +369,12 @@ bool UClimbingComponent::CanClimbUpon()
 		{
 			if (!CheckCapsuleSpaceCondition(FirstPoint, true,2))
 			{
-				Debug::Print(TEXT("NOSPACE")); return false;
+				//Debug::Print(TEXT("NOSPACE"));
+				return false;
 			}
 			else
 			{
-				Debug::Print(TEXT("CanDoSneak")); 
+				//Debug::Print(TEXT("CanDoSneak")); 
 			}
 		}
 		PanWolfCharacter->SetMotionWarpTarget(FName("LedgeClimbUP"),  FirstPoint + CharacterOwner->GetActorForwardVector() * 5.f + CharacterOwner->GetActorUpVector() * 7.5f);
@@ -381,6 +398,7 @@ bool UClimbingComponent::CanClimbDownLedge()
 	
 	if (CheckClimbableDownLedgeTrace(ClimbableSurfaceHit))
 	{
+		
 		ClimbedObject = ClimbableSurfaceHit.GetActor();
 		return FindClimbablePoint(ClimbableSurfaceHit);
 	}
@@ -606,7 +624,7 @@ const FHitResult UClimbingComponent::DoLineTraceSingleByChannel(const FVector& S
 const FHitResult UClimbingComponent::DoLineTraceSingleByWorldStatic(const FVector& Start, const FVector& End)
 {
 	FHitResult OutHit;
-	EDrawDebugTrace::Type DebugTraceType = ShowDebugTrace ? EDrawDebugTrace::ForDuration : EDrawDebugTrace::None;
+	EDrawDebugTrace::Type DebugTraceType = ShowDebugTrace ? EDrawDebugTrace::ForOneFrame : EDrawDebugTrace::None;
 	UKismetSystemLibrary::LineTraceSingleForObjects(this, Start, End, WorldStaticObjectTypes, false, TArray<AActor*>(), DebugTraceType, OutHit, false);
 
 	return OutHit;
@@ -615,7 +633,7 @@ const FHitResult UClimbingComponent::DoLineTraceSingleByWorldStatic(const FVecto
 const FHitResult UClimbingComponent::DoSphereTraceSingleForObjects(const FVector& Start, const FVector& End, float Radius, bool TraceWorldStatic)
 {
 	FHitResult OutHit;
-	EDrawDebugTrace::Type DebugTraceType = ShowDebugTrace ? EDrawDebugTrace::ForDuration : EDrawDebugTrace::None;
+	EDrawDebugTrace::Type DebugTraceType = ShowDebugTrace ? EDrawDebugTrace::ForOneFrame : EDrawDebugTrace::None;
 	TArray<AActor*> ActorsToIgnoreArray;
 	if(ClimbingState == EClimbingState::ECS_Falling)  ActorsToIgnoreArray.Add(ClimbedObject);
 
@@ -657,7 +675,7 @@ const FHitResult UClimbingComponent::DoCapsuleTraceSingleForObjects(const FVecto
 const FHitResult UClimbingComponent::DoCapsuleTraceSingleForChannel(const FVector& Start, const FVector& End, float Radius, float HalfHeight)
 {
 	FHitResult OutHit;
-	EDrawDebugTrace::Type DebugTraceType = ShowDebugTrace ? EDrawDebugTrace::ForDuration : EDrawDebugTrace::None;
+	EDrawDebugTrace::Type DebugTraceType = ShowDebugTrace ? EDrawDebugTrace::ForOneFrame : EDrawDebugTrace::None;
 	UKismetSystemLibrary::CapsuleTraceSingle(this, Start, End, Radius, HalfHeight, TraceType, false, TArray<AActor*>(), DebugTraceType, OutHit, true, FLinearColor::Yellow);
 
 	return OutHit;
@@ -709,7 +727,16 @@ const FHitResult UClimbingComponent::DoClimbableDownLedgeTrace()
 	const FVector ClimbableSurfaceTraceStart = ComponentLocation + FVector(0.f, 0.f, -height - 20.f);
 	const FVector ClimbableSurfaceTraceEnd = ClimbableSurfaceTraceStart + ComponentForward * 80.f;
 
-	return DoSphereTraceSingleForObjects(ClimbableSurfaceTraceEnd, ClimbableSurfaceTraceStart, 30.f);
+	if (PandolfoComponent->PandolfoState == EPandolfoState::EPS_Covering)
+	{
+		return DoSphereTraceSingleForObjects(ClimbableSurfaceTraceStart - ComponentForward * 30.f, ClimbableSurfaceTraceStart, 30.f);
+	}
+	else
+	{
+		return DoSphereTraceSingleForObjects(ClimbableSurfaceTraceEnd, ClimbableSurfaceTraceStart, 30.f);
+	}
+
+
 }
 
 const FHitResult UClimbingComponent::DoClimbCornerTrace(const FHitResult& outEndLedgePointHit, float Direction, bool InternLedge, bool BlindPoint)
@@ -840,7 +867,8 @@ const bool UClimbingComponent::DoMantleTrace(const FVector TraceStart, FVector& 
 		}
 		else
 		{
-			hit = DoLineTraceSingleByWorldStatic(Start, End);
+			//hit = DoLineTraceSingleByWorldStatic(Start, End);
+			hit = DoLineTraceSingleByChannel(Start, End);
 
 			if (hit.bBlockingHit)
 			{
@@ -856,7 +884,8 @@ const bool UClimbingComponent::DoMantleTrace(const FVector TraceStart, FVector& 
 	if (FirstPointFound && SecondPointFound) 
 	{
 		const FVector LandPoint = SecondPoint + CharacterOwner->GetActorForwardVector() * 25.f;
-		const bool IsLandSpace = DoLineTraceSingleByWorldStatic(LandPoint + FVector(0.f, 0.f, 25.f), LandPoint + FVector(0.f, 0.f, -25.f)).bBlockingHit;
+		//const bool IsLandSpace = DoLineTraceSingleByWorldStatic(LandPoint + FVector(0.f, 0.f, 25.f), LandPoint + FVector(0.f, 0.f, -25.f)).bBlockingHit;
+		const bool IsLandSpace = DoLineTraceSingleByChannel(LandPoint + FVector(0.f, 0.f, 25.f), LandPoint + FVector(0.f, 0.f, -25.f)).bBlockingHit;
 		return IsLandSpace;
 	}
 
@@ -1038,7 +1067,7 @@ void UClimbingComponent::Landed()
 
 		PanWolfCharacter->RemoveMappingContext(ClimbingMappingContext);
 		MovementComponent->bOrientRotationToMovement = true;
-
+		PandolfoComponent->PandolfoState = EPandolfoState::EPS_Pandolfo;
 		
 	}
 

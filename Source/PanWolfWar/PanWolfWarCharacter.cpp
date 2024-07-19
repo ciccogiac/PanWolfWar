@@ -215,6 +215,7 @@ void APanWolfWarCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInpu
 		EnhancedInputComponent->BindAction(PandolfoComponent->GetSneakCoverComponent()->SneakCoverMoveAction, ETriggerEvent::Triggered, PandolfoComponent->GetSneakCoverComponent(), &USneakCoverComponent::CoverMove);
 		EnhancedInputComponent->BindAction(PandolfoComponent->GetSneakCoverComponent()->StartCoverAction, ETriggerEvent::Started, PandolfoComponent->GetSneakCoverComponent(), &USneakCoverComponent::StartCover);
 		EnhancedInputComponent->BindAction(PandolfoComponent->GetSneakCoverComponent()->StopCoverAction, ETriggerEvent::Started, PandolfoComponent->GetSneakCoverComponent(), &USneakCoverComponent::StopCover);
+		EnhancedInputComponent->BindAction(PandolfoComponent->GetSneakCoverComponent()->JumpCoverAction, ETriggerEvent::Started, PandolfoComponent->GetSneakCoverComponent(), &USneakCoverComponent::JumpCover);
 
 		// Kite
 		EnhancedInputComponent->BindAction(PandolfoComponent->GetKiteComponent()->KiteMoveAction, ETriggerEvent::Triggered, PandolfoComponent->GetKiteComponent(), &UKiteComponent::KiteMove);	

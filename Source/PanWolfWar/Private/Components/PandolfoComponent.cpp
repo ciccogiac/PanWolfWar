@@ -44,6 +44,7 @@ void UPandolfoComponent::Activate(bool bReset)
 
 	PanWolfCharacter->AddMappingContext(PandolfoMappingContext, 1);
 
+	PandolfoState = EPandolfoState::EPS_Pandolfo;
 
 	Capsule->SetCapsuleRadius(35.f);
 	Capsule->SetCapsuleHalfHeight(90.f);
@@ -90,7 +91,7 @@ const bool UPandolfoComponent::IsClimbing()
 
 void UPandolfoComponent::Jump()
 {
-	if (!ClimbingComponent->TryClimbing()  && !ClimbingComponent->TryMantle() && !ClimbingComponent->TryVault())
+	if (!TryClimbOrMantle() && !ClimbingComponent->TryVault())
 	{		
 		if (!PredictJump())
 		{
@@ -103,6 +104,13 @@ void UPandolfoComponent::Jump()
 	
 
 
+}
+
+bool UPandolfoComponent::TryClimbOrMantle()
+{
+	if (!ClimbingComponent->TryClimbing() && !ClimbingComponent->TryMantle())
+		return false;
+	return true;
 }
 
 

@@ -8,6 +8,7 @@ class UInputMappingContext;
 struct FInputActionValue;
 class UInputAction;
 class APanWolfWarCharacter;
+class UPandolfoComponent;
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class PANWOLFWAR_API USneakCoverComponent : public UActorComponent
@@ -23,6 +24,8 @@ public:
 	void CoverMove(const FInputActionValue& Value);
 	void StartCover();
 	void StopCover();
+	void ExitCover();
+	void JumpCover();
 
 protected:
 	virtual void BeginPlay() override;
@@ -46,6 +49,9 @@ public:
 	UInputAction* StopCoverAction;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input Cover")
+	UInputAction* JumpCoverAction;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input Cover")
 	UInputAction* SneakCoverMoveAction;
 
 #pragma endregion
@@ -53,9 +59,13 @@ public:
 private:
 	ACharacter* CharacterOwner;
 	APanWolfWarCharacter* PanWolfCharacter;
+	UPandolfoComponent* PandolfoComponent;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input Cover", meta = (AllowPrivateAccess = "true"))
 	UInputMappingContext* SneakCoverMappingContext;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Climb Params", meta = (AllowPrivateAccess = "true"))
+	TArray<TEnumAsByte<EObjectTypeQuery> > WorldStaticObjectTypes;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Cover State ", meta = (AllowPrivateAccess = "true"))
 	bool IsCovering = false;
