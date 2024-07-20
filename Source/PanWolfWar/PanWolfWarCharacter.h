@@ -161,7 +161,7 @@ public:
 	FORCEINLINE UInteractComponent* GetInteractComponent() const { return InteractComponent; }
 
 	FORCEINLINE virtual UTransformationComponent* GetTransformationComponent()  const override { return TransformationComponent; } ;
-	FORCEINLINE UPandolfoComponent* GetPandolfoComponent() const { return PandolfoComponent; }
+	FORCEINLINE virtual UPandolfoComponent* GetPandolfoComponent() const override { return PandolfoComponent; }
 	FORCEINLINE UPanWolfComponent* GetPanWolfComponent() const { return PanWolfComponent; }
 	FORCEINLINE UPandolFlowerComponent* GetPandolFlowerComponent() const { return PandolFlowerComponent; }
 	FORCEINLINE UPanBirdComponent* GetPanBirdComponent() const { return PanBirdComponent; }

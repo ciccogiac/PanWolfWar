@@ -9,6 +9,7 @@ struct FInputActionValue;
 class UInputAction;
 class APanWolfWarCharacter;
 class UPandolfoComponent;
+class UAnimMontage;
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class PANWOLFWAR_API USneakCoverComponent : public UActorComponent
@@ -29,6 +30,15 @@ public:
 	void ExitCover();
 	void JumpCover();
 
+	void StartNarrow();
+	void StopNarrow(const FVector EndLocation);
+
+	UFUNCTION(BlueprintCallable)
+	void ExitNarrow();
+
+	void ActivateWallSearch();
+	void DeactivateWallSearch();
+
 protected:
 	virtual void BeginPlay() override;
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
@@ -36,8 +46,8 @@ protected:
 private:
 
 	const FHitResult DoWalltrace(float TraceRadius = 20.f,float Direction = 0.f);
-	void SetCharRotation(const FVector ImpactNormal);
-	void SetCharLocation(const FVector HitLocation, const FVector HitNormal);
+	void SetCharRotation(const FVector ImpactNormal, bool Istantaneus = false);
+	void SetCharLocation(const FVector HitLocation, const FVector HitNormal, bool Istantaneus = false);
 	bool CheckCrouchHeight(const float Direction);
 	bool CheckCanTurn(const FVector TurnPoint);
 
@@ -64,6 +74,8 @@ private:
 	APanWolfWarCharacter* PanWolfCharacter;
 	UPandolfoComponent* PandolfoComponent;
 
+	FTimerHandle WallSearch_TimerHandle;
+
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input Cover", meta = (AllowPrivateAccess = "true"))
 	UInputMappingContext* SneakCoverMappingContext;
 
@@ -76,7 +88,14 @@ private:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Cover State ", meta = (AllowPrivateAccess = "true"))
 	float CoverDirection = 0.f;
 
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Montage, meta = (AllowPrivateAccess = "true"))
+	UAnimMontage* ExitNarrowMontage;
+
 	float LastCoverDirection = 0.f;
 	FVector SavedAttachPoint;
 	FVector SavedAttachNormal;
+	bool bIsNarrowing = false;
+
+public:
+	FORCEINLINE bool IsNarrowing() const { return bIsNarrowing; }
 };

@@ -14,6 +14,8 @@
 
 #include "Components/PandolfoComponent.h"
 
+#include "TimerManager.h"
+
 #pragma region EngineFunctions
 
 USneakCoverComponent::USneakCoverComponent()
@@ -51,6 +53,48 @@ void USneakCoverComponent::TickComponent(float DeltaTime, ELevelTick TickType, F
 
 #pragma endregion
 
+void USneakCoverComponent::StartNarrow()
+{
+	Debug::Print(TEXT("StartNarrow"));
+	if (!bIsNarrowing && CanEnterCover(CharacterOwner->GetActorLocation() + CharacterOwner->GetActorForwardVector() * 70.f))
+	{
+		CharacterOwner->GetCapsuleComponent()->SetCapsuleRadius(22.f);
+		bIsNarrowing = true;
+		EnterCover();
+	}
+}
+
+void USneakCoverComponent::StopNarrow(const FVector EndLocation)
+{
+	Debug::Print(TEXT("StopNarrow"));
+	if (!bIsNarrowing) return;
+
+	
+
+	if (!ExitNarrowMontage) return;
+	UAnimInstance* OwningPlayerAnimInstance = CharacterOwner->GetMesh()->GetAnimInstance();
+	if (!OwningPlayerAnimInstance) return;
+	if (OwningPlayerAnimInstance->IsAnyMontagePlaying()) return;
+	PanWolfCharacter->SetMotionWarpTarget(FName("EndNarrowPoint"), FVector(EndLocation.X, EndLocation.Y,CharacterOwner->GetActorLocation().Z) );
+	OwningPlayerAnimInstance->Montage_Play(ExitNarrowMontage);
+}
+
+void USneakCoverComponent::ExitNarrow()
+{
+	CharacterOwner->GetCapsuleComponent()->SetCapsuleRadius(35.f);
+	ExitCover();
+	bIsNarrowing = false;
+}
+
+void USneakCoverComponent::ActivateWallSearch()
+{
+	GetWorld()->GetTimerManager().SetTimer(WallSearch_TimerHandle, this, &USneakCoverComponent::StartCover, 0.1f, true);
+}
+
+void USneakCoverComponent::DeactivateWallSearch()
+{
+	GetWorld()->GetTimerManager().ClearTimer(WallSearch_TimerHandle);
+}
 
 void USneakCoverComponent::CoverMove(const FInputActionValue& Value)
 {
@@ -159,13 +203,17 @@ void USneakCoverComponent::StartCover()
 {
 	//Debug::Print(TEXT("Start Cover"));
 
-	FHitResult hit = DoWalltrace(40.f);
+	FHitResult hit = DoWalltrace(35.f);
 	if (!hit.bBlockingHit) { return;}
 
-	SetCharRotation(hit.Normal);
+	DeactivateWallSearch();
+
+	SetCharRotation(hit.ImpactNormal,true);
+	SetCharLocation(hit.ImpactPoint, hit.ImpactNormal, true);
 
 	CharacterOwner->GetCharacterMovement()->bOrientRotationToMovement = false;
 	CharacterOwner->GetCharacterMovement()->MaxWalkSpeed = 100.f;
+	CharacterOwner->GetCharacterMovement()->MaxWalkSpeedCrouched = 100.f;
 
 	IsCovering = true;
 	PanWolfCharacter->AddMappingContext(SneakCoverMappingContext, 2);
@@ -179,6 +227,7 @@ void USneakCoverComponent::EnterCover()
 {
 	CharacterOwner->GetCharacterMovement()->bOrientRotationToMovement = false;
 	CharacterOwner->GetCharacterMovement()->MaxWalkSpeed = 100.f;
+	CharacterOwner->GetCharacterMovement()->MaxWalkSpeedCrouched = 100.f;
 
 	IsCovering = true;
 	PanWolfCharacter->AddMappingContext(SneakCoverMappingContext, 2);
@@ -187,8 +236,8 @@ void USneakCoverComponent::EnterCover()
 
 	LastCoverDirection = 0.f;
 
-	SetCharRotation(SavedAttachNormal);
-	SetCharLocation(SavedAttachPoint, SavedAttachNormal);
+	SetCharRotation(SavedAttachNormal,true);
+	SetCharLocation(SavedAttachPoint, SavedAttachNormal,true);
 
 	CharacterOwner->EnableInput(CharacterOwner->GetLocalViewingPlayerController());
 
@@ -214,10 +263,12 @@ void USneakCoverComponent::StopCover()
 {
 	//Debug::Print(TEXT("Stop Cover"));
 
-	if (CharacterOwner->bIsCrouched)
+	/*if (CharacterOwner->bIsCrouched)
 	{
 		return;
-	}
+	}*/
+
+	//Make a new Check lines for crouched situation
 
 	int N_SpaceIterarion = 6;
 		//Find Space To exit cover
@@ -261,6 +312,7 @@ void USneakCoverComponent::ExitCover()
 
 	CharacterOwner->GetCharacterMovement()->bOrientRotationToMovement = true;
 	CharacterOwner->GetCharacterMovement()->MaxWalkSpeed = 500.f;
+	CharacterOwner->GetCharacterMovement()->MaxWalkSpeedCrouched = 250.f;
 
 	PandolfoComponent->PandolfoState = EPandolfoState::EPS_Pandolfo;
 }
@@ -328,23 +380,23 @@ bool USneakCoverComponent::CheckCrouchHeight(const float Direction)
 	return true;
 }
 
-void USneakCoverComponent::SetCharRotation(const FVector ImpactNormal)
+void USneakCoverComponent::SetCharRotation(const FVector ImpactNormal, bool Istantaneus)
 {
-	const float FixCharRot = UKismetMathLibrary::MakeRotFromX(ImpactNormal).Yaw + 180.f;
+	FRotator NewRotation = FRotator(0.f, UKismetMathLibrary::MakeRotFromX(ImpactNormal).Yaw + 180.f, 0.f) ;
 	//CharacterOwner->SetActorRotation(FRotator(0.f, FixCharRot, 0.f));
 
-	FRotator NewRotation = UKismetMathLibrary::RInterpTo(CharacterOwner->GetActorRotation(), FRotator(0.f, FixCharRot, 0.f), GetWorld()->GetDeltaSeconds(), 1.5f);
+	NewRotation = Istantaneus ? NewRotation : UKismetMathLibrary::RInterpTo(CharacterOwner->GetActorRotation(), NewRotation, GetWorld()->GetDeltaSeconds(), 1.5f);
 	CharacterOwner->SetActorRotation(NewRotation);
 }
 
-void USneakCoverComponent::SetCharLocation(const FVector HitLocation, const FVector HitNormal)
+void USneakCoverComponent::SetCharLocation(const FVector HitLocation, const FVector HitNormal, bool Istantaneus)
 {
 	 FVector NewLocation = HitLocation + UKismetMathLibrary::GetForwardVector(UKismetMathLibrary::MakeRotFromX(HitNormal)) * 45.f;
 	//CharacterOwner->SetActorLocation(FVector(NewLocation.X, NewLocation.Y, CharacterOwner->GetActorLocation().Z));
 
 	//FRotator Rotator = FRotator(Rotation.Roll, Rotation.Yaw - 180, Rotation.Roll);
 
-	 NewLocation = UKismetMathLibrary::VInterpTo(CharacterOwner->GetActorLocation(), NewLocation, GetWorld()->GetDeltaSeconds(), 1.f);
+	 NewLocation = Istantaneus ? NewLocation :  UKismetMathLibrary::VInterpTo(CharacterOwner->GetActorLocation(), NewLocation, GetWorld()->GetDeltaSeconds(), 1.f);
 	//FRotator NewRotation = UKismetMathLibrary::RInterpTo(CharacterOwner->GetActorRotation(), Rotator, GetWorld()->GetDeltaSeconds(), 5.f);
 
 	CharacterOwner->SetActorLocation(NewLocation);

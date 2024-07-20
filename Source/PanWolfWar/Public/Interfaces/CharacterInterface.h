@@ -8,6 +8,7 @@
 
 class UTransformationComponent;
 class UAttributeComponent;
+class UPandolfoComponent;
 
 // This class does not need to be modified.
 UINTERFACE(MinimalAPI)
@@ -26,5 +27,6 @@ class PANWOLFWAR_API ICharacterInterface
 public:
 	 virtual UAttributeComponent* GetAttributeComponent() const = 0;
 	 virtual UTransformationComponent* GetTransformationComponent()  const = 0;
+	 virtual UPandolfoComponent* GetPandolfoComponent() const = 0;
 
 };

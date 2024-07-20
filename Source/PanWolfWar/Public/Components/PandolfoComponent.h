@@ -2,7 +2,9 @@
 
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
+#include <Components/TimelineComponent.h>
 #include "PandolfoComponent.generated.h"
+
 
 class UInputMappingContext;
 class APanWolfWarCharacter;
@@ -39,6 +41,7 @@ public:
 	void Jump();
 	bool TryClimbOrMantle();
 	void Sliding();
+	void Crouch();
 
 	void EnterKiteMode(AKiteBoard* KiteBoard);
 
@@ -65,6 +68,9 @@ private:
 	void EndPredictJump(UAnimMontage* Montage, bool bInterrupted);
 	UFUNCTION()
 	void StopPredictJump(FName NotifyName, const FBranchingPointNotifyPayload& BranchingPointPayload);
+
+	UFUNCTION()
+	void CrouchCameraUpdate(float Alpha);
 
 	void DoPredictJump();
 	const FHitResult TraceIsOnGround(const FVector RootLocation, const FVector ForwardVector);
@@ -117,6 +123,11 @@ private:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Sliding", meta = (AllowPrivateAccess = "true"))
 	UCurveFloat* PredictJump_Curve;
 
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Crouching", meta = (AllowPrivateAccess = "true"))
+	UCurveFloat* CrouchCameraLenght_Curve;
+
+	FTimeline CrouchingTimeline;
+
 	FTimerHandle Sliding_TimerHandle;
 	FTimerHandle PredictJump_TimerHandle;
 	float TimeElapsed = 0.f;
@@ -134,6 +145,9 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
 	UInputAction* Pandolfo_SlidingAction;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
+	UInputAction* Pandolfo_CrouchAction;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input| Transformation")
 	UInputAction* TransformationSelectRightAction;

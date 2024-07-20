@@ -23,6 +23,8 @@
 
 #include "Components/SneakCoverComponent.h"
 
+#include <Components/TimelineComponent.h>
+
 UPandolfoComponent::UPandolfoComponent()
 {
 	PrimaryComponentTick.bCanEverTick = true;
@@ -77,11 +79,20 @@ void UPandolfoComponent::BeginPlay()
 
 	Capsule = PanWolfCharacter->GetCapsuleComponent();
 	CameraBoom = PanWolfCharacter->GetCameraBoom();
+
+	if (!CrouchCameraLenght_Curve) return;
+
+	FOnTimelineFloat ProgressUpdate;
+	ProgressUpdate.BindUFunction(this, FName("CrouchCameraUpdate"));
+	CrouchingTimeline.AddInterpFloat(CrouchCameraLenght_Curve, ProgressUpdate);
+
 }
 
 void UPandolfoComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
+
+	CrouchingTimeline.TickTimeline(DeltaTime);
 }
 
 const bool UPandolfoComponent::IsClimbing()
@@ -101,9 +112,27 @@ void UPandolfoComponent::Jump()
 
 	ClimbingComponent->Activate();
 
-	
+}
 
+void UPandolfoComponent::Crouch()
+{
+	if (PandolfoState != EPandolfoState::EPS_Pandolfo) return;
 
+	const bool IsCrouched = CharacterOwner->bIsCrouched;
+	CharacterOwner->GetCharacterMovement()->bWantsToCrouch = !IsCrouched;
+
+	if (!IsCrouched)
+	{
+		CrouchingTimeline.PlayFromStart();
+	}
+		
+	else 
+		CrouchingTimeline.Reverse();
+}
+
+void UPandolfoComponent::CrouchCameraUpdate(float Alpha)
+{
+	CameraBoom->TargetArmLength = UKismetMathLibrary::Lerp(400.f, 550.f, Alpha);
 }
 
 bool UPandolfoComponent::TryClimbOrMantle()
@@ -266,7 +295,7 @@ void UPandolfoComponent::Sliding()
 
 	if (CharacterOwner->GetCharacterMovement()->GetLastInputVector().Length() < 0.5f) return;
 
-	EDrawDebugTrace::Type DebugTraceType = EDrawDebugTrace::None;
+	/*EDrawDebugTrace::Type DebugTraceType = EDrawDebugTrace::None;
 	FVector LineStart; FVector LineEnd; FHitResult OutHitLine;
 	FVector CapsuleStart; FHitResult OutHitCapsule;
 	FVector Start_ForwardSpace; FVector End_ForwardSpace; FHitResult OutHit_ForwardSpace;
@@ -314,20 +343,29 @@ void UPandolfoComponent::Sliding()
 		CharacterOwner->DisableInput(CharacterOwner->GetLocalViewingPlayerController());
 		PanWolfCharacter->SetMotionWarpTarget(FName("SlidingPoint"), OutHitLine.Location);
 		OwningPlayerAnimInstance->Montage_Play(SlidingMontage);
-	}
+	}*/
 
-
+	CharacterOwner->DisableInput(CharacterOwner->GetLocalViewingPlayerController());
+	//PanWolfCharacter->SetMotionWarpTarget(FName("SlidingPoint"), OutHitLine.Location);
+	OwningPlayerAnimInstance->Montage_Play(SlidingMontage);
 
 }
 
 void UPandolfoComponent::StartSliding()
 {
+	CharacterOwner->GetCharacterMovement()->CrouchedHalfHeight = 40.f;
+	CharacterOwner->GetCharacterMovement()->bWantsToCrouch = true;
+	
+
 	TimeElapsed = 0.f;
 	GetWorld()->GetTimerManager().SetTimer(Sliding_TimerHandle, [this]() {this->SetSlidingValues(false); }, 0.01f, true);
 }
 
 void UPandolfoComponent::EndSliding()
 {
+	CharacterOwner->GetCharacterMovement()->CrouchedHalfHeight = 55.f;
+	CharacterOwner->GetCharacterMovement()->bWantsToCrouch = false;
+
 	CharacterOwner->EnableInput(CharacterOwner->GetLocalViewingPlayerController());
 	TimeElapsed = 0.35f;
 	GetWorld()->GetTimerManager().SetTimer(Sliding_TimerHandle, [this]() {this->SetSlidingValues(true); }, 0.001f, true);
@@ -342,8 +380,8 @@ void UPandolfoComponent::SetSlidingValues(bool IsReverse)
 	const float NewMeshPosition = MeshPosition_Curve->GetFloatValue(TimeElapsed);
 	const float NewCameraHeight = CameraHeight_Curve->GetFloatValue(TimeElapsed);
 
-	Capsule->SetCapsuleHalfHeight(NewCapsuleSize, true);
-	CharacterOwner->GetMesh()->SetRelativeLocation(FVector(0.f, 0.f, NewMeshPosition));
+	//Capsule->SetCapsuleHalfHeight(NewCapsuleSize, true);
+	//CharacterOwner->GetMesh()->SetRelativeLocation(FVector(0.f, 0.f, NewMeshPosition));
 	CameraBoom->SetRelativeLocation(FVector(CameraBoom->GetRelativeLocation().X, CameraBoom->GetRelativeLocation().Y, NewCameraHeight));
 
 	if ((!IsReverse && TimeElapsed >= 0.35f) || (IsReverse && TimeElapsed <= 0.0f))
