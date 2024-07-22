@@ -25,13 +25,16 @@ public:
 	void CoverMove(const FInputActionValue& Value);
 	void StartCover();
 	void StopCover();
-	bool CanEnterCover(const FVector StartPoint);
-	void EnterCover();
+	bool CanEnterCover(const FVector StartPoint, bool bNarrowCover = false);
+	void EnterCover(const bool SetLocRot = true);
 	void ExitCover();
 	void JumpCover();
 
-	void StartNarrow();
-	void StopNarrow(const FVector EndLocation);
+	void StartNarrow(const FVector StartLocation, const FVector NarrowPosition);
+	void StopNarrow(const FVector EndLocation, const FVector EndDirection);
+
+	UFUNCTION(BlueprintCallable)
+	void EnterNarrow();
 
 	UFUNCTION(BlueprintCallable)
 	void ExitNarrow();
@@ -56,12 +59,6 @@ private:
 public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input Cover")
-	UInputAction* StartCoverAction;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input Cover")
-	UInputAction* StopCoverAction;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input Cover")
 	UInputAction* JumpCoverAction;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input Cover")
@@ -76,6 +73,9 @@ private:
 
 	FTimerHandle WallSearch_TimerHandle;
 
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Climb Params", meta = (AllowPrivateAccess = "true"))
+	bool ShowDebugTrace = false;
+
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input Cover", meta = (AllowPrivateAccess = "true"))
 	UInputMappingContext* SneakCoverMappingContext;
 
@@ -89,7 +89,13 @@ private:
 	float CoverDirection = 0.f;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Montage, meta = (AllowPrivateAccess = "true"))
+	UAnimMontage* StartNarrowMontage;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Montage, meta = (AllowPrivateAccess = "true"))
 	UAnimMontage* ExitNarrowMontage;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Montage, meta = (AllowPrivateAccess = "true"))
+	UAnimMontage* ExitCoverMontage;
 
 	float LastCoverDirection = 0.f;
 	FVector SavedAttachPoint;

@@ -196,8 +196,8 @@ void APanWolfWarCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInpu
 
 		//PandolfoAction
 		EnhancedInputComponent->BindAction(PandolfoComponent->Pandolfo_JumpAction, ETriggerEvent::Started, PandolfoComponent, &UPandolfoComponent::Jump);
-		EnhancedInputComponent->BindAction(PandolfoComponent->Pandolfo_CrouchAction, ETriggerEvent::Started, PandolfoComponent, &UPandolfoComponent::Crouch);
-		EnhancedInputComponent->BindAction(PandolfoComponent->Pandolfo_SlidingAction, ETriggerEvent::Started, PandolfoComponent, &UPandolfoComponent::Sliding);
+		EnhancedInputComponent->BindAction(PandolfoComponent->Pandolfo_CrouchAction, ETriggerEvent::Completed, PandolfoComponent, &UPandolfoComponent::Crouch);
+		EnhancedInputComponent->BindAction(PandolfoComponent->Pandolfo_SlidingAction, ETriggerEvent::Completed, PandolfoComponent, &UPandolfoComponent::Sliding);
 
 		// Climbing
 		EnhancedInputComponent->BindAction(PandolfoComponent->GetClimbingComponent()->ToggleClimbAction, ETriggerEvent::Started, PandolfoComponent->GetClimbingComponent(), &UClimbingComponent::ToggleClimbing);
@@ -214,8 +214,6 @@ void APanWolfWarCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInpu
 
 		// SneakCover
 		EnhancedInputComponent->BindAction(PandolfoComponent->GetSneakCoverComponent()->SneakCoverMoveAction, ETriggerEvent::Triggered, PandolfoComponent->GetSneakCoverComponent(), &USneakCoverComponent::CoverMove);
-		EnhancedInputComponent->BindAction(PandolfoComponent->GetSneakCoverComponent()->StartCoverAction, ETriggerEvent::Started, PandolfoComponent->GetSneakCoverComponent(), &USneakCoverComponent::StartCover);
-		EnhancedInputComponent->BindAction(PandolfoComponent->GetSneakCoverComponent()->StopCoverAction, ETriggerEvent::Started, PandolfoComponent->GetSneakCoverComponent(), &USneakCoverComponent::StopCover);
 		EnhancedInputComponent->BindAction(PandolfoComponent->GetSneakCoverComponent()->JumpCoverAction, ETriggerEvent::Started, PandolfoComponent->GetSneakCoverComponent(), &USneakCoverComponent::JumpCover);
 
 		// Kite

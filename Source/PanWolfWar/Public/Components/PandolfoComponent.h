@@ -86,6 +86,8 @@ private:
 	USpringArmComponent* CameraBoom;
 
 
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Climb Params", meta = (AllowPrivateAccess = "true"))
+	bool ShowDebugTrace = false;
 
 	UPROPERTY(Category = Character, EditDefaultsOnly, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<USkeletalMesh> SkeletalMeshAsset;
@@ -110,12 +112,6 @@ private:
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Sliding", meta = (AllowPrivateAccess = "true"))
 	UAnimMontage* PredictJumpMontage;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Sliding", meta = (AllowPrivateAccess = "true"))
-	UCurveFloat* CapsuleSize_Curve;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Sliding", meta = (AllowPrivateAccess = "true"))
-	UCurveFloat* MeshPosition_Curve;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Sliding", meta = (AllowPrivateAccess = "true"))
 	UCurveFloat* CameraHeight_Curve;

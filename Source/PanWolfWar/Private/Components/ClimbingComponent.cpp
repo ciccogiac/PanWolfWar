@@ -115,6 +115,9 @@ void UClimbingComponent::StartClimbing()
 	if (PandolfoComponent->PandolfoState == EPandolfoState::EPS_Covering)
 		PandolfoComponent->GetSneakCoverComponent()->ExitCover();
 
+	if (MovementComponent->IsCrouching())
+		MovementComponent->bWantsToCrouch = false;
+
 	PandolfoComponent->PandolfoState = EPandolfoState::EPS_Climbing;
 }
 
@@ -365,22 +368,6 @@ bool UClimbingComponent::CanClimbUpon()
 	bCoveringSaved = false;
 	if (DoMantleTrace(LandingObstacleHit.TraceStart,FirstPoint,SecondPoint) )
 	{
-		//if (!CheckCapsuleSpaceCondition(SecondPoint, true)) 
-		//{
-		//	if (!CheckCapsuleSpaceCondition(FirstPoint, true,2))
-		//	{
-		//		//Debug::Print(TEXT("NOSPACE"));
-		//		return false;
-		//	}
-		//	else
-		//	{
-		//		//Debug::Print(TEXT("CanDoSneak")); 
-		//		if(!PandolfoComponent->GetSneakCoverComponent()->CanEnterCover(FirstPoint + FVector(0.f,0.f,90.f)))
-		//		return false;
-
-		//		bCoveringSaved = true;
-		//	}
-		//}
 
 		if (LandingObstacleHit.bBlockingHit )
 		{
@@ -398,6 +385,7 @@ bool UClimbingComponent::CanClimbUpon()
 				else
 				{
 					//Debug::Print(TEXT("CanDoSneak")); 
+					if (!DoSphereTraceSingleForObjects(FirstPoint, FirstPoint, 15.f).bBlockingHit) return false;
 					bCoveringSaved = true;
 				}
 			}
@@ -664,7 +652,7 @@ const FHitResult UClimbingComponent::DoLineTraceSingleByWorldStatic(const FVecto
 const FHitResult UClimbingComponent::DoSphereTraceSingleForObjects(const FVector& Start, const FVector& End, float Radius, bool TraceWorldStatic)
 {
 	FHitResult OutHit;
-	EDrawDebugTrace::Type DebugTraceType = ShowDebugTrace ? EDrawDebugTrace::ForOneFrame : EDrawDebugTrace::None;
+	EDrawDebugTrace::Type DebugTraceType = ShowDebugTrace ? (TraceWorldStatic ? EDrawDebugTrace::ForDuration : EDrawDebugTrace::ForOneFrame) : EDrawDebugTrace::None;
 	TArray<AActor*> ActorsToIgnoreArray;
 	if(ClimbingState == EClimbingState::ECS_Falling)  ActorsToIgnoreArray.Add(ClimbedObject);
 
@@ -880,7 +868,9 @@ const bool UClimbingComponent::DoMantleTrace(const FVector TraceStart, FVector& 
 	for (size_t i = 0; i < Offset /3 ; i++)
 	{
 		Start = TraceStart + CharacterOwner->GetActorForwardVector() * i * 3;
-		const float MantleLineDownLength = IsClimbing() ? MantleLineDownLength_Climb : MantleLineDownLength_NoClimb;
+		const float MantleLineDownLength = MovementComponent->IsCrouching() ? MantleLineDownLength_Crouch :
+			(IsClimbing() ? MantleLineDownLength_Climb : MantleLineDownLength_NoClimb);
+			
 		End = Start - FVector(0.f, 0.f, MantleLineDownLength);
 
 		if (!FirstPointFound)

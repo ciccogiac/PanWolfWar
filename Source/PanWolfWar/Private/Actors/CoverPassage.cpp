@@ -52,7 +52,7 @@ void ACoverPassage::BoxCollisionEnter(UPrimitiveComponent* OverlappedComponent, 
 				switch (CoverPassageType)
 				{
 				case ECoverPassageType::ECPT_Wall:
-					Debug::Print(TEXT("EnterWall"));
+					//Debug::Print(TEXT("EnterWall"));
 					if (PandolfoComponent->PandolfoState == EPandolfoState::EPS_Covering)
 					{
 						SneakCoverComponent->StopCover();
@@ -65,21 +65,17 @@ void ACoverPassage::BoxCollisionEnter(UPrimitiveComponent* OverlappedComponent, 
 					break;
 				case ECoverPassageType::ECPT_Narrow:
 					//Debug::Print(TEXT("EnterNarrow"));
-					if (PandolfoComponent->PandolfoState == EPandolfoState::EPS_Covering && SneakCoverComponent->IsNarrowing() && !bNarrowEntering)
+					// 
+					//Uscita
+					if (PandolfoComponent->PandolfoState == EPandolfoState::EPS_Covering && SneakCoverComponent->IsNarrowing() )
 					{
-						SneakCoverComponent->StopNarrow(GetActorLocation() + GetActorForwardVector()*35.f);
-						bNarrowEntering = false;
+						SneakCoverComponent->StopNarrow(GetActorLocation() + GetActorForwardVector() * BoxComponent->GetScaledBoxExtent().X* 4.f, GetActorForwardVector());
 					}
-					else if (PandolfoComponent->PandolfoState == EPandolfoState::EPS_Covering && !SneakCoverComponent->IsNarrowing() && !bNarrowEntering)
+
+					//Ingresso 
+					else if(PandolfoComponent->PandolfoState == EPandolfoState::EPS_Pandolfo && !SneakCoverComponent->IsNarrowing())
 					{
-						bNarrowEntering = true;
-						SneakCoverComponent->StartNarrow();
-						
-					}
-					else if(!bNarrowEntering)
-					{
-						bNarrowEntering = true;
-						SneakCoverComponent->StartNarrow();
+						SneakCoverComponent->StartNarrow(GetActorLocation() - GetActorForwardVector() * BoxComponent->GetScaledBoxExtent().X * 4 + GetActorRightVector() * BoxComponent->GetScaledBoxExtent().Y , GetActorLocation());
 						
 					}
 					break;
@@ -118,17 +114,7 @@ void ACoverPassage::BoxCollisionExit(UPrimitiveComponent* OverlappedComponent, A
 					}
 
 					break;
-				case ECoverPassageType::ECPT_Narrow:
-					
-					if (PandolfoComponent->PandolfoState == EPandolfoState::EPS_Covering && SneakCoverComponent->IsNarrowing() && bNarrowEntering )
-					{
-						//SneakCoverComponent->StopNarrow();
-						bNarrowEntering = false;
-					}
-					//else
-					//{
-					//	//SneakCoverComponent->StartNarrow();
-					//}
+				case ECoverPassageType::ECPT_Narrow:				
 					break;
 				default:
 					break;

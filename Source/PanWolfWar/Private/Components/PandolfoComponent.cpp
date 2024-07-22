@@ -150,9 +150,9 @@ const FHitResult UPandolfoComponent::TraceIsOnGround(const FVector RootLocation,
 {
 	const FVector OnGroundStart = RootLocation + ForwardVector * 5.f;
 	const FVector OnGroundEnd = OnGroundStart + FVector(0.f, 0.f, 0.1f);
-
+	EDrawDebugTrace::Type DebugTrace = ShowDebugTrace ? EDrawDebugTrace::ForDuration : EDrawDebugTrace::None;
 	FHitResult OnGroundHit;
-	UKismetSystemLibrary::SphereTraceSingle(this, OnGroundStart, OnGroundEnd, 10.f, ETraceTypeQuery::TraceTypeQuery1, false, TArray<AActor*>(), EDrawDebugTrace::None, OnGroundHit, true);
+	UKismetSystemLibrary::SphereTraceSingle(this, OnGroundStart, OnGroundEnd, 10.f, ETraceTypeQuery::TraceTypeQuery1, false, TArray<AActor*>(), DebugTrace, OnGroundHit, true);
 
 	return OnGroundHit;
 }
@@ -166,7 +166,7 @@ const FHitResult UPandolfoComponent::PredictProjectileTrace(const FVector ActorL
 	PredictParams.OverrideGravityZ = -10.f;
 	PredictParams.DrawDebugTime = 3.f;
 	PredictParams.SimFrequency = 0.4;
-	PredictParams.DrawDebugType = EDrawDebugTrace::None;
+	PredictParams.DrawDebugType =  ShowDebugTrace ? EDrawDebugTrace::ForDuration : EDrawDebugTrace::None;
 
 	FPredictProjectilePathResult PredictResult;
 
@@ -180,7 +180,8 @@ const FHitResult UPandolfoComponent::TraceLandConditions(const FVector ImpactPoi
 	const FVector SpaceCapsuleStart = ImpactPoint + ForwardVector * 50.f + FVector(0.f, 0.f, 30.f);
 	const FVector SpaceCapsuleEnd = SpaceCapsuleStart + FVector(0.f, 0.f, -60.f);
 	FHitResult OnSpaceCapsuleHit;
-	UKismetSystemLibrary::LineTraceSingle(this, SpaceCapsuleStart, SpaceCapsuleEnd, ETraceTypeQuery::TraceTypeQuery1, false, TArray<AActor*>(), EDrawDebugTrace::None, OnSpaceCapsuleHit, true);
+	EDrawDebugTrace::Type DebugTrace = ShowDebugTrace ? EDrawDebugTrace::ForDuration : EDrawDebugTrace::None;
+	UKismetSystemLibrary::LineTraceSingle(this, SpaceCapsuleStart, SpaceCapsuleEnd, ETraceTypeQuery::TraceTypeQuery1, false, TArray<AActor*>(), DebugTrace, OnSpaceCapsuleHit, true);
 
 	return OnSpaceCapsuleHit;
 }
@@ -190,7 +191,8 @@ const FHitResult UPandolfoComponent::TraceObstacles(const FVector ActorLocation,
 	const FVector ObastacleStart = ActorLocation;
 	const FVector  ObastacleEnd = ImpactPoint + FVector(0.f, 0.f, 120.f);
 	FHitResult OnObastacleHit;
-	UKismetSystemLibrary::LineTraceSingle(this, ObastacleStart, ObastacleEnd, ETraceTypeQuery::TraceTypeQuery1, false, TArray<AActor*>(), EDrawDebugTrace::None, OnObastacleHit, true);
+	EDrawDebugTrace::Type DebugTrace = ShowDebugTrace ? EDrawDebugTrace::ForDuration : EDrawDebugTrace::None;
+	UKismetSystemLibrary::LineTraceSingle(this, ObastacleStart, ObastacleEnd, ETraceTypeQuery::TraceTypeQuery1, false, TArray<AActor*>(), DebugTrace, OnObastacleHit, true);
 
 	return OnObastacleHit;
 }
@@ -291,68 +293,21 @@ void UPandolfoComponent::Sliding()
 	UAnimInstance* OwningPlayerAnimInstance = CharacterOwner->GetMesh()->GetAnimInstance();
 	if (!OwningPlayerAnimInstance) return;
 	if (OwningPlayerAnimInstance->IsAnyMontagePlaying()) return;
-
-
 	if (CharacterOwner->GetCharacterMovement()->GetLastInputVector().Length() < 0.5f) return;
 
-	/*EDrawDebugTrace::Type DebugTraceType = EDrawDebugTrace::None;
-	FVector LineStart; FVector LineEnd; FHitResult OutHitLine;
-	FVector CapsuleStart; FHitResult OutHitCapsule;
-	FVector Start_ForwardSpace; FVector End_ForwardSpace; FHitResult OutHit_ForwardSpace;
-
-	LineStart = CharacterOwner->GetActorLocation() + CharacterOwner->GetActorForwardVector() * 550.f;
-	LineEnd = LineStart + FVector(0.f, 0.f, -350.f);
-	UKismetSystemLibrary::LineTraceSingle(this, LineStart, LineEnd, ETraceTypeQuery::TraceTypeQuery1, false, TArray<AActor*>(), DebugTraceType, OutHitLine, true);
-
-	if (!OutHitLine.bBlockingHit) return;
-
-	CapsuleStart = OutHitLine.Location + FVector(0.f, 0.f, 95.f);
-	UKismetSystemLibrary::CapsuleTraceSingle(this, CapsuleStart, CapsuleStart, 35.f, 90.f, ETraceTypeQuery::TraceTypeQuery1, false, TArray<AActor*>(), DebugTraceType, OutHitCapsule, true);
-
-	Start_ForwardSpace = CharacterOwner->GetMesh()->GetComponentLocation() + FVector(0.f, 0.f, 60.f) + CharacterOwner->GetActorForwardVector() * 35.f;
-	End_ForwardSpace = OutHitLine.Location + FVector(0.f, 0.f, 60.f);
-	UKismetSystemLibrary::SphereTraceSingle(this, Start_ForwardSpace, End_ForwardSpace, 25.f, ETraceTypeQuery::TraceTypeQuery1, false, TArray<AActor*>(), DebugTraceType, OutHit_ForwardSpace, true);
-
-	if (OutHitCapsule.bBlockingHit || OutHit_ForwardSpace.bBlockingHit)
-	{
-		for (size_t i = 0; i < 5; i++)
-		{
-			if (i == 2) continue;
-
-			LineStart = CharacterOwner->GetActorLocation() + CharacterOwner->GetActorForwardVector() * 550.f + CharacterOwner->GetActorRightVector() * i * 35.f - CharacterOwner->GetActorRightVector() * 105.f;
-			LineEnd = LineStart + FVector(0.f, 0.f, -350.f);
-			UKismetSystemLibrary::LineTraceSingle(this, LineStart, LineEnd, ETraceTypeQuery::TraceTypeQuery1, false, TArray<AActor*>(), DebugTraceType, OutHitLine, true);
-
-			if (!OutHitLine.bBlockingHit) continue;
-
-			CapsuleStart = OutHitLine.Location + FVector(0.f, 0.f, 95.f);
-			UKismetSystemLibrary::CapsuleTraceSingle(this, CapsuleStart, CapsuleStart, 35.f, 90.f, ETraceTypeQuery::TraceTypeQuery1, false, TArray<AActor*>(), DebugTraceType, OutHitCapsule, true);
-
-			Start_ForwardSpace = CharacterOwner->GetMesh()->GetComponentLocation() + FVector(0.f, 0.f, 60.f) + CharacterOwner->GetActorForwardVector() * 35.f;
-			End_ForwardSpace = OutHitLine.Location + FVector(0.f, 0.f, 60.f);
-			UKismetSystemLibrary::SphereTraceSingle(this, Start_ForwardSpace, End_ForwardSpace, 25.f, ETraceTypeQuery::TraceTypeQuery1, false, TArray<AActor*>(), DebugTraceType, OutHit_ForwardSpace, true);
-
-			if (!OutHitCapsule.bBlockingHit && !OutHit_ForwardSpace.bBlockingHit)
-				break;
-		}
-	}
-
-
-	if (!OutHitCapsule.bBlockingHit && !OutHit_ForwardSpace.bBlockingHit)
-	{
-		CharacterOwner->DisableInput(CharacterOwner->GetLocalViewingPlayerController());
-		PanWolfCharacter->SetMotionWarpTarget(FName("SlidingPoint"), OutHitLine.Location);
-		OwningPlayerAnimInstance->Montage_Play(SlidingMontage);
-	}*/
-
 	CharacterOwner->DisableInput(CharacterOwner->GetLocalViewingPlayerController());
-	//PanWolfCharacter->SetMotionWarpTarget(FName("SlidingPoint"), OutHitLine.Location);
 	OwningPlayerAnimInstance->Montage_Play(SlidingMontage);
-
 }
 
 void UPandolfoComponent::StartSliding()
 {
+	if (CharacterOwner->GetCharacterMovement()->IsCrouching())
+	{
+		CharacterOwner->GetCapsuleComponent()->SetCapsuleSize(35.f,40.f);
+		CrouchingTimeline.Reverse();
+	}
+		
+
 	CharacterOwner->GetCharacterMovement()->CrouchedHalfHeight = 40.f;
 	CharacterOwner->GetCharacterMovement()->bWantsToCrouch = true;
 	
@@ -376,12 +331,8 @@ void UPandolfoComponent::SetSlidingValues(bool IsReverse)
 	TimeElapsed = TimeElapsed + GetWorld()->GetTimerManager().GetTimerElapsed(Sliding_TimerHandle) * (IsReverse ? -1 : 1);
 	TimeElapsed = UKismetMathLibrary::FClamp(TimeElapsed, 0.00f, 0.35f);
 
-	const float NewCapsuleSize = CapsuleSize_Curve->GetFloatValue(TimeElapsed);
-	const float NewMeshPosition = MeshPosition_Curve->GetFloatValue(TimeElapsed);
 	const float NewCameraHeight = CameraHeight_Curve->GetFloatValue(TimeElapsed);
 
-	//Capsule->SetCapsuleHalfHeight(NewCapsuleSize, true);
-	//CharacterOwner->GetMesh()->SetRelativeLocation(FVector(0.f, 0.f, NewMeshPosition));
 	CameraBoom->SetRelativeLocation(FVector(CameraBoom->GetRelativeLocation().X, CameraBoom->GetRelativeLocation().Y, NewCameraHeight));
 
 	if ((!IsReverse && TimeElapsed >= 0.35f) || (IsReverse && TimeElapsed <= 0.0f))
