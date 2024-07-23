@@ -288,12 +288,17 @@ void APanWolfWarCharacter::Landed(const FHitResult& Hit)
 	Super::Landed(Hit);
 
 	if (PandolfoComponent->IsActive())
-	{
-		PandolfoComponent->UnGlide();
+	{		
+		PandolfoComponent->HandleLand();
+	}
+}
 
-		if (PandolfoComponent->GetClimbingComponent()->IsActive())
-			PandolfoComponent->GetClimbingComponent()->Landed();
-			
+void APanWolfWarCharacter::Falling()
+{
+	//Debug::Print(TEXT("Start Falling"));
+	if (PandolfoComponent->IsActive())
+	{
+		PandolfoComponent->HandleFalling();
 	}
 }
 

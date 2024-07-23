@@ -60,6 +60,7 @@ protected:
 	virtual void BeginPlay();
 
 	virtual void Landed(const FHitResult& Hit) override;
+	virtual void Falling() override;
 
 #pragma endregion
 

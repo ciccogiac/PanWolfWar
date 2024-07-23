@@ -23,6 +23,7 @@ enum class EPandolfoState : uint8
 	EPS_Pandolfo UMETA(DisplayName = "Pandolfo"),
 	EPS_Climbing UMETA(DisplayName = "Climbing"),
 	EPS_Covering UMETA(DisplayName = "Covering"),
+	EPS_Gliding UMETA(DisplayName = "Gliding")
 };
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
@@ -47,6 +48,9 @@ public:
 
 	void TryGliding();
 	void UnGlide();
+
+	void HandleLand();
+	void HandleFalling();
 
 protected:
 	virtual void BeginPlay() override;
@@ -87,7 +91,6 @@ private:
 	UCapsuleComponent* Capsule;
 	USpringArmComponent* CameraBoom;
 
-	bool bIsGliding = false;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Climb Params", meta = (AllowPrivateAccess = "true"))
 	bool ShowDebugTrace = false;
@@ -169,6 +172,6 @@ public:
 	FORCEINLINE UKiteComponent* GetKiteComponent()  const { return KiteComponent; }
 
 	UFUNCTION(BlueprintCallable, Category = "Gliding")
-	FORCEINLINE bool IsGliding() const { return bIsGliding; }
+	FORCEINLINE bool IsGliding() const { return PandolfoState == EPandolfoState::EPS_Gliding; }
 	
 };

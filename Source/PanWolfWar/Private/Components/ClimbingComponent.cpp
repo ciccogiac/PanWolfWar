@@ -142,6 +142,7 @@ void UClimbingComponent::StopClimbing()
 	CapsuleComponent->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
 
 	PandolfoComponent->PandolfoState = EPandolfoState::EPS_Pandolfo;
+	Deactivate();
 }
 
 #pragma endregion
@@ -573,8 +574,9 @@ bool UClimbingComponent::TryClimbUpon()
 bool UClimbingComponent::TryMantle()
 {
 	if (OwningPlayerAnimInstance->IsAnyMontagePlaying()) return false;
-
-	return CanClimbUpon();
+	bool bCanMantle = CanClimbUpon();
+	if (bCanMantle) Deactivate();
+	return bCanMantle;
 }
 
 bool UClimbingComponent::TryJumping()

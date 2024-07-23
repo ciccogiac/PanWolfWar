@@ -57,6 +57,9 @@ void UPandolfoComponent::Activate(bool bReset)
 
 	PanWolfCharacter->SetTransformationCharacter(SkeletalMeshAsset, Anim);
 
+	if(CharacterOwner->GetCharacterMovement()->IsFalling())
+		ClimbingComponent->Activate();
+
 	PanWolfCharacter->GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Falling);
 	PanWolfCharacter->GetCharacterMovement()->MaxFlySpeed = 0.f;
 
@@ -110,7 +113,34 @@ void UPandolfoComponent::Jump()
 		}
 	}
 
+}
+
+void UPandolfoComponent::HandleFalling()
+{
+	//Debug::Print(TEXT("FAlling"));
 	ClimbingComponent->Activate();
+}
+
+void UPandolfoComponent::HandleLand()
+{
+	switch (PandolfoState)
+	{
+	case EPandolfoState::EPS_Pandolfo:
+		break;
+	case EPandolfoState::EPS_Climbing:
+		ClimbingComponent->Landed();
+		break;
+	case EPandolfoState::EPS_Covering:
+		break;
+	case EPandolfoState::EPS_Gliding:
+		UnGlide();
+		break;
+	default:
+		break;
+	}
+
+	if (ClimbingComponent->IsActive())
+		ClimbingComponent->Deactivate();
 
 }
 
@@ -345,7 +375,7 @@ void UPandolfoComponent::SetSlidingValues(bool IsReverse)
 
 void UPandolfoComponent::TryGliding()
 {
-	if (bIsGliding) return;
+	if (PandolfoState != EPandolfoState::EPS_Pandolfo) return;
 
 	const FVector Start = CharacterOwner->GetActorLocation() ;
 	const FVector End = Start - CharacterOwner->GetActorUpVector() * 800.f;
@@ -356,8 +386,8 @@ void UPandolfoComponent::TryGliding()
 	
 	if (!Hit.bBlockingHit && CharacterOwner->GetCharacterMovement()->GetLastUpdateVelocity().Z < -500.f)
 	{
-		Debug::Print(TEXT("Glide"));
-		bIsGliding = true;
+		//Debug::Print(TEXT("Glide"));
+		PandolfoState = EPandolfoState::EPS_Gliding;
 
 		CharacterOwner->GetCharacterMovement()->StopMovementImmediately();
 		CharacterOwner->GetCharacterMovement()->GravityScale = 0.4f;
@@ -371,10 +401,10 @@ void UPandolfoComponent::TryGliding()
 
 void UPandolfoComponent::UnGlide()
 {
-	if(bIsGliding)
+	if(PandolfoState == EPandolfoState::EPS_Gliding)
 	{
-		Debug::Print(TEXT("UnGlide"));
-		bIsGliding = false;
+		//Debug::Print(TEXT("UnGlide"));
+		PandolfoState = EPandolfoState::EPS_Pandolfo;
 
 		UmbrellaActor->Destroy();
 		CharacterOwner->GetCharacterMovement()->GravityScale = 1.75f;
@@ -393,3 +423,4 @@ void UPandolfoComponent::EnterKiteMode(AKiteBoard* KiteBoard)
 	KiteComponent->Activate();
 
 }
+
