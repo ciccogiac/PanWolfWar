@@ -287,8 +287,14 @@ void APanWolfWarCharacter::Landed(const FHitResult& Hit)
 {
 	Super::Landed(Hit);
 
-	if(PandolfoComponent->GetClimbingComponent()->IsActive())
-		PandolfoComponent->GetClimbingComponent()->Landed();
+	if (PandolfoComponent->IsActive())
+	{
+		PandolfoComponent->UnGlide();
+
+		if (PandolfoComponent->GetClimbingComponent()->IsActive())
+			PandolfoComponent->GetClimbingComponent()->Landed();
+			
+	}
 }
 
 #pragma endregion

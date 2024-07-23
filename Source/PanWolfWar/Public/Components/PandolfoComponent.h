@@ -45,6 +45,8 @@ public:
 
 	void EnterKiteMode(AKiteBoard* KiteBoard);
 
+	void TryGliding();
+	void UnGlide();
 
 protected:
 	virtual void BeginPlay() override;
@@ -85,6 +87,7 @@ private:
 	UCapsuleComponent* Capsule;
 	USpringArmComponent* CameraBoom;
 
+	bool bIsGliding = false;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Climb Params", meta = (AllowPrivateAccess = "true"))
 	bool ShowDebugTrace = false;
@@ -131,6 +134,12 @@ private:
 	FVector LandPredictLocation;
 	FVector LandPredictStartLocation;
 
+	//Umbrella
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Gliding", meta = (AllowPrivateAccess = "true"))
+	TSubclassOf<AActor> UmbrellaActorClass;
+
+	AActor* UmbrellaActor;
+
 public:
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Pandolfo State ")
@@ -158,5 +167,8 @@ public:
 	FORCEINLINE UClimbingComponent* GetClimbingComponent()  const { return ClimbingComponent; }
 	FORCEINLINE USneakCoverComponent* GetSneakCoverComponent()  const { return SneakCoverComponent; }
 	FORCEINLINE UKiteComponent* GetKiteComponent()  const { return KiteComponent; }
+
+	UFUNCTION(BlueprintCallable, Category = "Gliding")
+	FORCEINLINE bool IsGliding() const { return bIsGliding; }
 	
 };

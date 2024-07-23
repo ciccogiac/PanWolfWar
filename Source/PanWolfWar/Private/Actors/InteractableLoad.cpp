@@ -9,12 +9,17 @@
 
 #include "TimerManager.h"
 
+#include "Components/WidgetComponent.h"
+#include "UserWidgets/InteractionLoadWidget.h"
+#include "GameFramework/CharacterMovementComponent.h"
+
 AInteractableLoad::AInteractableLoad()
 {
 	PrimaryActorTick.bCanEverTick = false;
 
 	N_InteractBox = 1;
-	InitializeBoxComponents();
+	InitializeBoxComponents();	
+
 }
 
 bool AInteractableLoad::Interact(ACharacter* _CharacterOwner)
@@ -33,32 +38,72 @@ bool AInteractableLoad::Interact(ACharacter* _CharacterOwner)
 
 	if (bFirstInteraction) 
 	{
-		CharacterOwner->SetActorLocation(BoxComponent->GetComponentLocation());
+		CharacterOwner->SetActorLocation(FVector(BoxComponent->GetComponentLocation().X, BoxComponent->GetComponentLocation().Y, CharacterOwner->GetActorLocation().Z));
 		CharacterOwner->SetActorRotation(UKismetMathLibrary::MakeRotFromX(BoxComponent->GetForwardVector()));
 		bFirstInteraction = false;
 
 		GetWorld()->GetTimerManager().SetTimer(Percentage_TimerHandle, [this]() {this->DecreasePercentage(); }, DecreaseTime, true);
+
+		CharacterOwner->GetCharacterMovement()->bOrientRotationToMovement = false;
+		CharacterOwner->GetCharacterMovement()->Deactivate();
+
 	}
 
-	Percentage = UKismetMathLibrary::FClamp(Percentage + InteractPercent, 0.f, 100.f);
-	Debug::Print(TEXT("Percent : ") + FString::SanitizeFloat(Percentage), FColor::Cyan, 1);
+	if (!bLoadFull)
+	{
+		Percentage = UKismetMathLibrary::FClamp(Percentage + InteractPercent, 0.f, 100.f);
+		InteractionLoadWidget->SetInteractionBarPercent(Percentage/100.f);
+		Interaction(Percentage);
+	}
+
 
 	if (Percentage >= 100.f)
 	{
+		bLoadFull = true;
 		GetWorld()->GetTimerManager().ClearTimer(Percentage_TimerHandle);
 		BoxComponent->GetChildComponent(1)->SetVisibility(false);
+
+		CharacterOwner->GetCharacterMovement()->bOrientRotationToMovement = true;
+		CharacterOwner->GetCharacterMovement()->Activate();
 	}
+
 	return true;
 }
 
 void AInteractableLoad::BeginPlay()
 {
 	Super::BeginPlay();
+
+	InteractionLoadWidget = Cast<UInteractionLoadWidget>(InteractionWidgetArray[0]->GetWidget());
+	BoxComponentArray[0]->DetachFromParent(true);
+}
+
+void AInteractableLoad::BoxCollisionEnter(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
+{
+	if (bLoadFull) return;
+	Super::BoxCollisionEnter(OverlappedComponent, OtherActor, OtherComp, OtherBodyIndex, bFromSweep, SweepResult);
+}
+
+void AInteractableLoad::BoxCollisionExit(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
+{
+	if (bLoadFull) return;
+	Super::BoxCollisionExit(OverlappedComponent, OtherActor, OtherComp, OtherBodyIndex);
+	Percentage = 0.f;
+	InteractionLoadWidget->SetInteractionBarPercent(0.f);
 }
 
 
 void AInteractableLoad::DecreasePercentage()
 {	
 	Percentage = UKismetMathLibrary::FClamp(Percentage - DecreasePercent, 0.f, 100.f);
-	Debug::Print(TEXT("Percent : ") + FString::SanitizeFloat(Percentage),FColor::Cyan,1);
+	InteractionLoadWidget->SetInteractionBarPercent(Percentage / 100.f);
+	Interaction(Percentage);
+
+	if (Percentage <= 0.f)
+	{
+		GetWorld()->GetTimerManager().ClearTimer(Percentage_TimerHandle);
+		CharacterOwner->GetCharacterMovement()->bOrientRotationToMovement = true;
+		CharacterOwner->GetCharacterMovement()->Activate();
+		bFirstInteraction = true;
+	}
 }

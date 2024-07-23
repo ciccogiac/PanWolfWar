@@ -341,6 +341,50 @@ void UPandolfoComponent::SetSlidingValues(bool IsReverse)
 
 #pragma endregion
 
+#pragma region Gliding
+
+void UPandolfoComponent::TryGliding()
+{
+	if (bIsGliding) return;
+
+	const FVector Start = CharacterOwner->GetActorLocation() ;
+	const FVector End = Start - CharacterOwner->GetActorUpVector() * 800.f;
+	EDrawDebugTrace::Type DebugTrace = ShowDebugTrace ? EDrawDebugTrace::ForDuration : EDrawDebugTrace::None;
+	FHitResult Hit;
+	UKismetSystemLibrary::LineTraceSingle(this, Start, End, ETraceTypeQuery::TraceTypeQuery1, false, TArray<AActor*>(), EDrawDebugTrace::ForDuration, Hit, true);
+
+	
+	if (!Hit.bBlockingHit && CharacterOwner->GetCharacterMovement()->GetLastUpdateVelocity().Z < -500.f)
+	{
+		Debug::Print(TEXT("Glide"));
+		bIsGliding = true;
+
+		CharacterOwner->GetCharacterMovement()->StopMovementImmediately();
+		CharacterOwner->GetCharacterMovement()->GravityScale = 0.4f;
+		CharacterOwner->GetCharacterMovement()->AirControl = 0.7f;
+
+		UmbrellaActor = GetWorld()->SpawnActor<AActor>(UmbrellaActorClass, CharacterOwner->GetActorLocation(), CharacterOwner->GetActorRotation());
+		FAttachmentTransformRules AttachmentRules(EAttachmentRule::SnapToTarget, true);
+		UmbrellaActor->AttachToComponent(CharacterOwner->GetMesh(), AttachmentRules, FName("hand_l_Umbrella"));
+	}
+}
+
+void UPandolfoComponent::UnGlide()
+{
+	if(bIsGliding)
+	{
+		Debug::Print(TEXT("UnGlide"));
+		bIsGliding = false;
+
+		UmbrellaActor->Destroy();
+		CharacterOwner->GetCharacterMovement()->GravityScale = 1.75f;
+		CharacterOwner->GetCharacterMovement()->AirControl = 0.35f;
+	}
+
+}
+
+#pragma endregion
+
 
 void UPandolfoComponent::EnterKiteMode(AKiteBoard* KiteBoard)
 {

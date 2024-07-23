@@ -74,7 +74,8 @@ void UClimbingComponent::TickComponent(float DeltaTime, ELevelTick TickType, FAc
 	switch (ClimbingState)
 	{
 	case  EClimbingState::ECS_NOTClimbing :
-		if (CheckTryClimbingConditions() &&!TryClimbing()) { TryMantle(); }
+		if (CheckTryClimbingConditions() && !TryClimbing()) { TryMantle(); }
+		else { PandolfoComponent->TryGliding(); }
 		break;
 
 	case EClimbingState::ECS_Falling :
@@ -1166,6 +1167,7 @@ void UClimbingComponent::ClimbJump()
 
 void UClimbingComponent::ClimbDownActivate()
 {
+	if (MovementComponent->IsFalling()) return;
 	Activate();
 	ClimbingState = EClimbingState::ECS_SearchingClimbingDown;
 }
