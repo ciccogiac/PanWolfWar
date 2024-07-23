@@ -13,6 +13,8 @@
 #include "UserWidgets/InteractionLoadWidget.h"
 #include "GameFramework/CharacterMovementComponent.h"
 
+
+
 AInteractableLoad::AInteractableLoad()
 {
 	PrimaryActorTick.bCanEverTick = false;
@@ -65,6 +67,8 @@ bool AInteractableLoad::Interact(ACharacter* _CharacterOwner)
 
 		CharacterOwner->GetCharacterMovement()->bOrientRotationToMovement = true;
 		CharacterOwner->GetCharacterMovement()->Activate();
+
+		return false;
 	}
 
 	return true;
@@ -105,5 +109,7 @@ void AInteractableLoad::DecreasePercentage()
 		CharacterOwner->GetCharacterMovement()->bOrientRotationToMovement = true;
 		CharacterOwner->GetCharacterMovement()->Activate();
 		bFirstInteraction = true;
+
+
 	}
 }

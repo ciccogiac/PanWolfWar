@@ -192,7 +192,7 @@ const FHitResult UPandolfoComponent::PredictProjectileTrace(const FVector ActorL
 	const FVector ProjectileStart = ActorLocation + ForwardVector * 250.f;
 	const FVector ProjectileVelocity = ForwardVector * 10.f;
 
-	FPredictProjectilePathParams PredictParams(75.f, ProjectileStart, ProjectileVelocity, 7, EObjectTypeQuery::ObjectTypeQuery1, OnGroundActor);
+	FPredictProjectilePathParams PredictParams(75.f, ProjectileStart, ProjectileVelocity, 7, PredictJumpObjectTypes, OnGroundActor);
 	PredictParams.OverrideGravityZ = -10.f;
 	PredictParams.DrawDebugTime = 3.f;
 	PredictParams.SimFrequency = 0.4;
@@ -240,7 +240,6 @@ void UPandolfoComponent::LoadPredictJump(const FVector ActorLocation, UAnimInsta
 	OwningPlayerAnimInstance->OnPlayMontageNotifyEnd.AddDynamic(this, &UPandolfoComponent::StopPredictJump);
 	OwningPlayerAnimInstance->OnMontageEnded.AddDynamic(this, &UPandolfoComponent::EndPredictJump);
 }
-
 
 bool UPandolfoComponent::PredictJump()
 {
@@ -378,20 +377,20 @@ void UPandolfoComponent::TryGliding()
 	if (PandolfoState != EPandolfoState::EPS_Pandolfo) return;
 
 	const FVector Start = CharacterOwner->GetActorLocation() ;
-	const FVector End = Start - CharacterOwner->GetActorUpVector() * 800.f;
+	const FVector End = Start - CharacterOwner->GetActorUpVector() * GlidingHeight;
 	EDrawDebugTrace::Type DebugTrace = ShowDebugTrace ? EDrawDebugTrace::ForDuration : EDrawDebugTrace::None;
 	FHitResult Hit;
 	UKismetSystemLibrary::LineTraceSingle(this, Start, End, ETraceTypeQuery::TraceTypeQuery1, false, TArray<AActor*>(), EDrawDebugTrace::ForDuration, Hit, true);
 
 	
-	if (!Hit.bBlockingHit && CharacterOwner->GetCharacterMovement()->GetLastUpdateVelocity().Z < -500.f)
+	if (!Hit.bBlockingHit && CharacterOwner->GetCharacterMovement()->GetLastUpdateVelocity().Z < -GlidingVelocity)
 	{
 		//Debug::Print(TEXT("Glide"));
 		PandolfoState = EPandolfoState::EPS_Gliding;
 
 		CharacterOwner->GetCharacterMovement()->StopMovementImmediately();
-		CharacterOwner->GetCharacterMovement()->GravityScale = 0.4f;
-		CharacterOwner->GetCharacterMovement()->AirControl = 0.7f;
+		CharacterOwner->GetCharacterMovement()->GravityScale = GlidingGravityScale;
+		CharacterOwner->GetCharacterMovement()->AirControl = GlidingAirControl;
 
 		UmbrellaActor = GetWorld()->SpawnActor<AActor>(UmbrellaActorClass, CharacterOwner->GetActorLocation(), CharacterOwner->GetActorRotation());
 		FAttachmentTransformRules AttachmentRules(EAttachmentRule::SnapToTarget, true);

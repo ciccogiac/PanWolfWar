@@ -143,6 +143,21 @@ private:
 
 	AActor* UmbrellaActor;
 
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Gliding", meta = (AllowPrivateAccess = "true"))
+	float GlidingHeight = 700.f;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Gliding", meta = (AllowPrivateAccess = "true"))
+	float GlidingVelocity = 500.f;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Gliding", meta = (AllowPrivateAccess = "true"))
+	float GlidingGravityScale = 0.4f;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Gliding", meta = (AllowPrivateAccess = "true"))
+	float GlidingAirControl = 0.7f;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "PredictJump Params", meta = (AllowPrivateAccess = "true"))
+	TEnumAsByte<EObjectTypeQuery> PredictJumpObjectTypes;
+
 public:
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Pandolfo State ")
