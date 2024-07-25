@@ -16,6 +16,7 @@ class UAnimMontage;
 class UKiteComponent;
 class AKiteBoard;
 class USneakCoverComponent;
+class AAssassinableEnemy;
 
 UENUM(BlueprintType)
 enum class EPandolfoState : uint8
@@ -43,6 +44,7 @@ public:
 	bool TryClimbOrMantle();
 	void Sliding();
 	void Crouch();
+	void Assassination();
 
 	void EnterKiteMode(AKiteBoard* KiteBoard);
 
@@ -68,6 +70,9 @@ private:
 
 	bool PredictJump();
 
+	UFUNCTION(BlueprintCallable)
+	void TakeKnife(bool Take);
+
 	UFUNCTION()
 	void StartPredictJump(FName NotifyName, const FBranchingPointNotifyPayload& BranchingPointPayload);
 	UFUNCTION()
@@ -91,6 +96,10 @@ private:
 	UCapsuleComponent* Capsule;
 	USpringArmComponent* CameraBoom;
 
+	AAssassinableEnemy* AssassinableOverlapped = nullptr;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Knife", meta = (AllowPrivateAccess = "true"))
+	UStaticMeshComponent* Knife;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Climb Params", meta = (AllowPrivateAccess = "true"))
 	bool ShowDebugTrace = false;
@@ -118,6 +127,9 @@ private:
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Sliding", meta = (AllowPrivateAccess = "true"))
 	UAnimMontage* PredictJumpMontage;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Assassination", meta = (AllowPrivateAccess = "true"))
+	UAnimMontage* AssassinationMontage;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Sliding", meta = (AllowPrivateAccess = "true"))
 	UCurveFloat* CameraHeight_Curve;
@@ -172,6 +184,9 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
 	UInputAction* Pandolfo_CrouchAction;
 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
+	UInputAction* Pandolfo_AssassinAction;
+
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input| Transformation")
 	UInputAction* TransformationSelectRightAction;
 
@@ -185,6 +200,7 @@ public:
 	FORCEINLINE UClimbingComponent* GetClimbingComponent()  const { return ClimbingComponent; }
 	FORCEINLINE USneakCoverComponent* GetSneakCoverComponent()  const { return SneakCoverComponent; }
 	FORCEINLINE UKiteComponent* GetKiteComponent()  const { return KiteComponent; }
+	FORCEINLINE void SetAssassinableEnemy(AAssassinableEnemy* Enemy) { AssassinableOverlapped = Enemy; }
 
 	UFUNCTION(BlueprintCallable, Category = "Gliding")
 	FORCEINLINE bool IsGliding() const { return PandolfoState == EPandolfoState::EPS_Gliding; }

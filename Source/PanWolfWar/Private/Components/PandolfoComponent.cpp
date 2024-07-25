@@ -25,6 +25,8 @@
 
 #include <Components/TimelineComponent.h>
 
+#include "Enemy/AssassinableEnemy.h"
+
 UPandolfoComponent::UPandolfoComponent()
 {
 	PrimaryComponentTick.bCanEverTick = true;
@@ -38,6 +40,9 @@ UPandolfoComponent::UPandolfoComponent()
 	ClimbingComponent = CreateDefaultSubobject<UClimbingComponent>(TEXT("ClimbingComponent"));
 	SneakCoverComponent = CreateDefaultSubobject<USneakCoverComponent>(TEXT("SneakCoverComponent"));
 	KiteComponent = CreateDefaultSubobject<UKiteComponent>(TEXT("KiteComponent"));
+	
+	Knife = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Knife"));
+	Knife->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 }
 
 void UPandolfoComponent::Activate(bool bReset)
@@ -65,6 +70,9 @@ void UPandolfoComponent::Activate(bool bReset)
 
 	ClimbingComponent->SetAnimationBindings();
 
+	Knife->AttachToComponent(CharacterOwner->GetMesh(),FAttachmentTransformRules::SnapToTargetNotIncludingScale,FName("foot_Knife_Socket"));
+	Knife->SetVisibility(true);
+
 	//KiteComponent->Activate();
 }
 
@@ -74,6 +82,9 @@ void UPandolfoComponent::Deactivate()
 
 	PanWolfCharacter->RemoveMappingContext(PandolfoMappingContext);
 	ClimbingComponent->Deactivate();
+
+
+	Knife->SetVisibility(false);
 }
 
 void UPandolfoComponent::BeginPlay()
@@ -423,3 +434,31 @@ void UPandolfoComponent::EnterKiteMode(AKiteBoard* KiteBoard)
 
 }
 
+void UPandolfoComponent::Assassination()
+{
+
+	if (!AssassinableOverlapped) return;
+
+	Debug::Print(TEXT("Assassination"));
+
+	if (!AssassinationMontage) return;
+	UAnimInstance* OwningPlayerAnimInstance = CharacterOwner->GetMesh()->GetAnimInstance();
+	if (!OwningPlayerAnimInstance) return;
+	if (OwningPlayerAnimInstance->IsAnyMontagePlaying()) return;
+
+	//CharacterOwner->DisableInput(CharacterOwner->GetLocalViewingPlayerController());
+	 
+	const FTransform AssassinTransform = AssassinableOverlapped->GetAssassinationTransform();
+	const FVector WarpLocation = AssassinTransform.GetLocation();
+	const FRotator WarpRotator = AssassinTransform.Rotator() + FRotator(0.f,90.f,0.f);
+	PanWolfCharacter->SetMotionWarpTarget(FName("AssasinationWarp"), WarpLocation, WarpRotator);	
+	OwningPlayerAnimInstance->Montage_Play(AssassinationMontage);
+
+	AssassinableOverlapped->Assassinated();
+}
+
+void UPandolfoComponent::TakeKnife(bool Take)
+{
+	FName KnifeSocket = Take ?  FName("hand_Knife_Reverse_Socket") : FName("foot_Knife_Socket");
+	Knife->AttachToComponent(CharacterOwner->GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, KnifeSocket);
+}

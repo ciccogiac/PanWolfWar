@@ -145,6 +145,8 @@ void UPandolFlowerComponent::Deactivate()
 	}
 
 	DeactivateGrapplePoint();
+
+	ResetMovement();
 }
 
 #pragma endregion
