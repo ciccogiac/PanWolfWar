@@ -45,9 +45,23 @@ void AAssassinableEnemy::BeginPlay()
 	BoxComponent->OnComponentEndOverlap.AddDynamic(this, &AAssassinableEnemy::BoxCollisionExit);
 }
 
+void AAssassinableEnemy::SetPlayerVisibilityWidget(bool NewVisibility)
+{
+	Super::SetPlayerVisibilityWidget(NewVisibility);
+
+	if (NewVisibility && PandolfoComponent)
+	{
+		PandolfoComponent->SetAssassinableEnemy(nullptr);
+		AssassinationWidget->SetVisibility(false);
+	}
+
+
+}
+
 void AAssassinableEnemy::BoxCollisionEnter(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
 	if (bDied) return;
+	if (bSeen) return;
 
 	if (OtherActor->Implements<UCharacterInterface>())
 	{
@@ -92,18 +106,18 @@ void AAssassinableEnemy::Killed()
 void AAssassinableEnemy::Die()
 {
 	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-	Niagara_DieEffect->SetActive(true);
-	GetWorld()->GetTimerManager().SetTimer(Die_TimerHandle, Destroy(), 1.f, true);
+	//Niagara_DieEffect->SetActive(true);
+	GetWorld()->GetTimerManager().SetTimer(Die_TimerHandle, [this]() {this->Destroy(); }, 5.f, true);
 }
 
-void AAssassinableEnemy::Assassinated()
+void AAssassinableEnemy::Assassinated(UAnimMontage* AssassinatedMontage)
 {
-	if (!AssassinationMontage) return;
+	if (!AssassinatedMontage) return;
 	UAnimInstance* OwningPlayerAnimInstance =GetMesh()->GetAnimInstance();
 	if (!OwningPlayerAnimInstance) return;
 	//if (OwningPlayerAnimInstance->IsAnyMontagePlaying()) return;
 
-	OwningPlayerAnimInstance->Montage_Play(AssassinationMontage);
+	OwningPlayerAnimInstance->Montage_Play(AssassinatedMontage);
 
 	bDied = true;
 	if(PandolfoComponent)

@@ -129,7 +129,7 @@ private:
 	UAnimMontage* PredictJumpMontage;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Assassination", meta = (AllowPrivateAccess = "true"))
-	UAnimMontage* AssassinationMontage;
+	TMap<UAnimMontage*, UAnimMontage*> AssassinationMontage_Map;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Sliding", meta = (AllowPrivateAccess = "true"))
 	UCurveFloat* CameraHeight_Curve;

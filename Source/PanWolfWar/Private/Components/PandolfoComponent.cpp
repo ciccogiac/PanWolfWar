@@ -441,20 +441,25 @@ void UPandolfoComponent::Assassination()
 
 	Debug::Print(TEXT("Assassination"));
 
-	if (!AssassinationMontage) return;
 	UAnimInstance* OwningPlayerAnimInstance = CharacterOwner->GetMesh()->GetAnimInstance();
 	if (!OwningPlayerAnimInstance) return;
 	if (OwningPlayerAnimInstance->IsAnyMontagePlaying()) return;
 
 	//CharacterOwner->DisableInput(CharacterOwner->GetLocalViewingPlayerController());
-	 
+
+
+	int32 MapIndex = FMath::RandRange(0, AssassinationMontage_Map.Num()-1);
+	TPair<UAnimMontage*, UAnimMontage*> MontageCouple = AssassinationMontage_Map.Get(FSetElementId::FromInteger(MapIndex));
+	if (!MontageCouple.Key) return;
+	if (!MontageCouple.Value) return;
 	const FTransform AssassinTransform = AssassinableOverlapped->GetAssassinationTransform();
 	const FVector WarpLocation = AssassinTransform.GetLocation();
 	const FRotator WarpRotator = AssassinTransform.Rotator() + FRotator(0.f,90.f,0.f);
 	PanWolfCharacter->SetMotionWarpTarget(FName("AssasinationWarp"), WarpLocation, WarpRotator);	
-	OwningPlayerAnimInstance->Montage_Play(AssassinationMontage);
+	OwningPlayerAnimInstance->Montage_Play(MontageCouple.Key);
 
-	AssassinableOverlapped->Assassinated();
+	
+	AssassinableOverlapped->Assassinated(MontageCouple.Value);
 }
 
 void UPandolfoComponent::TakeKnife(bool Take)

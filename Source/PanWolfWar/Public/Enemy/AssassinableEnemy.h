@@ -1,24 +1,26 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Enemy.h"
+#include "BaseEnemy.h"
 #include "AssassinableEnemy.generated.h"
 
 class UNiagaraComponent;
 class UAnimMontage;
 
 UCLASS()
-class PANWOLFWAR_API AAssassinableEnemy : public AEnemy
+class PANWOLFWAR_API AAssassinableEnemy : public ABaseEnemy
 {
 	GENERATED_BODY()
 
 public:
 	AAssassinableEnemy();
 
-	void Assassinated();
+	void Assassinated(UAnimMontage* AssassinatedMontage);
 
 protected:
 	virtual void BeginPlay() override;
+
+	virtual void SetPlayerVisibilityWidget(bool NewVisibility) override;
 
 	UFUNCTION()
 	virtual void BoxCollisionEnter(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
@@ -36,7 +38,7 @@ private:
 
 private:
 
-	bool bDied = false;
+	//bool bDied = false;
 	FTimerHandle Die_TimerHandle;
 	class UPandolfoComponent* PandolfoComponent;
 
@@ -56,8 +58,8 @@ private:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Assassination Components", meta = (AllowPrivateAccess = "true"))
 	USkeletalMeshComponent* Assassin_Preview_Mesh;
 	
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Assassination", meta = (AllowPrivateAccess = "true"))
-	UAnimMontage* AssassinationMontage;
+	//UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Assassination", meta = (AllowPrivateAccess = "true"))
+	//UAnimMontage* AssassinationMontage;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Assassination", meta = (AllowPrivateAccess = "true"))
 	TSubclassOf<UCameraShakeBase> CameraShake;
