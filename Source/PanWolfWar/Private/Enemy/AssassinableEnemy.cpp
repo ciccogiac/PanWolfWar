@@ -105,6 +105,8 @@ void AAssassinableEnemy::Killed()
 
 void AAssassinableEnemy::Die()
 {
+	Super::Die();
+
 	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	//Niagara_DieEffect->SetActive(true);
 	GetWorld()->GetTimerManager().SetTimer(Die_TimerHandle, [this]() {this->Destroy(); }, 5.f, true);
@@ -119,7 +121,7 @@ void AAssassinableEnemy::Assassinated(UAnimMontage* AssassinatedMontage)
 
 	OwningPlayerAnimInstance->Montage_Play(AssassinatedMontage);
 
-	bDied = true;
+	Die();
 	if(PandolfoComponent)
 		PandolfoComponent->SetAssassinableEnemy(nullptr);
 	AssassinationWidget->SetVisibility(false);

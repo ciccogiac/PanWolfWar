@@ -28,13 +28,15 @@ protected:
 	UFUNCTION()
 	virtual void BoxCollisionExit(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
 
+	virtual void Die() override;
+
 private:
 
 	UFUNCTION(BlueprintCallable)
 	void Killed();
 
-	UFUNCTION(BlueprintCallable)
-	void Die();
+	
+	
 
 private:
 

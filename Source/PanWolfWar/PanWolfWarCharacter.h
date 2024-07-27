@@ -28,7 +28,7 @@ class UPanBirdComponent;
 DECLARE_LOG_CATEGORY_EXTERN(LogTemplateCharacter, Log, All);
 
 UCLASS(config=Game)
-class APanWolfWarCharacter : public ACharacter , public IInteractInterface , public ICharacterInterface
+class APanWolfWarCharacter : public ACharacter , public IInteractInterface , public ICharacterInterface 
 {
 	GENERATED_BODY()
 
@@ -42,6 +42,9 @@ public:
 	void SetTransformationCharacter(TObjectPtr<USkeletalMesh> SkeletalMeshAsset, TSubclassOf<UAnimInstance> Anim);
 
 	void SetMotionWarpTarget(const FName& InWarpTargetName, const FVector& InTargetPosition, const FRotator& InTargetRotation = FRotator::ZeroRotator);
+
+	UFUNCTION(BlueprintCallable)
+	void SetIsHiding(bool Value, bool DoCrouchCheck = true);
 
 	#pragma region InputCallback
 
@@ -68,6 +71,9 @@ protected:
 
 private:
 
+	bool bIsHiding = false;
+	TArray<AActor*> EnemyAware;
+
 	#pragma region Components
 
 	/** Camera boom positioning the camera behind the character */
@@ -77,6 +83,13 @@ private:
 	/** Follow camera */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
 	UCameraComponent* FollowCamera;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Hiding Widget", meta = (AllowPrivateAccess = "true"))
+	class UWidgetComponent* PlayerHidingWidget;
+
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Hiding Widget", meta = (AllowPrivateAccess = "true"))
+	class UWidgetComponent* PlayerSeenWidget;
 
 	/** Niagara Transformation */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
@@ -169,6 +182,19 @@ public:
 
 	FORCEINLINE UNiagaraComponent* GetNiagaraTransformation() { return NiagaraTransformation; }
 	FORCEINLINE UNiagaraComponent* GetNiagaraTransformationEffect() { return NiagaraApplyTransformationEffect; }
+
+
+	UFUNCTION(BlueprintCallable)
+	FORCEINLINE bool IsHiding() const { return bIsHiding; }
+
+	UFUNCTION(BlueprintCallable)
+	void AddEnemyAware(AActor* Enemy);
+
+	UFUNCTION(BlueprintCallable)
+	void RemoveEnemyAware(AActor* Enemy);
+
+	UFUNCTION(BlueprintCallable)
+	FORCEINLINE TArray<AActor*> GetEnemyAware() { return EnemyAware; }
 
 #pragma endregion
 

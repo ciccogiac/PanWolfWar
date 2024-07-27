@@ -35,6 +35,8 @@
 #include "Components/KiteComponent.h"
 #include "Components/SneakCoverComponent.h"
 
+#include "Components/WidgetComponent.h"
+
 DEFINE_LOG_CATEGORY(LogTemplateCharacter);
 
 //////////////////////////////////////////////////////////////////////////
@@ -94,6 +96,23 @@ APanWolfWarCharacter::APanWolfWarCharacter()
 	PanWolfComponent = CreateDefaultSubobject<UPanWolfComponent>(TEXT("PanWolfComponent"));
 	PandolFlowerComponent = CreateDefaultSubobject<UPandolFlowerComponent>(TEXT("PandolFlowerComponent"));
 	PanBirdComponent = CreateDefaultSubobject<UPanBirdComponent>(TEXT("PanBirdComponent"));
+
+	PlayerHidingWidget = CreateDefaultSubobject<UWidgetComponent>(TEXT("PlayerHidingWidget"));
+	if (PlayerHidingWidget)
+	{
+		PlayerHidingWidget->SetWidgetSpace(EWidgetSpace::Screen);
+		PlayerHidingWidget->SetVisibility(false);
+		PlayerHidingWidget->SetupAttachment(GetRootComponent());
+	}
+
+
+	PlayerSeenWidget = CreateDefaultSubobject<UWidgetComponent>(TEXT("PlayerSeenWidget"));
+	if (PlayerSeenWidget)
+	{
+		PlayerSeenWidget->SetWidgetSpace(EWidgetSpace::Screen);
+		PlayerSeenWidget->SetVisibility(false);
+		PlayerSeenWidget->SetupAttachment(GetRootComponent());
+	}
 }
 
 void APanWolfWarCharacter::BeginPlay()
@@ -321,6 +340,8 @@ bool APanWolfWarCharacter::SetOverlappingObject(AInteractableObject* Interactabl
 	return InteractComponent->SetOverlappingObject(InteractableObject, bEnter);
 }
 
+
+
 #pragma endregion
 
 
@@ -335,3 +356,34 @@ void APanWolfWarCharacter::SetMotionWarpTarget(const FName& InWarpTargetName, co
 }
 
 
+void APanWolfWarCharacter::SetIsHiding(bool Value, bool DoCrouchCheck)
+{
+	if (Value && !EnemyAware.IsEmpty())
+		return;
+
+	if (DoCrouchCheck && Value && !GetMovementComponent()->IsCrouching())
+		return;
+
+	bIsHiding = Value;
+	PlayerHidingWidget->SetVisibility(bIsHiding);
+}
+
+void APanWolfWarCharacter::AddEnemyAware(AActor* Enemy)
+{	
+	EnemyAware.AddUnique(Enemy);
+	if (EnemyAware.Num() == 1)
+	{
+		PlayerSeenWidget->SetVisibility(true);
+	}
+		
+}
+
+void APanWolfWarCharacter::RemoveEnemyAware(AActor* Enemy)
+{	
+	EnemyAware.Remove(Enemy);
+	if (EnemyAware.IsEmpty())
+	{
+		PlayerSeenWidget->SetVisibility(false);
+	}
+}
+		

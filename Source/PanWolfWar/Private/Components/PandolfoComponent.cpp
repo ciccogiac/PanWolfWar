@@ -165,10 +165,31 @@ void UPandolfoComponent::Crouch()
 	if (!IsCrouched)
 	{
 		CrouchingTimeline.PlayFromStart();
+
+		CheckCanHide();
+		
 	}
 		
-	else 
+	else
+	{		
 		CrouchingTimeline.Reverse();
+
+		if (PanWolfCharacter->IsHiding())
+			PanWolfCharacter->SetIsHiding(false);
+	}
+
+}
+
+void UPandolfoComponent::CheckCanHide()
+{
+	if (PanWolfCharacter->IsHiding()) return;
+
+	const FVector Start = CharacterOwner->GetActorLocation();
+	const FVector End = Start + CharacterOwner->GetActorForwardVector();
+	FHitResult Hit;
+	UKismetSystemLibrary::SphereTraceSingleForObjects(this, Start, End, 60.f, HidingObjectTypes, false, TArray<AActor*>(), EDrawDebugTrace::None, Hit, true);
+	if(Hit.bBlockingHit)
+		PanWolfCharacter->SetIsHiding(true,false);
 }
 
 void UPandolfoComponent::CrouchCameraUpdate(float Alpha)

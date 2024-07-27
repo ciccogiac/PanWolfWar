@@ -5,7 +5,10 @@
 #include <Engine/TargetPoint.h>
 #include "BaseEnemy.generated.h"
 
+
 class UBehaviorTree;
+
+
 
 UCLASS()
 class PANWOLFWAR_API ABaseEnemy : public ACharacter
@@ -21,6 +24,12 @@ public:
 protected:
 	virtual void BeginPlay() override;
 
+	UFUNCTION(BlueprintCallable)
+	virtual void Die();
+
+	UFUNCTION(BlueprintCallable)
+	float PerformAttack();
+
 public:	
 	virtual void Tick(float DeltaTime) override;
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
@@ -29,11 +38,25 @@ protected:
 	bool bDied = false;
 	bool bSeen = false;
 
+	class ABaseAIController* BaseAIController;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAcces = "true"))
+	class UMotionWarpingComponent* MotionWarping;
+
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "AI", meta = (AllowPrivateAccess = "true"))
 	UBehaviorTree* BehaviorTree;
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Combat)
+	AActor* CombatTarget;
+
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Assassination Components", meta = (AllowPrivateAccess = "true"))
 	class UWidgetComponent* PlayerVisibleWidget;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Sliding", meta = (AllowPrivateAccess = "true"))
+	class UAnimMontage* AttackMontage;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "AI", meta = (AllowPrivateAccess = "true"))
+	double WarpTargetDistance = 75.f;
 
 public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "AI")
@@ -42,4 +65,10 @@ public:
 public:
 	UFUNCTION(BlueprintCallable)
 	FORCEINLINE bool IsDead() const { return bDied; }
+
+	UFUNCTION(BlueprintCallable)
+	FORCEINLINE void SetCombatTarget(AActor* Target) { CombatTarget = Target; }
+
+	UFUNCTION(BlueprintCallable)
+	FORCEINLINE AActor* GetCombatTarget() const { return CombatTarget; }
 };

@@ -60,6 +60,8 @@ protected:
 
 private:
 
+	void CheckCanHide();
+
 	void SetSlidingValues(bool IsReverse = false);
 
 	UFUNCTION(BlueprintCallable)
@@ -97,6 +99,9 @@ private:
 	USpringArmComponent* CameraBoom;
 
 	AAssassinableEnemy* AssassinableOverlapped = nullptr;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Climb Params", meta = (AllowPrivateAccess = "true"))
+	TArray<TEnumAsByte<EObjectTypeQuery> > HidingObjectTypes;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Knife", meta = (AllowPrivateAccess = "true"))
 	UStaticMeshComponent* Knife;
