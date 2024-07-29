@@ -368,6 +368,12 @@ void APanWolfWarCharacter::SetIsHiding(bool Value, bool DoCrouchCheck)
 
 	bIsHiding = Value;
 	PlayerHidingWidget->SetVisibility(bIsHiding);
+
+	if(bIsHiding)
+		GetMesh()->SetScalarParameterValueOnMaterials(FName("Emissive Multiplier"), 10.f);
+	else
+		GetMesh()->SetScalarParameterValueOnMaterials(FName("Emissive Multiplier"), 0.f);
+
 }
 
 void APanWolfWarCharacter::AddEnemyAware(AActor* Enemy)
