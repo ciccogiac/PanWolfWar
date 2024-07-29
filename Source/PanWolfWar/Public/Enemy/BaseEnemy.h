@@ -19,7 +19,10 @@ public:
 	ABaseEnemy();
 
 	UFUNCTION(BlueprintCallable)
-	virtual void SetPlayerVisibilityWidget(bool NewVisibility);
+	virtual void SetPlayerVisibility(bool NewVisibility);
+
+	virtual void Tick(float DeltaTime) override;
+	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
 protected:
 	virtual void BeginPlay() override;
@@ -30,13 +33,16 @@ protected:
 	UFUNCTION(BlueprintCallable)
 	float PerformAttack();
 
-public:	
-	virtual void Tick(float DeltaTime) override;
-	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
+private:	
+
+	void FindNearestAI();
 
 protected:
 	bool bDied = false;
 	bool bSeen = false;
+	ACharacter* Player;
+
+	FTimerHandle FindEnemies_TimerHandle;
 
 	class ABaseAIController* BaseAIController;
 

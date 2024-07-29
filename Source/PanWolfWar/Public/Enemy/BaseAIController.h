@@ -13,6 +13,9 @@ class PANWOLFWAR_API ABaseAIController : public AAIController
 public:
 
 	UFUNCTION(BlueprintImplementableEvent)
+	void FindNewEnemy(AActor* Enemy);
+
+	UFUNCTION(BlueprintImplementableEvent)
 	void Die();
 
 protected:

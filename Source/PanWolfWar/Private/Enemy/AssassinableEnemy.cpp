@@ -45,9 +45,9 @@ void AAssassinableEnemy::BeginPlay()
 	BoxComponent->OnComponentEndOverlap.AddDynamic(this, &AAssassinableEnemy::BoxCollisionExit);
 }
 
-void AAssassinableEnemy::SetPlayerVisibilityWidget(bool NewVisibility)
+void AAssassinableEnemy::SetPlayerVisibility(bool NewVisibility)
 {
-	Super::SetPlayerVisibilityWidget(NewVisibility);
+	Super::SetPlayerVisibility(NewVisibility);
 
 	if (NewVisibility && PandolfoComponent)
 	{

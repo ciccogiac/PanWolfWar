@@ -412,7 +412,7 @@ void UPandolfoComponent::TryGliding()
 	const FVector End = Start - CharacterOwner->GetActorUpVector() * GlidingHeight;
 	EDrawDebugTrace::Type DebugTrace = ShowDebugTrace ? EDrawDebugTrace::ForDuration : EDrawDebugTrace::None;
 	FHitResult Hit;
-	UKismetSystemLibrary::LineTraceSingle(this, Start, End, ETraceTypeQuery::TraceTypeQuery1, false, TArray<AActor*>(), EDrawDebugTrace::ForDuration, Hit, true);
+	UKismetSystemLibrary::LineTraceSingle(this, Start, End, ETraceTypeQuery::TraceTypeQuery1, false, TArray<AActor*>(), DebugTrace, Hit, true);
 
 	
 	if (!Hit.bBlockingHit && CharacterOwner->GetCharacterMovement()->GetLastUpdateVelocity().Z < -GlidingVelocity)

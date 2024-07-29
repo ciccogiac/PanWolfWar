@@ -135,7 +135,9 @@ float UAttributeComponent::GetFlowerStaminaPercent()
 
 bool UAttributeComponent::ConsumeFlowerStamina()
 {
-	if (FlowerStamina < MaxFlowerStamina) return false;
+	//if (FlowerStamina < MaxFlowerStamina) return false;
+
+	if (FlowerStamina <= 0) return false;
 
 	return true;
 

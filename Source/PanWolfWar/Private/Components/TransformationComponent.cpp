@@ -81,7 +81,12 @@ bool UTransformationComponent::CanTrasform(const int32 NewTransformation_ID)
 	if (PossibleTransformationState[NewTransformation_ID] == CurrentTransformationState) return false;
 	if (CurrentTransformationState == ETransformationState::ETS_Transforming) return false;
 	//if (Attributes->IsInConsumingState()) return false;
-	if (PanWolfWarCharacter->GetPandolfoComponent()->IsClimbing()) return false;
+	//if (PanWolfWarCharacter->GetPandolfoComponent()->IsClimbing()) return false;
+
+	if (PanWolfWarCharacter->GetPandolfoComponent()->PandolfoState != EPandolfoState::EPS_Pandolfo) return false;
+
+	UAnimInstance* AnimInstance = PanWolfWarCharacter->GetMesh()->GetAnimInstance();
+	if (AnimInstance && AnimInstance->IsAnyMontagePlaying()) return false;
 
 	return true;
 }

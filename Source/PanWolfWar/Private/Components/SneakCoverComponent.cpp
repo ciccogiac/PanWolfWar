@@ -438,7 +438,6 @@ bool USneakCoverComponent::CheckCrouchHeight(const float Direction)
 void USneakCoverComponent::SetCharRotation(const FVector ImpactNormal, bool Istantaneus)
 {
 	FRotator NewRotation = FRotator(0.f, UKismetMathLibrary::MakeRotFromX(ImpactNormal).Yaw + 180.f, 0.f) ;
-	//CharacterOwner->SetActorRotation(FRotator(0.f, FixCharRot, 0.f));
 
 	NewRotation = Istantaneus ? NewRotation : UKismetMathLibrary::RInterpTo(CharacterOwner->GetActorRotation(), NewRotation, GetWorld()->GetDeltaSeconds(), 1.5f);
 	CharacterOwner->SetActorRotation(NewRotation);
@@ -447,12 +446,7 @@ void USneakCoverComponent::SetCharRotation(const FVector ImpactNormal, bool Ista
 void USneakCoverComponent::SetCharLocation(const FVector HitLocation, const FVector HitNormal, bool Istantaneus)
 {
 	 FVector NewLocation = HitLocation + UKismetMathLibrary::GetForwardVector(UKismetMathLibrary::MakeRotFromX(HitNormal)) * 45.f;
-	//CharacterOwner->SetActorLocation(FVector(NewLocation.X, NewLocation.Y, CharacterOwner->GetActorLocation().Z));
-
-	//FRotator Rotator = FRotator(Rotation.Roll, Rotation.Yaw - 180, Rotation.Roll);
-
 	 NewLocation = Istantaneus ? NewLocation :  UKismetMathLibrary::VInterpTo(CharacterOwner->GetActorLocation(), NewLocation, GetWorld()->GetDeltaSeconds(), 1.f);
-	//FRotator NewRotation = UKismetMathLibrary::RInterpTo(CharacterOwner->GetActorRotation(), Rotator, GetWorld()->GetDeltaSeconds(), 5.f);
 
 	CharacterOwner->SetActorLocation(NewLocation);
 }

@@ -13,6 +13,8 @@ class UInputMappingContext;
 class UNiagaraSystem;
 class AGrapplePoint;
 struct FInputActionValue;
+class USpringArmComponent;
+class AFlowerHideObject;
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class PANWOLFWAR_API UPandolFlowerComponent : public UActorComponent
@@ -30,6 +32,10 @@ public:
 	void Move(const FInputActionValue& Value);
 	void Hook();
 	void Jump();
+	void Crouch();
+	void Hide();
+
+	void UnHide();
 
 protected:
 	virtual void BeginPlay() override;
@@ -43,8 +49,12 @@ private:
 	void MoveRope();
 	void GrapplingMovement();
 
+	void CheckCanCrouchHide();
+
 	void PlayMontage(UAnimMontage* MontageToPlay);
 
+	void SetCharRotation(const FVector ImpactNormal, bool Istantaneus = false);
+	void SetCharLocation(const FVector HitLocation, const FVector HitNormal, bool Istantaneus = false);
 
 
 	#pragma region AnimNotifyFunctions
@@ -85,6 +95,13 @@ private:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	UInputAction* MoveAction;
 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
+	UInputAction* PandolFlower_CrouchAction;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
+	UInputAction* PandolFlower_HideAction;
+
+
 	#pragma endregion
 
 
@@ -98,6 +115,14 @@ private:
 	ACharacter* CharacterOwner;
 	APanWolfWarCharacter* PanWolfCharacter;
 	UCameraComponent* FollowCamera;
+	USpringArmComponent* CameraBoom;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Cover State ", meta = (AllowPrivateAccess = "true"))
+	bool IsCovering = false;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Cover State ", meta = (AllowPrivateAccess = "true"))
+	float CoverDirection = 0.f;
+	float LastCoverDirection = 0.f;
+	AFlowerHideObject* FlowerHideObject = nullptr;
 
 	UPROPERTY(Category = Character, EditDefaultsOnly, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<USkeletalMesh> SkeletalMeshAsset;
@@ -112,6 +137,12 @@ private:
 	TSubclassOf<AFlowerCable> BP_FlowerCable;
 
 	AFlowerCable* FlowerCable;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Climb Params", meta = (AllowPrivateAccess = "true"))
+	TArray<TEnumAsByte<EObjectTypeQuery> > HidingObjectTypes;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Climb Params", meta = (AllowPrivateAccess = "true"))
+	TArray<TEnumAsByte<EObjectTypeQuery> > PandolFlowerHideObjectTypes;
 
 	#pragma endregion
 

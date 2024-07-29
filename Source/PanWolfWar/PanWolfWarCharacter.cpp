@@ -245,7 +245,9 @@ void APanWolfWarCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInpu
 
 		EnhancedInputComponent->BindAction(PandolFlowerComponent->MoveAction, ETriggerEvent::Triggered, PandolFlowerComponent, &UPandolFlowerComponent::Move);
 		EnhancedInputComponent->BindAction(PandolFlowerComponent->HookAction, ETriggerEvent::Started, PandolFlowerComponent, &UPandolFlowerComponent::Hook);
-		EnhancedInputComponent->BindAction(PandolFlowerComponent->JumpAction, ETriggerEvent::Started, PandolFlowerComponent, &UPandolFlowerComponent::Jump);
+		EnhancedInputComponent->BindAction(PandolFlowerComponent->JumpAction, ETriggerEvent::Started, PandolFlowerComponent, &UPandolFlowerComponent::Jump);	
+		EnhancedInputComponent->BindAction(PandolFlowerComponent->PandolFlower_CrouchAction, ETriggerEvent::Started, PandolFlowerComponent, &UPandolFlowerComponent::Crouch);
+		EnhancedInputComponent->BindAction(PandolFlowerComponent->PandolFlower_HideAction, ETriggerEvent::Started, PandolFlowerComponent, &UPandolFlowerComponent::Hide);
 
 		#pragma endregion
 
