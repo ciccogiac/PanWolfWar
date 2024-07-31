@@ -84,9 +84,9 @@ void ABaseEnemy::FindNearestAI()
 	TArray<AActor*> ActorsToIgnore;
 	ActorsToIgnore.Add(Player);
 
-	UKismetSystemLibrary::SphereTraceMultiForObjects(this, Start, End,1500.f, Objects, false, ActorsToIgnore, EDrawDebugTrace::ForDuration, Hit, true);
+	bool bBlocked = UKismetSystemLibrary::SphereTraceMultiForObjects(this, Start, End,1500.f, Objects, false, ActorsToIgnore, EDrawDebugTrace::ForDuration, Hit, true);
 
-	if (Hit.Num() <= 0) return;
+	if (!bBlocked || Hit.Num() <= 0) return;
 
 	for (size_t i = 0; i < Hit.Num() ; i++)
 	{
