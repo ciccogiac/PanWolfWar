@@ -45,6 +45,11 @@ public:
 	void Sliding();
 	void Crouch();
 	void Assassination();
+	void CheckCanAirAssassin();
+
+	void PlayAirAssassination(UAnimInstance* OwningPlayerAnimInstance);
+
+	void PlayStealthAssassination(UAnimInstance* OwningPlayerAnimInstance);
 
 	void EnterKiteMode(AKiteBoard* KiteBoard);
 
@@ -61,6 +66,10 @@ protected:
 private:
 
 	void CheckCanHide();
+	void CheckCanHideStandUP();
+	void DetectAirAssassinableEnemy();
+	
+
 
 	void SetSlidingValues(bool IsReverse = false);
 
@@ -85,6 +94,12 @@ private:
 	UFUNCTION()
 	void CrouchCameraUpdate(float Alpha);
 
+	UFUNCTION(BlueprintCallable)
+	void AirKill();
+
+	UFUNCTION(BlueprintCallable)
+	void RiattachCamera();
+
 	void DoPredictJump();
 	const FHitResult TraceIsOnGround(const FVector RootLocation, const FVector ForwardVector);
 	const FHitResult PredictProjectileTrace(const FVector ActorLocation, const FVector ForwardVector, AActor* OnGroundActor);
@@ -99,6 +114,12 @@ private:
 	USpringArmComponent* CameraBoom;
 
 	AAssassinableEnemy* AssassinableOverlapped = nullptr;
+	AAssassinableEnemy* AIR_AssassinableOverlapped = nullptr;
+	FTimerHandle AirAssassination_TimerHandle;
+	FTimerHandle AirAssassinationCamera_TimerHandle;
+
+	FTimerHandle Glide_TimerHandle;
+	bool bIsGlideTimerActive = false;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Climb Params", meta = (AllowPrivateAccess = "true"))
 	TArray<TEnumAsByte<EObjectTypeQuery> > HidingObjectTypes;
@@ -132,6 +153,12 @@ private:
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Sliding", meta = (AllowPrivateAccess = "true"))
 	UAnimMontage* PredictJumpMontage;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Assassination", meta = (AllowPrivateAccess = "true"))
+	UAnimMontage* AirAssassinMontage;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Assassination", meta = (AllowPrivateAccess = "true"))
+	UAnimMontage* AirAssassinDeathMontage;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Assassination", meta = (AllowPrivateAccess = "true"))
 	TMap<UAnimMontage*, UAnimMontage*> AssassinationMontage_Map;
@@ -190,6 +217,9 @@ public:
 	UInputAction* Pandolfo_CrouchAction;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
+	UInputAction* Pandolfo_GlideAction;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
 	UInputAction* Pandolfo_AssassinAction;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input| Transformation")
@@ -206,6 +236,8 @@ public:
 	FORCEINLINE USneakCoverComponent* GetSneakCoverComponent()  const { return SneakCoverComponent; }
 	FORCEINLINE UKiteComponent* GetKiteComponent()  const { return KiteComponent; }
 	FORCEINLINE void SetAssassinableEnemy(AAssassinableEnemy* Enemy) { AssassinableOverlapped = Enemy; }
+	FORCEINLINE void SetAssassinableAirEnemy(AAssassinableEnemy* Enemy) { AIR_AssassinableOverlapped = Enemy; }
+	FORCEINLINE bool IsAssassinableEnemy() { return (AssassinableOverlapped!= nullptr || AIR_AssassinableOverlapped != nullptr); }
 
 	UFUNCTION(BlueprintCallable, Category = "Gliding")
 	FORCEINLINE bool IsGliding() const { return PandolfoState == EPandolfoState::EPS_Gliding; }

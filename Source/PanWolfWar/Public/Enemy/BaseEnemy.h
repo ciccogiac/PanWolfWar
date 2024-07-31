@@ -77,4 +77,6 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	FORCEINLINE AActor* GetCombatTarget() const { return CombatTarget; }
+
+	FORCEINLINE bool IsAware() const { return bSeen; }
 };

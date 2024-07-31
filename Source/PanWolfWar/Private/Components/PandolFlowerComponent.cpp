@@ -24,6 +24,9 @@
 
 #include "Actors/FlowerHideObject.h"
 
+#include "Components/PandolfoComponent.h"
+#include "Components/TransformationComponent.h"
+
 #pragma region EngineFunctions
 
 UPandolFlowerComponent::UPandolFlowerComponent()
@@ -45,6 +48,8 @@ void UPandolFlowerComponent::BeginPlay()
 	{
 		FollowCamera = PanWolfCharacter->GetFollowCamera();
 		CameraBoom = PanWolfCharacter->GetCameraBoom();
+		PandolfoComponent = PanWolfCharacter->GetPandolfoComponent();
+		TransformationComponent = PanWolfCharacter->GetTransformationComponent();
 	}
 
 }
@@ -154,8 +159,11 @@ void UPandolFlowerComponent::Crouch()
 	{
 		//CrouchingTimeline.Reverse();
 
+		//if (PanWolfCharacter->IsHiding())
+		//	PanWolfCharacter->SetIsHiding(false);
+
 		if (PanWolfCharacter->IsHiding())
-			PanWolfCharacter->SetIsHiding(false);
+			CheckCanHideStandUP();
 	}
 }
 
@@ -171,6 +179,15 @@ void UPandolFlowerComponent::CheckCanCrouchHide()
 		PanWolfCharacter->SetIsHiding(true, false);
 }
 
+void UPandolFlowerComponent::CheckCanHideStandUP()
+{
+	const FVector Start = CharacterOwner->GetActorLocation() + CharacterOwner->GetActorUpVector() * CharacterOwner->BaseEyeHeight * 3.f;
+	const FVector End = Start + CharacterOwner->GetActorForwardVector();
+	FHitResult Hit;
+	UKismetSystemLibrary::SphereTraceSingleForObjects(this, Start, End, 20.f, HidingObjectTypes, false, TArray<AActor*>(), EDrawDebugTrace::ForDuration, Hit, true);
+	if (!Hit.bBlockingHit)
+		PanWolfCharacter->SetIsHiding(false);
+}
 
 #pragma endregion
 
@@ -180,6 +197,7 @@ void UPandolFlowerComponent::Activate(bool bReset)
 {
 	Super::Activate(bReset);
 	//Debug::Print(TEXT("OVA"));
+
 	PanWolfCharacter->AddMappingContext(PandolFlowerMappingContext, 1);
 
 	PanWolfCharacter->bUseControllerRotationPitch = false;
@@ -190,12 +208,18 @@ void UPandolFlowerComponent::Activate(bool bReset)
 
 	OwningPlayerAnimInstance = CharacterOwner->GetMesh()->GetAnimInstance();
 
+	if (PanWolfCharacter->IsHiding())
+		CharacterOwner->GetMesh()->SetScalarParameterValueOnMaterials(FName("Emissive Multiplier"), 10.f);
+
 	FlowerCable = GetWorld()->SpawnActor<AFlowerCable>(BP_FlowerCable, CharacterOwner->GetActorLocation(), CharacterOwner->GetActorRotation());
 	FAttachmentTransformRules AttachmentRules(EAttachmentRule::SnapToTarget, true);
 	//FlowerCable->AttachToComponent(CharacterOwner->GetMesh(), AttachmentRules, FName("hand_l"));
 	FlowerCable->SetCableAttachment(CharacterOwner->GetMesh(), FName("hand_l"));
 
 	CameraBoom->TargetArmLength = 400.f;
+
+
+	GetWorld()->GetTimerManager().SetTimer(AirAssassination_TimerHandle, [this]() {this->CheckCanAirAssassin(); }, 0.25f, true);
 }
 
 void UPandolFlowerComponent::Deactivate()
@@ -221,6 +245,8 @@ void UPandolFlowerComponent::Deactivate()
 
 	if (IsCovering)
 		UnHide();
+
+	GetWorld()->GetTimerManager().ClearTimer(AirAssassination_TimerHandle);
 }
 
 #pragma endregion
@@ -564,4 +590,22 @@ void UPandolFlowerComponent::SetCharLocation(const FVector HitLocation, const FV
 }
 
 
+void UPandolFlowerComponent::Assassination()
+{
+	
+	if (TransformationComponent && PandolfoComponent && PandolfoComponent->IsAssassinableEnemy())
+	{
+		//Debug::Print(TEXT("Assassin PandolFlower"));
 
+		TransformationComponent->SelectDesiredTransformation(0);
+		PandolfoComponent->Assassination();
+	}
+
+}
+
+void UPandolFlowerComponent::CheckCanAirAssassin()
+{
+	//Debug::Print(TEXT("CheckCanAirAssassin"));
+	if (PandolfoComponent)
+		PandolfoComponent->CheckCanAirAssassin();
+}

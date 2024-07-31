@@ -15,6 +15,8 @@ class AGrapplePoint;
 struct FInputActionValue;
 class USpringArmComponent;
 class AFlowerHideObject;
+class UPandolfoComponent;
+class UTransformationComponent;
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class PANWOLFWAR_API UPandolFlowerComponent : public UActorComponent
@@ -34,8 +36,8 @@ public:
 	void Jump();
 	void Crouch();
 	void Hide();
-
 	void UnHide();
+	void Assassination();
 
 protected:
 	virtual void BeginPlay() override;
@@ -50,12 +52,14 @@ private:
 	void GrapplingMovement();
 
 	void CheckCanCrouchHide();
+	void CheckCanHideStandUP();
 
 	void PlayMontage(UAnimMontage* MontageToPlay);
 
 	void SetCharRotation(const FVector ImpactNormal, bool Istantaneus = false);
 	void SetCharLocation(const FVector HitLocation, const FVector HitNormal, bool Istantaneus = false);
 
+	void CheckCanAirAssassin();
 
 	#pragma region AnimNotifyFunctions
 
@@ -101,6 +105,8 @@ private:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
 	UInputAction* PandolFlower_HideAction;
 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
+	UInputAction* PandolFlower_AssassinAction;
 
 	#pragma endregion
 
@@ -116,6 +122,10 @@ private:
 	APanWolfWarCharacter* PanWolfCharacter;
 	UCameraComponent* FollowCamera;
 	USpringArmComponent* CameraBoom;
+	UPandolfoComponent* PandolfoComponent;
+	UTransformationComponent* TransformationComponent;
+
+	FTimerHandle AirAssassination_TimerHandle;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Cover State ", meta = (AllowPrivateAccess = "true"))
 	bool IsCovering = false;

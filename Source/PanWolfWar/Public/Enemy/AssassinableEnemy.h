@@ -6,6 +6,7 @@
 
 class UNiagaraComponent;
 class UAnimMontage;
+class UPandolfoComponent;
 
 UCLASS()
 class PANWOLFWAR_API AAssassinableEnemy : public ABaseEnemy
@@ -15,7 +16,9 @@ class PANWOLFWAR_API AAssassinableEnemy : public ABaseEnemy
 public:
 	AAssassinableEnemy();
 
-	void Assassinated(UAnimMontage* AssassinatedMontage);
+	void Assassinated(UAnimMontage* AssassinatedMontage,UPandolfoComponent* _PandolfoComponent , bool AirAssassination = false);
+	void MarkAsTarget(bool IsTargeted);
+	void DisableBoxAssassination();
 
 protected:
 	virtual void BeginPlay() override;
@@ -35,7 +38,7 @@ private:
 	UFUNCTION(BlueprintCallable)
 	void Killed();
 
-	
+	void AirAssassinated();
 	
 
 private:

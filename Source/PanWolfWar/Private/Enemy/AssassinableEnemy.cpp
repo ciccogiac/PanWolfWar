@@ -10,6 +10,9 @@
 #include "Components/PandolfoComponent.h"
 #include "Interfaces/CharacterInterface.h"
 
+#include "Kismet/KismetMathLibrary.h"
+#include "Components/PandolFlowerComponent.h"
+
 AAssassinableEnemy::AAssassinableEnemy()
 {
 	Niagara_DieEffect = CreateDefaultSubobject<UNiagaraComponent>(TEXT("Niagara_DieEffect"));
@@ -43,6 +46,8 @@ void AAssassinableEnemy::BeginPlay()
 
 	BoxComponent->OnComponentBeginOverlap.AddDynamic(this, &AAssassinableEnemy::BoxCollisionEnter);
 	BoxComponent->OnComponentEndOverlap.AddDynamic(this, &AAssassinableEnemy::BoxCollisionExit);
+
+	GetMesh()->SetVectorParameterValueOnMaterials(FName("Emission"), UKismetMathLibrary::Conv_LinearColorToVector(FLinearColor::Red));
 }
 
 void AAssassinableEnemy::SetPlayerVisibility(bool NewVisibility)
@@ -69,10 +74,14 @@ void AAssassinableEnemy::BoxCollisionEnter(UPrimitiveComponent* OverlappedCompon
 		if (!CharacterInterface) return;
 		
 		PandolfoComponent = CharacterInterface->GetPandolfoComponent();
-		if (!PandolfoComponent || !PandolfoComponent->IsActive()) return;
+		UPandolFlowerComponent* PandolFlowerComponent = CharacterInterface->GetPandolFlowerComponent();
+		//if (!PandolfoComponent || !PandolfoComponent->IsActive()) return;
+
+		if (!PandolfoComponent || (!PandolfoComponent->IsActive() && !PandolFlowerComponent->IsActive()) ) return;
 
 		PandolfoComponent->SetAssassinableEnemy(this);
 		AssassinationWidget->SetVisibility(true);
+		MarkAsTarget(true);
 	}
 
 
@@ -89,11 +98,19 @@ void AAssassinableEnemy::BoxCollisionExit(UPrimitiveComponent* OverlappedCompone
 		if (!CharacterInterface) return;
 
 		PandolfoComponent = CharacterInterface->GetPandolfoComponent();
-		if (!PandolfoComponent || !PandolfoComponent->IsActive()) return;
+		UPandolFlowerComponent* PandolFlowerComponent = CharacterInterface->GetPandolFlowerComponent();
+		//if (!PandolfoComponent || !PandolfoComponent->IsActive()) return;
+		if (!PandolfoComponent || (!PandolfoComponent->IsActive() && !PandolFlowerComponent->IsActive())) return;
 
 		PandolfoComponent->SetAssassinableEnemy(nullptr);
 		AssassinationWidget->SetVisibility(false);
+		MarkAsTarget(false);
 	}
+}
+
+void AAssassinableEnemy::DisableBoxAssassination()
+{
+	BoxComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 }
 
 void AAssassinableEnemy::Killed()
@@ -108,24 +125,52 @@ void AAssassinableEnemy::Die()
 	Super::Die();
 
 	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-	//Niagara_DieEffect->SetActive(true);
 	GetWorld()->GetTimerManager().SetTimer(Die_TimerHandle, [this]() {this->Destroy(); }, 5.f, true);
 }
 
-void AAssassinableEnemy::Assassinated(UAnimMontage* AssassinatedMontage)
+void AAssassinableEnemy::Assassinated(UAnimMontage* AssassinatedMontage, UPandolfoComponent* _PandolfoComponent, bool AirAssassination)
 {
 	if (!AssassinatedMontage) return;
 	UAnimInstance* OwningPlayerAnimInstance =GetMesh()->GetAnimInstance();
 	if (!OwningPlayerAnimInstance) return;
 	//if (OwningPlayerAnimInstance->IsAnyMontagePlaying()) return;
+	Super::Die();
+	DisableBoxAssassination();
+
+	if (AirAssassination)
+		AirAssassinated();
 
 	OwningPlayerAnimInstance->Montage_Play(AssassinatedMontage);
 
-	Die();
-	if(PandolfoComponent)
-		PandolfoComponent->SetAssassinableEnemy(nullptr);
+	
+	if(_PandolfoComponent)
+		_PandolfoComponent->SetAssassinableEnemy(nullptr);
+	if (AirAssassination && _PandolfoComponent)
+	{
+		_PandolfoComponent->SetAssassinableEnemy(nullptr);
+		_PandolfoComponent->SetAssassinableAirEnemy(nullptr);
+	}
+
+
 	AssassinationWidget->SetVisibility(false);
-	BoxComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	MarkAsTarget(false);
+	
+}
+
+void AAssassinableEnemy::AirAssassinated()
+{
+	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	const FRotator NewRotation = FRotator(0.f, UKismetMathLibrary::FindLookAtRotation(GetActorLocation(), Player->GetActorLocation()).Yaw , 0.f);
+	FLatentActionInfo LatentInfo;
+	LatentInfo.CallbackTarget = this;
+	UKismetSystemLibrary::MoveComponentTo(GetCapsuleComponent(), GetActorLocation(), NewRotation , false, false, 0.05, false, EMoveComponentAction::Move, LatentInfo);
+	
+}
+
+void AAssassinableEnemy::MarkAsTarget(bool IsTargeted)
+{
+	const float EmissiveMultiplier = UKismetMathLibrary::SelectFloat(2.0, 0.f, IsTargeted);
+	GetMesh()->SetScalarParameterValueOnMaterials(FName("Emissive Multiplier"), EmissiveMultiplier);
 }
 
 
