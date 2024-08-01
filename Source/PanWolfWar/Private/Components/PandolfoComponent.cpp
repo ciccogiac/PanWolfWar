@@ -519,6 +519,7 @@ void UPandolfoComponent::Assassination()
 
 void UPandolfoComponent::PlayAirAssassination(UAnimInstance* OwningPlayerAnimInstance)
 {
+	if (!AssassinableOverlapped) return;
 	AIR_AssassinableOverlapped = nullptr;
 
 	const FRotator NewRotation = FRotator(0.f, UKismetMathLibrary::FindLookAtRotation(CharacterOwner->GetActorLocation(), AssassinableOverlapped->GetActorLocation()).Yaw, 0.f);
@@ -545,6 +546,8 @@ void UPandolfoComponent::PlayAirAssassination(UAnimInstance* OwningPlayerAnimIns
 
 void UPandolfoComponent::PlayStealthAssassination(UAnimInstance* OwningPlayerAnimInstance)
 {
+	if (!AssassinableOverlapped) return;
+
 	int32 MapIndex = FMath::RandRange(0, AssassinationMontage_Map.Num() - 1);
 	TPair<UAnimMontage*, UAnimMontage*> MontageCouple = AssassinationMontage_Map.Get(FSetElementId::FromInteger(MapIndex));
 	if (!MontageCouple.Key) return;

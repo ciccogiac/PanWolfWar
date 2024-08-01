@@ -125,7 +125,7 @@ void AAssassinableEnemy::Die()
 	Super::Die();
 
 	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-	GetWorld()->GetTimerManager().SetTimer(Die_TimerHandle, [this]() {this->Destroy(); }, 5.f, true);
+	GetWorld()->GetTimerManager().SetTimer(Die_TimerHandle, [this]() {this->Destroy(); }, 5.f, false);
 }
 
 void AAssassinableEnemy::Assassinated(UAnimMontage* AssassinatedMontage, UPandolfoComponent* _PandolfoComponent, bool AirAssassination)

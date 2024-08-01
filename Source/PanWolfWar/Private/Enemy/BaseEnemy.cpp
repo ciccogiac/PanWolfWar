@@ -54,6 +54,7 @@ void ABaseEnemy::Die()
 {
 	BaseAIController->Die();
 	bDied = true;
+	GetWorld()->GetTimerManager().ClearTimer(FindEnemies_TimerHandle);
 }
 
 float ABaseEnemy::PerformAttack()
@@ -75,6 +76,8 @@ float ABaseEnemy::PerformAttack()
 
 void ABaseEnemy::FindNearestAI()
 {
+	if (bDied || !bSeen) return;
+
 	const FVector Start = GetActorLocation();
 	const FVector End = Start + GetActorForwardVector();
 	TArray<FHitResult> Hit;
@@ -95,7 +98,8 @@ void ABaseEnemy::FindNearestAI()
 		{
 			//Debug::Print(TEXT("Enemy: ") + EnemyHit.GetActor()->GetName());
 			ABaseEnemy* Enemy = Cast<ABaseEnemy>(EnemyHit.GetActor());
-			if (!Enemy || Enemy->bSeen) continue;
+			if (!Enemy) continue;
+			if (Enemy->bSeen) continue;
 			Enemy->BaseAIController->FindNewEnemy(Player);
 		}
 			

@@ -72,7 +72,7 @@ protected:
 private:
 
 	bool bIsHiding = false;
-	TArray<AActor*> EnemyAware;
+	TArray<AActor*> EnemyAware = TArray<AActor*>();
 
 	#pragma region Components
 

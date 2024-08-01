@@ -17,6 +17,8 @@ AGrapplePoint::AGrapplePoint()
 {
 	PrimaryActorTick.bCanEverTick = true;
 
+	RootComponent = CreateDefaultSubobject<USceneComponent>(TEXT("DefaultRoot"));
+
 	Detection_Mesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Detection_Mesh"));
 	Detection_Mesh->SetupAttachment(GetRootComponent());
 

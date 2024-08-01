@@ -12,6 +12,8 @@ AFlowerCable::AFlowerCable()
 	//StartCable = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("FlowerStartCable"));
 	//StartCable->SetupAttachment(GetRootComponent());
 
+	RootComponent = CreateDefaultSubobject<USceneComponent>(TEXT("DefaultRoot"));
+
 	CableComponent = CreateDefaultSubobject<UCableComponent>(TEXT("FlowerCable"));
 	CableComponent->SetupAttachment(GetRootComponent());
 

@@ -11,7 +11,8 @@ UPanWolfComponent::UPanWolfComponent()
 	PrimaryComponentTick.SetTickFunctionEnable(false);
 	bAutoActivate = false;
 
-	PanWolfCharacter = Cast<APanWolfWarCharacter>(GetOwner());
+	CharacterOwner = Cast<ACharacter>(GetOwner());
+	PanWolfCharacter = Cast<APanWolfWarCharacter>(CharacterOwner);
 }
 
 void UPanWolfComponent::Activate(bool bReset)
@@ -28,6 +29,11 @@ void UPanWolfComponent::Deactivate()
 	Super::Deactivate();
 
 	PanWolfCharacter->RemoveMappingContext(PanWolfMappingContext);
+}
+
+void UPanWolfComponent::Jump()
+{
+	CharacterOwner->Jump();
 }
 
 void UPanWolfComponent::BeginPlay()

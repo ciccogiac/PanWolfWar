@@ -258,6 +258,10 @@ void APanWolfWarCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInpu
 
 		#pragma endregion
 
+		#pragma region PanWolf
+		EnhancedInputComponent->BindAction(PanWolfComponent->JumpAction, ETriggerEvent::Started, PanWolfComponent, &UPanWolfComponent::Jump);
+		#pragma endregion
+
 
 	}
 	else
