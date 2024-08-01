@@ -9,6 +9,7 @@
 class APanWolfWarCharacter;
 class UInputMappingContext;
 class UInputAction;
+class UAnimMontage;
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class PANWOLFWAR_API UPanWolfComponent : public UActorComponent
@@ -22,6 +23,7 @@ public:
 	virtual void Deactivate() override;
 
 	void Jump();
+	void Attack();
 
 protected:
 	virtual void BeginPlay() override;
@@ -39,10 +41,16 @@ private:
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	UInputMappingContext* PanWolfMappingContext;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Assassination", meta = (AllowPrivateAccess = "true"))
+	UAnimMontage* AttackMontage;
 		
 public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	UInputAction* JumpAction;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	UInputAction* AttackAction;
 
 };

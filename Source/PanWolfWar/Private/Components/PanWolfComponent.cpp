@@ -36,6 +36,15 @@ void UPanWolfComponent::Jump()
 	CharacterOwner->Jump();
 }
 
+void UPanWolfComponent::Attack()
+{
+	UAnimInstance* OwningPlayerAnimInstance = CharacterOwner->GetMesh()->GetAnimInstance();
+	if (!OwningPlayerAnimInstance) return;
+	if (OwningPlayerAnimInstance->IsAnyMontagePlaying()) return;
+
+	OwningPlayerAnimInstance->Montage_Play(AttackMontage);
+}
+
 void UPanWolfComponent::BeginPlay()
 {
 	Super::BeginPlay();	
