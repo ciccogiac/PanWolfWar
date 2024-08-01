@@ -401,7 +401,7 @@ bool UClimbingComponent::CanClimbUpon()
 		PanWolfCharacter->SetMotionWarpTarget(FName("LedgeClimbUP"),  FirstPoint + CharacterOwner->GetActorForwardVector() * 5.f + CharacterOwner->GetActorUpVector() * 7.5f);
 		PanWolfCharacter->SetMotionWarpTarget(FName("LedgeClimbForward"), SecondPoint + CharacterOwner->GetActorForwardVector()*25.f);
 		CapsuleComponent->SetCapsuleHalfHeight(90);
-		CapsuleComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+		//CapsuleComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 		UAnimMontage* MantleMontage = IsClimbing() ? ClimbToTopMontage : MantleNoClimbMontage;
 		PlayClimbMontage(MantleMontage);
 		return true;
@@ -936,7 +936,7 @@ void UClimbingComponent::PlayClimbMontage(UAnimMontage* MontageToPlay)
 	else if (MontageToPlay == ClimbToTopMontage)
 	{
 		OwningPlayerAnimInstance->Montage_Play(MontageToPlay);
-		PanWolfCharacter->GetCameraBoom()->bDoCollisionTest = false;
+		//PanWolfCharacter->GetCameraBoom()->bDoCollisionTest = false;
 
 		if (bCoveringSaved)
 		{
@@ -950,7 +950,7 @@ void UClimbingComponent::PlayClimbMontage(UAnimMontage* MontageToPlay)
 		MovementComponent->SetMovementMode(EMovementMode::MOVE_Flying, 0);
 		MovementComponent->StopMovementImmediately();
 		OwningPlayerAnimInstance->Montage_Play(MontageToPlay);
-		PanWolfCharacter->GetCameraBoom()->bDoCollisionTest = false;
+		//PanWolfCharacter->GetCameraBoom()->bDoCollisionTest = false;
 
 		if (bCoveringSaved)
 		{
@@ -1029,11 +1029,6 @@ void UClimbingComponent::OnClimbMontageEnded(UAnimMontage* Montage, bool bInterr
 		PanWolfCharacter->GetCameraBoom()->bDoCollisionTest = true;
 	}
 
-	else if(IsClimbing())
-	{
-		MoveToLedgeLocation();
-		MovementComponent->StopMovementImmediately();
-	}
 	else if (Montage == MantleNoClimbMontage)
 	{
 		CapsuleComponent->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
@@ -1045,6 +1040,12 @@ void UClimbingComponent::OnClimbMontageEnded(UAnimMontage* Montage, bool bInterr
 		{
 			PandolfoComponent->GetSneakCoverComponent()->EnterCover();
 		}
+	}
+
+	else if (IsClimbing())
+	{
+		MoveToLedgeLocation();
+		MovementComponent->StopMovementImmediately();
 	}
 
 }

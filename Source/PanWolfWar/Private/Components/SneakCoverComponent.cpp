@@ -294,6 +294,7 @@ bool USneakCoverComponent::CanEnterCover(const FVector StartPoint,bool bNarrowCo
 	FHitResult hit;
 	EDrawDebugTrace::Type DebugTrace = ShowDebugTrace ? EDrawDebugTrace::ForDuration : EDrawDebugTrace::None;
 	UKismetSystemLibrary::SphereTraceSingleForObjects(this, Start, End, 40.f, WorldStaticObjectTypes, false, TArray<AActor*>(), DebugTrace, hit, true);
+	
 	if (hit.bBlockingHit)
 	{
 		SavedAttachNormal = hit.Normal;

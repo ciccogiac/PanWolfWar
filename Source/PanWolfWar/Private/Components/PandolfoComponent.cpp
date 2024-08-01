@@ -423,6 +423,8 @@ void UPandolfoComponent::EndSliding()
 	CharacterOwner->EnableInput(CharacterOwner->GetLocalViewingPlayerController());
 	TimeElapsed = 0.35f;
 	GetWorld()->GetTimerManager().SetTimer(Sliding_TimerHandle, [this]() {this->SetSlidingValues(true); }, 0.001f, true);
+
+	CheckCanHideStandUP();
 }
 
 void UPandolfoComponent::SetSlidingValues(bool IsReverse)
