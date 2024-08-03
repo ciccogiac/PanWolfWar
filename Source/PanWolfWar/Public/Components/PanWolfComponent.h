@@ -10,6 +10,7 @@ class APanWolfWarCharacter;
 class UInputMappingContext;
 class UInputAction;
 class UAnimMontage;
+class UCombatComponent;
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class PANWOLFWAR_API UPanWolfComponent : public UActorComponent
@@ -32,6 +33,7 @@ protected:
 private:
 	APanWolfWarCharacter* PanWolfCharacter;
 	ACharacter* CharacterOwner;
+	UCombatComponent* CombatComponent;
 
 	UPROPERTY(Category = Character, EditDefaultsOnly, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<USkeletalMesh> SkeletalMeshAsset;

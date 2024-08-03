@@ -3,15 +3,16 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
 #include <Engine/TargetPoint.h>
+#include "Interfaces/CombatInterface.h"
 #include "BaseEnemy.generated.h"
 
 
 class UBehaviorTree;
-
+class UCombatComponent;
 
 
 UCLASS()
-class PANWOLFWAR_API ABaseEnemy : public ACharacter
+class PANWOLFWAR_API ABaseEnemy : public ACharacter, public ICombatInterface
 {
 	GENERATED_BODY()
 
@@ -23,6 +24,9 @@ public:
 
 	virtual void Tick(float DeltaTime) override;
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
+
+	virtual void ActivateCollision(FString CollisionPart) override;
+	virtual void DeactivateCollision(FString CollisionPart) override;
 
 protected:
 	virtual void BeginPlay() override;
@@ -48,6 +52,9 @@ protected:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAcces = "true"))
 	class UMotionWarpingComponent* MotionWarping;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Movement, meta = (AllowPrivateAccess = "true"))
+	UCombatComponent* CombatComponent;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "AI", meta = (AllowPrivateAccess = "true"))
 	UBehaviorTree* BehaviorTree;

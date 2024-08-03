@@ -85,8 +85,8 @@ bool UTransformationComponent::CanTrasform(const int32 NewTransformation_ID)
 
 	if (PanWolfWarCharacter->GetPandolfoComponent()->PandolfoState != EPandolfoState::EPS_Pandolfo) return false;
 
-	UAnimInstance* AnimInstance = PanWolfWarCharacter->GetMesh()->GetAnimInstance();
-	if (AnimInstance && AnimInstance->IsAnyMontagePlaying()) return false;
+	//UAnimInstance* AnimInstance = PanWolfWarCharacter->GetMesh()->GetAnimInstance();
+	//if (AnimInstance && AnimInstance->IsAnyMontagePlaying()) return false;
 
 	return true;
 }

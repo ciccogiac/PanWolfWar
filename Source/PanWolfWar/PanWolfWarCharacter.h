@@ -7,6 +7,7 @@
 #include "Logging/LogMacros.h"
 #include "Interfaces/InteractInterface.h"
 #include "Interfaces/CharacterInterface.h"
+#include "Interfaces/CombatInterface.h"
 #include "PanWolfWarCharacter.generated.h"
 
 class USpringArmComponent;
@@ -24,11 +25,12 @@ class UPandolfoComponent;
 class UPanWolfComponent;
 class UPandolFlowerComponent;
 class UPanBirdComponent;
+class UCombatComponent;
 
 DECLARE_LOG_CATEGORY_EXTERN(LogTemplateCharacter, Log, All);
 
-UCLASS(config=Game)
-class APanWolfWarCharacter : public ACharacter , public IInteractInterface , public ICharacterInterface 
+UCLASS(config=Game, Blueprintable)
+class APanWolfWarCharacter : public ACharacter , public IInteractInterface , public ICharacterInterface, public ICombatInterface
 {
 	GENERATED_BODY()
 
@@ -45,6 +47,9 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	void SetIsHiding(bool Value, bool DoCrouchCheck = true);
+
+	virtual void ActivateCollision(FString CollisionPart) override;
+	virtual void DeactivateCollision(FString CollisionPart) override;
 
 	#pragma region InputCallback
 
@@ -124,6 +129,9 @@ private:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Movement, meta = (AllowPrivateAccess = "true"))
 	UAttributeComponent* Attributes;
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Movement, meta = (AllowPrivateAccess = "true"))
+	UCombatComponent* CombatComponent;
+
 	#pragma endregion
 
 	#pragma region InputAction
@@ -173,6 +181,7 @@ public:
 	
 	FORCEINLINE virtual UAttributeComponent* GetAttributeComponent()  const override { return Attributes; }
 	FORCEINLINE UInteractComponent* GetInteractComponent() const { return InteractComponent; }
+	FORCEINLINE UCombatComponent* GetCombatComponent() const { return CombatComponent; }
 
 	FORCEINLINE virtual UTransformationComponent* GetTransformationComponent()  const override { return TransformationComponent; } ;
 	FORCEINLINE virtual UPandolfoComponent* GetPandolfoComponent() const override { return PandolfoComponent; }

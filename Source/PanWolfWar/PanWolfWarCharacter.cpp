@@ -22,6 +22,7 @@
 #include "Components/InteractComponent.h"
 
 #include "Components/TransformationComponent.h"
+#include "Components/CombatComponent.h"
 
 #include "NiagaraComponent.h"
 
@@ -91,6 +92,7 @@ APanWolfWarCharacter::APanWolfWarCharacter()
 	Attributes = CreateDefaultSubobject<UAttributeComponent>(TEXT("Attributes"));
 	InteractComponent = CreateDefaultSubobject<UInteractComponent>(TEXT("InteractComponent"));
 	TransformationComponent = CreateDefaultSubobject<UTransformationComponent>(TEXT("TransformationComponent"));
+	CombatComponent = CreateDefaultSubobject<UCombatComponent>(TEXT("CombatComponent"));
 
 	PandolfoComponent = CreateDefaultSubobject<UPandolfoComponent>(TEXT("PandolfoComponent"));
 	PanWolfComponent = CreateDefaultSubobject<UPanWolfComponent>(TEXT("PanWolfComponent"));
@@ -349,6 +351,16 @@ bool APanWolfWarCharacter::SetOverlappingObject(AInteractableObject* Interactabl
 }
 
 
+void APanWolfWarCharacter::ActivateCollision(FString CollisionPart)
+{
+	CombatComponent->ActivateCollision(CollisionPart);
+}
+
+void APanWolfWarCharacter::DeactivateCollision(FString CollisionPart)
+{
+	CombatComponent->DeactivateCollision(CollisionPart);
+}
+
 
 #pragma endregion
 
@@ -382,6 +394,7 @@ void APanWolfWarCharacter::SetIsHiding(bool Value, bool DoCrouchCheck)
 
 }
 
+
 void APanWolfWarCharacter::AddEnemyAware(AActor* Enemy)
 {	
 	if (!Enemy) return;
@@ -405,3 +418,14 @@ void APanWolfWarCharacter::RemoveEnemyAware(AActor* Enemy)
 	}
 }
 		
+
+
+//void APanWolfWarCharacter::ActivateCollision(FString CollisionPart)
+//{
+//	CombatComponent->ActivateCollision(CollisionPart);
+//}
+//
+//void APanWolfWarCharacter::DeactivateCollision(FString CollisionPart)
+//{
+//	CombatComponent->DeactivateCollision(CollisionPart);
+//}

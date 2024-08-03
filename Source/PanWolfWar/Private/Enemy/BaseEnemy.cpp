@@ -10,6 +10,8 @@
 #include "Kismet/GameplayStatics.h"
 #include <PanWolfWar/PanWolfWarCharacter.h>
 
+#include "Components/CombatComponent.h"
+
 ABaseEnemy::ABaseEnemy()
 {
 	PrimaryActorTick.bCanEverTick = false;
@@ -23,6 +25,7 @@ ABaseEnemy::ABaseEnemy()
 	}
 
 	MotionWarping = CreateDefaultSubobject<UMotionWarpingComponent>(TEXT("Motion Warping"));
+	CombatComponent = CreateDefaultSubobject<UCombatComponent>(TEXT("CombatComponent"));
 }
 
 void ABaseEnemy::SetPlayerVisibility(bool NewVisibility)
@@ -59,19 +62,21 @@ void ABaseEnemy::Die()
 
 float ABaseEnemy::PerformAttack()
 {
-	UAnimInstance* AnimIstance = GetMesh()->GetAnimInstance();
+	/*UAnimInstance* AnimIstance = GetMesh()->GetAnimInstance();
 	if (!AnimIstance) return 0.f;
-	if (AnimIstance->IsAnyMontagePlaying() || !AttackMontage) return 0.f;
+	if (AnimIstance->IsAnyMontagePlaying() || !AttackMontage) return 0.f;*/
 
 	if (MotionWarping && CombatTarget)
 	{
 		MotionWarping->AddOrUpdateWarpTargetFromComponent(FName("CombatTarget"), CombatTarget->GetRootComponent(), FName(NAME_None), true);
 	}
 
-	float Duration = AnimIstance->Montage_Play(AttackMontage,1.f,EMontagePlayReturnType::Duration);
-	
-	return Duration;
+	/*float Duration = AnimIstance->Montage_Play(AttackMontage,1.f,EMontagePlayReturnType::Duration);
+	return Duration;*/
 
+	CombatComponent->PerformAttack(EAttackType::EAT_LightAttack);
+
+	return 1.f;
 }
 
 void ABaseEnemy::FindNearestAI()
@@ -120,3 +125,14 @@ void ABaseEnemy::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent
 
 }
 
+
+
+void ABaseEnemy::ActivateCollision(FString CollisionPart)
+{
+	CombatComponent->ActivateCollision(CollisionPart);
+}
+
+void ABaseEnemy::DeactivateCollision(FString CollisionPart)
+{
+	CombatComponent->DeactivateCollision(CollisionPart);
+}
