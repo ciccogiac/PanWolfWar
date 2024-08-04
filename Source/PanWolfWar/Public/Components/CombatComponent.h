@@ -32,6 +32,9 @@ struct FCollisionPartStruct
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	float TraceRadius;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float Damage;
 };
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
@@ -64,6 +67,9 @@ public:
 
 	void SetBlockingState(bool EnableBlocking);
 
+	void PlayHitSound(const FVector& ImpactPoint);
+	void SpawnHitParticles(const FVector& ImpactPoint);
+
 protected:
 
 	virtual void BeginPlay() override;
@@ -74,6 +80,8 @@ private:
 	TArray<UAnimMontage*> GetAttackMontages(EAttackType AttackType);
 	void TraceLoop();
 
+	bool ActorIsSameType(AActor* OtherActor);
+	void ExecuteGetHit(FHitResult& Hit);
 
 private:
 	ACharacter* CharacterOwner;
@@ -87,6 +95,12 @@ private:
 
 
 	FTimerHandle Collision_TimerHandle;
+
+	UPROPERTY(EditAnywhere, Category = Combat)
+	USoundBase* HitSound;
+
+	UPROPERTY(EditAnywhere, Category = Combat)
+	UParticleSystem* HitParticles;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Attack Montages", meta = (AllowPrivateAccess = "true"))
 	TArray<UAnimMontage*> LightAttackMontages;

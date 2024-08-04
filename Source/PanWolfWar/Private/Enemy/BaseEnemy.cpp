@@ -11,6 +11,11 @@
 #include <PanWolfWar/PanWolfWarCharacter.h>
 
 #include "Components/CombatComponent.h"
+#include "Components/CapsuleComponent.h"
+
+#include "UserWidgets/BaseEnemyWidget.h"
+
+#include "Perception/AISense_Damage.h"
 
 ABaseEnemy::ABaseEnemy()
 {
@@ -24,23 +29,41 @@ ABaseEnemy::ABaseEnemy()
 		PlayerVisibleWidget->SetupAttachment(GetRootComponent());
 	}
 
+	
+	
+
+	EnemyWidgetComponent = CreateDefaultSubobject<UWidgetComponent>(TEXT("EnemyWidgetComponent"));
+	if (EnemyWidgetComponent)
+	{
+		EnemyWidgetComponent->SetWidgetSpace(EWidgetSpace::Screen);
+		EnemyWidgetComponent->SetVisibility(false);
+		EnemyWidgetComponent->SetupAttachment(GetRootComponent());
+		
+	}
+
 	MotionWarping = CreateDefaultSubobject<UMotionWarpingComponent>(TEXT("Motion Warping"));
 	CombatComponent = CreateDefaultSubobject<UCombatComponent>(TEXT("CombatComponent"));
+
+	Tags.Add(FName("Enemy"));
 }
 
 void ABaseEnemy::SetPlayerVisibility(bool NewVisibility)
 {
 	bSeen = NewVisibility;
-	PlayerVisibleWidget->SetVisibility(NewVisibility);
+	//PlayerVisibleWidget->SetVisibility(NewVisibility);
 
-	if (bSeen)
+	if (bSeen && !bDied)
 	{
 		FindNearestAI();
 		GetWorld()->GetTimerManager().SetTimer(FindEnemies_TimerHandle, [this]() {this->FindNearestAI(); }, 3.f, true);
+
+		EnemyWidgetComponent->SetVisibility(true);
 	}
 	else
 	{
 		GetWorld()->GetTimerManager().ClearTimer(FindEnemies_TimerHandle);
+
+		EnemyWidgetComponent->SetVisibility(false);
 	}
 		
 }
@@ -51,6 +74,8 @@ void ABaseEnemy::BeginPlay()
 	
 	BaseAIController = Cast<ABaseAIController>(GetController());
 	Player =  UGameplayStatics::GetPlayerCharacter(this, 0 );
+
+	BaseEnemyWidget = Cast<UBaseEnemyWidget>(EnemyWidgetComponent->GetWidget());
 }
 
 void ABaseEnemy::Die()
@@ -135,4 +160,64 @@ void ABaseEnemy::ActivateCollision(FString CollisionPart)
 void ABaseEnemy::DeactivateCollision(FString CollisionPart)
 {
 	CombatComponent->DeactivateCollision(CollisionPart);
+}
+
+
+void ABaseEnemy::GetHit(const FVector& ImpactPoint, AActor* Hitter)
+{
+	if (IsAlive() && Hitter)
+	{
+		//DirectionalHitReact(Hitter->GetActorLocation()); 
+		FName Section = IHitInterface::DirectionalHitReact(GetOwner(), Hitter->GetActorLocation());
+		//Debug::Print(TEXT("Hit From : ") + Section.ToString());
+		PlayHitReactMontage(Section);
+	}
+	//else Die();
+
+	CombatComponent->PlayHitSound(ImpactPoint);
+	CombatComponent->SpawnHitParticles(ImpactPoint);
+}
+
+void ABaseEnemy::PlayHitReactMontage(const FName& SectionName)
+{
+	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+	if (AnimInstance && HitReactMontage)
+	{
+		AnimInstance->Montage_Play(HitReactMontage);
+		AnimInstance->Montage_JumpToSection(SectionName, HitReactMontage);
+	}
+}
+
+bool ABaseEnemy::IsAlive()
+{
+	//return Attributes && Attributes->IsAlive();
+	return !bDied;
+}
+
+float ABaseEnemy::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
+{
+	/*if (Attributes)
+	{
+		Attributes->ReceiveDamage(DamageAmount);
+	}*/
+
+	
+	Health = FMath::Clamp(Health - DamageAmount, 0.f, 100.f);
+	BaseEnemyWidget->SetHealthBarPercent(Health/100.f);
+	
+	if (Health <= 0)
+	{
+		Die();
+		GetMesh()->SetSimulatePhysics(true);
+		GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+		FTimerHandle Die_TimerHandle;
+		GetWorld()->GetTimerManager().SetTimer(Die_TimerHandle, [this]() {this->Destroy(); }, 5.f, false);
+
+		EnemyWidgetComponent->SetVisibility(false);
+	}
+	else
+		BaseAIController->ReportDamageEvent(this, DamageCauser, DamageAmount, GetActorLocation());
+
+		
+	return DamageAmount;
 }

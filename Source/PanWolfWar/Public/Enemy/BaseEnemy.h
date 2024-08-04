@@ -4,15 +4,17 @@
 #include "GameFramework/Character.h"
 #include <Engine/TargetPoint.h>
 #include "Interfaces/CombatInterface.h"
+#include "Interfaces/HitInterface.h"
 #include "BaseEnemy.generated.h"
 
 
 class UBehaviorTree;
 class UCombatComponent;
-
+class UWidgetComponent;
+class UBaseEnemyWidget;
 
 UCLASS()
-class PANWOLFWAR_API ABaseEnemy : public ACharacter, public ICombatInterface
+class PANWOLFWAR_API ABaseEnemy : public ACharacter, public ICombatInterface, public IHitInterface
 {
 	GENERATED_BODY()
 
@@ -28,6 +30,9 @@ public:
 	virtual void ActivateCollision(FString CollisionPart) override;
 	virtual void DeactivateCollision(FString CollisionPart) override;
 
+	//HitInterface
+	virtual void GetHit(const FVector& ImpactPoint, AActor* Hitter) override;
+
 protected:
 	virtual void BeginPlay() override;
 
@@ -37,6 +42,10 @@ protected:
 	UFUNCTION(BlueprintCallable)
 	float PerformAttack();
 
+	virtual float TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, class AController* EventInstigator, AActor* DamageCauser) override;
+	void PlayHitReactMontage(const FName& SectionName);
+	bool IsAlive();
+
 private:	
 
 	void FindNearestAI();
@@ -44,6 +53,7 @@ private:
 protected:
 	bool bDied = false;
 	bool bSeen = false;
+	float Health = 100.f;
 	ACharacter* Player;
 
 	FTimerHandle FindEnemies_TimerHandle;
@@ -52,6 +62,9 @@ protected:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAcces = "true"))
 	class UMotionWarpingComponent* MotionWarping;
+
+
+	
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Movement, meta = (AllowPrivateAccess = "true"))
 	UCombatComponent* CombatComponent;
@@ -63,13 +76,22 @@ protected:
 	AActor* CombatTarget;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Assassination Components", meta = (AllowPrivateAccess = "true"))
-	class UWidgetComponent* PlayerVisibleWidget;
+	UWidgetComponent* PlayerVisibleWidget;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components", meta = (AllowPrivateAccess = "true"))
+	UWidgetComponent* EnemyWidgetComponent;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components", meta = (AllowPrivateAccess = "true"))
+	UBaseEnemyWidget* BaseEnemyWidget;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Sliding", meta = (AllowPrivateAccess = "true"))
 	class UAnimMontage* AttackMontage;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "AI", meta = (AllowPrivateAccess = "true"))
 	double WarpTargetDistance = 75.f;
+
+	UPROPERTY(EditDefaultsOnly, Category = Combat)
+	UAnimMontage* HitReactMontage;
 
 public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "AI")

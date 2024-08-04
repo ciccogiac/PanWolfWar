@@ -351,15 +351,7 @@ bool APanWolfWarCharacter::SetOverlappingObject(AInteractableObject* Interactabl
 }
 
 
-void APanWolfWarCharacter::ActivateCollision(FString CollisionPart)
-{
-	CombatComponent->ActivateCollision(CollisionPart);
-}
 
-void APanWolfWarCharacter::DeactivateCollision(FString CollisionPart)
-{
-	CombatComponent->DeactivateCollision(CollisionPart);
-}
 
 
 #pragma endregion
@@ -419,13 +411,116 @@ void APanWolfWarCharacter::RemoveEnemyAware(AActor* Enemy)
 }
 		
 
+#pragma region Combat
 
-//void APanWolfWarCharacter::ActivateCollision(FString CollisionPart)
-//{
-//	CombatComponent->ActivateCollision(CollisionPart);
-//}
-//
-//void APanWolfWarCharacter::DeactivateCollision(FString CollisionPart)
-//{
-//	CombatComponent->DeactivateCollision(CollisionPart);
-//}
+void APanWolfWarCharacter::ActivateCollision(FString CollisionPart)
+{
+	CombatComponent->ActivateCollision(CollisionPart);
+}
+
+void APanWolfWarCharacter::DeactivateCollision(FString CollisionPart)
+{
+	CombatComponent->DeactivateCollision(CollisionPart);
+}
+
+void APanWolfWarCharacter::GetHit(const FVector& ImpactPoint, AActor* Hitter)
+{
+	if (IsAlive() && Hitter)
+	{
+		FName Section = IHitInterface::DirectionalHitReact(GetOwner(), Hitter->GetActorLocation());
+		PlayHitReactMontage(Section);
+	}
+
+	CombatComponent->PlayHitSound(ImpactPoint);
+	CombatComponent->SpawnHitParticles(ImpactPoint);
+}
+
+void APanWolfWarCharacter::PlayHitReactMontage(const FName& SectionName)
+{
+	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+	if (!AnimInstance) return;
+
+	UAnimMontage* ReactMontage = nullptr;
+	GetHitReactMontage(ReactMontage);
+	if (!ReactMontage) return;
+
+	AnimInstance->Montage_Play(ReactMontage);
+	AnimInstance->Montage_JumpToSection(SectionName, ReactMontage);
+}
+
+void APanWolfWarCharacter::GetHitReactMontage(UAnimMontage*& ReactMontage)
+{
+	switch (TransformationComponent->GetCurrentTransformationState())
+	{
+	case ETransformationState::ETS_Pandolfo:
+		if (PandolfoComponent->IsActive()) { ReactMontage = Pandolfo_HitReactMontage; }
+		break;
+	case ETransformationState::ETS_PanWolf:
+		if (PanWolfComponent->IsActive()) { ReactMontage = PanWolf_HitReactMontage; }
+		break;
+	case ETransformationState::ETS_PanFlower:
+		if (PandolFlowerComponent->IsActive()) { ReactMontage = PandolFlower_HitReactMontage; }
+		break;
+	case ETransformationState::ETS_PanBird:
+		if (PanBirdComponent->IsActive()) { ReactMontage = PanBird_HitReactMontage; }
+		break;
+	default:
+		break;
+	}
+
+}
+
+bool APanWolfWarCharacter::IsAlive()
+{
+	return Attributes && Attributes->IsAlive();
+}
+
+float APanWolfWarCharacter::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
+{
+	if (!Attributes) return 0.f;
+
+	const float Damage = DamageAmount / GetDamageDivisor();
+	Attributes->ReceiveDamage(Damage);
+	if (!Attributes->IsAlive())
+		Die();
+
+	return Damage;
+}
+
+float APanWolfWarCharacter::GetDamageDivisor()
+{
+
+	switch (TransformationComponent->GetCurrentTransformationState())
+	{
+	case ETransformationState::ETS_Pandolfo:
+		if (PandolfoComponent->IsActive()) { return Pandolfo_DamageDivisor; }
+		break;
+	case ETransformationState::ETS_PanWolf:
+		if (PanWolfComponent->IsActive()) { return PanWolf_DamageDivisor; }
+		break;
+	case ETransformationState::ETS_PanFlower:
+		if (PandolFlowerComponent->IsActive()) { return PandolFlower_DamageDivisor; }
+		break;
+	case ETransformationState::ETS_PanBird:
+		if (PanBirdComponent->IsActive()) { return PanBird_DamageDivisor; }
+		break;
+	default:
+		return 1.f;
+		break;
+	}
+
+	return 1.f;
+}
+
+void APanWolfWarCharacter::Die()
+{
+	Tags.Add(FName("Dead"));
+	TransformationComponent->SelectDesiredTransformation(0);
+	GetMesh()->SetSimulatePhysics(true);
+	GetMesh()->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	FTimerHandle Die_TimerHandle;
+	GetWorld()->GetTimerManager().SetTimer(Die_TimerHandle, [this]() {this->Destroy(); }, 5.f, false);
+}
+
+#pragma endregion

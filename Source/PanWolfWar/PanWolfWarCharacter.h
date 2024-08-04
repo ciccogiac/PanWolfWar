@@ -8,6 +8,7 @@
 #include "Interfaces/InteractInterface.h"
 #include "Interfaces/CharacterInterface.h"
 #include "Interfaces/CombatInterface.h"
+#include "Interfaces/HitInterface.h"
 #include "PanWolfWarCharacter.generated.h"
 
 class USpringArmComponent;
@@ -30,7 +31,7 @@ class UCombatComponent;
 DECLARE_LOG_CATEGORY_EXTERN(LogTemplateCharacter, Log, All);
 
 UCLASS(config=Game, Blueprintable)
-class APanWolfWarCharacter : public ACharacter , public IInteractInterface , public ICharacterInterface, public ICombatInterface
+class APanWolfWarCharacter : public ACharacter , public IInteractInterface , public ICharacterInterface, public ICombatInterface , public IHitInterface
 {
 	GENERATED_BODY()
 
@@ -48,9 +49,12 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void SetIsHiding(bool Value, bool DoCrouchCheck = true);
 
+	//Combat Interface
 	virtual void ActivateCollision(FString CollisionPart) override;
 	virtual void DeactivateCollision(FString CollisionPart) override;
 
+	//HitInterface
+	virtual void GetHit(const FVector& ImpactPoint, AActor* Hitter) override;
 	#pragma region InputCallback
 
 	void Move(const FInputActionValue& Value);
@@ -70,6 +74,12 @@ protected:
 	virtual void Landed(const FHitResult& Hit) override;
 	virtual void Falling() override;
 
+	void PlayHitReactMontage(const FName& SectionName);
+	void GetHitReactMontage(UAnimMontage*& ReactMontage);
+	bool IsAlive();
+	void Die();
+	virtual float TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, class AController* EventInstigator, AActor* DamageCauser) override;
+	float GetDamageDivisor();
 #pragma endregion
 
 #pragma region PrivateVariables
@@ -92,7 +102,6 @@ private:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Hiding Widget", meta = (AllowPrivateAccess = "true"))
 	class UWidgetComponent* PlayerHidingWidget;
 
-
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Hiding Widget", meta = (AllowPrivateAccess = "true"))
 	class UWidgetComponent* PlayerSeenWidget;
 
@@ -106,11 +115,9 @@ private:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Movement, meta = (AllowPrivateAccess = "true"))
 	UMotionWarpingComponent* MotionWarpingComponent;
 
-	/** Interact Component */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Movement, meta = (AllowPrivateAccess = "true"))
 	UInteractComponent* InteractComponent;
 
-	/** Transformation Component */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Movement, meta = (AllowPrivateAccess = "true"))
 	UTransformationComponent* TransformationComponent;
 
@@ -131,6 +138,38 @@ private:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Movement, meta = (AllowPrivateAccess = "true"))
 	UCombatComponent* CombatComponent;
+
+	#pragma endregion
+
+	#pragma region Combat Variables
+
+	UPROPERTY(EditDefaultsOnly, Category = Combat)
+	float Pandolfo_DamageDivisor = 1.f;
+
+	UPROPERTY(EditDefaultsOnly, Category = Combat)
+	float PanWolf_DamageDivisor = 10.f;
+
+	UPROPERTY(EditDefaultsOnly, Category = Combat)
+	float PandolFlower_DamageDivisor = 4.f;
+
+	UPROPERTY(EditDefaultsOnly, Category = Combat)
+	float PanBird_DamageDivisor = 10.f;
+
+	#pragma region HitReact Montages
+
+	UPROPERTY(EditDefaultsOnly, Category = Combat)
+	UAnimMontage* Pandolfo_HitReactMontage;
+
+	UPROPERTY(EditDefaultsOnly, Category = Combat)
+	UAnimMontage* PandolFlower_HitReactMontage;
+
+	UPROPERTY(EditDefaultsOnly, Category = Combat)
+	UAnimMontage* PanWolf_HitReactMontage;
+
+	UPROPERTY(EditDefaultsOnly, Category = Combat)
+	UAnimMontage* PanBird_HitReactMontage;
+
+	#pragma endregion
 
 	#pragma endregion
 

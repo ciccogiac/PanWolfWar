@@ -93,4 +93,5 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	UInputAction* AnnulTransformationAction;
 	
+	FORCEINLINE ETransformationState GetCurrentTransformationState() const { return CurrentTransformationState; }
 };
