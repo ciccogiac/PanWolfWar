@@ -21,12 +21,12 @@ ABaseEnemy::ABaseEnemy()
 {
 	PrimaryActorTick.bCanEverTick = false;
 
-	PlayerVisibleWidget = CreateDefaultSubobject<UWidgetComponent>(*FString::Printf(TEXT("PlayerVisibleWidget")));
-	if (PlayerVisibleWidget)
+	EnemyTargetWidget = CreateDefaultSubobject<UWidgetComponent>(*FString::Printf(TEXT("PlayerVisibleWidget")));
+	if (EnemyTargetWidget)
 	{
-		PlayerVisibleWidget->SetWidgetSpace(EWidgetSpace::Screen);
-		PlayerVisibleWidget->SetVisibility(false);
-		PlayerVisibleWidget->SetupAttachment(GetRootComponent());
+		EnemyTargetWidget->SetWidgetSpace(EWidgetSpace::Screen);
+		EnemyTargetWidget->SetVisibility(false);
+		EnemyTargetWidget->SetupAttachment(GetRootComponent());
 	}
 
 	
@@ -45,6 +45,18 @@ ABaseEnemy::ABaseEnemy()
 	CombatComponent = CreateDefaultSubobject<UCombatComponent>(TEXT("CombatComponent"));
 
 	Tags.Add(FName("Enemy"));
+}
+
+void ABaseEnemy::SetTargetVisibility(bool NewVisibility)
+{
+	if (NewVisibility && !CanBeTargeted())
+		return;
+	EnemyTargetWidget->SetVisibility(NewVisibility);
+}
+
+bool ABaseEnemy::CanBeTargeted()
+{
+	return !bDied;
 }
 
 void ABaseEnemy::SetPlayerVisibility(bool NewVisibility)
@@ -99,7 +111,7 @@ float ABaseEnemy::PerformAttack()
 	/*float Duration = AnimIstance->Montage_Play(AttackMontage,1.f,EMontagePlayReturnType::Duration);
 	return Duration;*/
 
-	CombatComponent->PerformAttack(EAttackType::EAT_LightAttack);
+	CombatComponent->PerformAttack(EAttackType::EAT_LightAttack_Right);
 
 	return 1.f;
 }

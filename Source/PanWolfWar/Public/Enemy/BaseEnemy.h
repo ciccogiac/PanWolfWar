@@ -5,6 +5,7 @@
 #include <Engine/TargetPoint.h>
 #include "Interfaces/CombatInterface.h"
 #include "Interfaces/HitInterface.h"
+#include "Interfaces/TargetInterface.h"
 #include "BaseEnemy.generated.h"
 
 
@@ -14,7 +15,7 @@ class UWidgetComponent;
 class UBaseEnemyWidget;
 
 UCLASS()
-class PANWOLFWAR_API ABaseEnemy : public ACharacter, public ICombatInterface, public IHitInterface
+class PANWOLFWAR_API ABaseEnemy : public ACharacter, public ICombatInterface, public IHitInterface , public ITargetInterface
 {
 	GENERATED_BODY()
 
@@ -46,6 +47,9 @@ protected:
 	void PlayHitReactMontage(const FName& SectionName);
 	bool IsAlive();
 
+	virtual void SetTargetVisibility(bool NewVisibility) override;
+	virtual bool CanBeTargeted() override;
+
 private:	
 
 	void FindNearestAI();
@@ -76,7 +80,7 @@ protected:
 	AActor* CombatTarget;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Assassination Components", meta = (AllowPrivateAccess = "true"))
-	UWidgetComponent* PlayerVisibleWidget;
+	UWidgetComponent* EnemyTargetWidget;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components", meta = (AllowPrivateAccess = "true"))
 	UWidgetComponent* EnemyWidgetComponent;

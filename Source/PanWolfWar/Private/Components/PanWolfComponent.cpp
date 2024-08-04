@@ -54,7 +54,19 @@ void UPanWolfComponent::Jump()
 
 void UPanWolfComponent::Attack()
 {
-	CombatComponent->PerformAttack(EAttackType::EAT_LightAttack);
+	if (!CombatComponent->IsAttacking())
+	{
+		const AActor* ClosestEnemy = CombatComponent->GetClosestEnemy();
+
+		//if (!ClosestEnemy) return;
+
+		const bool EnemyDirection = CombatComponent->GetEnemyDirection(ClosestEnemy);
+		CombatComponent->RotateToClosestEnemy(ClosestEnemy);
+		EAttackType AttackType = EnemyDirection ? EAttackType::EAT_LightAttack_Right : EAttackType::EAT_LightAttack_Left;
+		CombatComponent->PerformAttack(AttackType);
+	}
+	CombatComponent->PerformAttack(EAttackType::EAT_LightAttack_Right);
+
 }
 
 void UPanWolfComponent::BeginPlay()

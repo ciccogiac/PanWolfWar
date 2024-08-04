@@ -5,6 +5,7 @@
 #include "PanWolfWar/DebugHelper.h"
 
 #include "Kismet/KismetSystemLibrary.h"
+#include "Kismet/KismetMathLibrary.h"
 #include "Interfaces/HitInterface.h"
 #include "Kismet/GameplayStatics.h"
 
@@ -33,6 +34,60 @@ void UCombatComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActo
 
 #pragma region PerformAttacks
 
+const AActor* UCombatComponent::GetClosestEnemy()
+{
+	const FVector Location = CharacterOwner->GetActorLocation() + CharacterOwner->GetActorForwardVector() * 50.f;
+	TArray<TEnumAsByte<EObjectTypeQuery> > CombatObjectTypes;
+	CombatObjectTypes.Add(EObjectTypeQuery::ObjectTypeQuery3);
+	TArray<AActor*> ActorsToIgnore = TArray<AActor*>();
+	ActorsToIgnore.Add(CharacterOwner);
+	TArray<AActor*> OutActors ;
+	if (!UKismetSystemLibrary::SphereOverlapActors(this, Location, 300.f, CombatObjectTypes, nullptr, ActorsToIgnore, OutActors)) return nullptr;
+
+	float ClosestDistance = 5000000000.f;
+	AActor* ClosestEnemy = nullptr;
+
+	for (size_t i = 0; i < OutActors.Num(); i++)
+	{
+		AActor* LoopActor = OutActors[i];
+		//LoopActor->GetActorLocation()
+		const float Distance = UKismetMathLibrary::Vector_Distance(LoopActor->GetActorLocation(), Location);
+		if (Distance < ClosestDistance)
+		{
+			ClosestDistance = Distance;
+			ClosestEnemy = LoopActor;
+		}
+	}
+
+	
+
+	return ClosestEnemy;
+}
+
+const bool UCombatComponent::GetEnemyDirection(const AActor* ClosestEnemy)
+{
+	if (!ClosestEnemy) return true;
+
+	const FVector Location = CharacterOwner->GetActorLocation() + CharacterOwner->GetActorForwardVector() * 50.f;
+	const FVector Right = Location + CharacterOwner->GetActorRightVector() * 100.f;
+	const FVector Left = Location - CharacterOwner->GetActorRightVector() * 100.f;
+
+	const float RightDistance = UKismetMathLibrary::Vector_Distance(ClosestEnemy->GetActorLocation(), Right);
+	const float LeftDistance = UKismetMathLibrary::Vector_Distance(ClosestEnemy->GetActorLocation(), Left);
+
+	const bool RightDirection = (RightDistance <= LeftDistance) ? true : false;
+
+	return RightDirection;
+}
+
+void UCombatComponent::RotateToClosestEnemy(const AActor* ClosestEnemy)
+{
+	if (!ClosestEnemy) return ;
+
+	const FRotator LookRotator = UKismetMathLibrary::FindLookAtRotation(CharacterOwner->GetActorLocation(), ClosestEnemy->GetActorLocation());
+	CharacterOwner->SetActorRotation(FRotator(0.f, LookRotator.Yaw,0.f));
+}
+
 void UCombatComponent::PerformAttack(EAttackType AttackType)
 {
 	// Check If Can Perform Attack (ISDead , ISAttacking , IsInOtherState)
@@ -43,7 +98,9 @@ void UCombatComponent::PerformAttack(EAttackType AttackType)
 		return;
 	}
 
-	TArray<UAnimMontage*> AttackMontages = GetAttackMontages(AttackType);
+	SavedAttackType = AttackType;
+
+	TArray<UAnimMontage*> AttackMontages = GetAttackMontages(SavedAttackType);
 	if (!AttackMontages.IsValidIndex(AttackCount)) return;
 	UAnimMontage* Selected_AttackMontage = AttackMontages[AttackCount];
 	if (!Selected_AttackMontage) return;
@@ -72,7 +129,7 @@ void UCombatComponent::ContinueAttack()
 
 	bAttackSaved = false;
 	bIsAttacking = false;
-	PerformAttack(EAttackType::EAT_LightAttack);
+	PerformAttack(SavedAttackType);
 }
 
 void UCombatComponent::ResetAttack()
@@ -86,8 +143,11 @@ TArray<UAnimMontage*> UCombatComponent::GetAttackMontages(EAttackType AttackType
 {
 	switch (AttackType)
 	{
-	case EAttackType::EAT_LightAttack:
-		return LightAttackMontages;
+	case EAttackType::EAT_LightAttack_Right:
+		return Right_LightAttackMontages;
+
+	case EAttackType::EAT_LightAttack_Left:
+		return Left_LightAttackMontages;
 
 	case EAttackType::EAT_HeavyAttack:
 		return HeavyAttackMontages;

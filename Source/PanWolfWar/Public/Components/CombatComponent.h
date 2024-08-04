@@ -9,7 +9,8 @@ class UAnimMontage;
 UENUM(BlueprintType)
 enum class EAttackType : uint8
 {
-	EAT_LightAttack UMETA(DisplayName = "LightAttack"),
+	EAT_LightAttack_Right UMETA(DisplayName = "LightAttack_Right"),
+	EAT_LightAttack_Left UMETA(DisplayName = "LightAttack_Left"),
 	EAT_HeavyAttack UMETA(DisplayName = "HeavyAttack")
 };
 
@@ -70,6 +71,10 @@ public:
 	void PlayHitSound(const FVector& ImpactPoint);
 	void SpawnHitParticles(const FVector& ImpactPoint);
 
+	const AActor* GetClosestEnemy();
+	const bool GetEnemyDirection(const AActor* ClosestEnemy);
+	void RotateToClosestEnemy(const AActor* ClosestEnemy);
+
 protected:
 
 	virtual void BeginPlay() override;
@@ -83,11 +88,14 @@ private:
 	bool ActorIsSameType(AActor* OtherActor);
 	void ExecuteGetHit(FHitResult& Hit);
 
+	
+
 private:
 	ACharacter* CharacterOwner;
 
 	bool bCombatEnabled = false;
 	bool bAttackSaved = false;
+	EAttackType SavedAttackType;
 	bool bIsBlocking = false;
 	int32 AttackCount = 0;
 		
@@ -103,7 +111,10 @@ private:
 	UParticleSystem* HitParticles;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Attack Montages", meta = (AllowPrivateAccess = "true"))
-	TArray<UAnimMontage*> LightAttackMontages;
+	TArray<UAnimMontage*> Right_LightAttackMontages;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Attack Montages", meta = (AllowPrivateAccess = "true"))
+	TArray<UAnimMontage*> Left_LightAttackMontages;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Attack Montages", meta = (AllowPrivateAccess = "true"))
 	TArray<UAnimMontage*> HeavyAttackMontages;
@@ -117,5 +128,6 @@ public:
 	FORCEINLINE bool IsCombatEnabled() const { return bCombatEnabled; }
 	FORCEINLINE void SetCombatEnabled(bool CombatEnabled) { bCombatEnabled = CombatEnabled; }
 	FORCEINLINE bool IsBlocking() const { return bIsBlocking; }
+	FORCEINLINE bool IsAttacking() const { return bIsAttacking; }
 };
 
