@@ -27,6 +27,7 @@ class UPanWolfComponent;
 class UPandolFlowerComponent;
 class UPanBirdComponent;
 class UCombatComponent;
+class UTargetingComponent;
 
 DECLARE_LOG_CATEGORY_EXTERN(LogTemplateCharacter, Log, All);
 
@@ -139,6 +140,9 @@ private:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Movement, meta = (AllowPrivateAccess = "true"))
 	UCombatComponent* CombatComponent;
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Movement, meta = (AllowPrivateAccess = "true"))
+	UTargetingComponent* TargetingComponent;
+
 	#pragma endregion
 
 	#pragma region Combat Variables
@@ -221,6 +225,7 @@ public:
 	FORCEINLINE virtual UAttributeComponent* GetAttributeComponent()  const override { return Attributes; }
 	FORCEINLINE UInteractComponent* GetInteractComponent() const { return InteractComponent; }
 	FORCEINLINE UCombatComponent* GetCombatComponent() const { return CombatComponent; }
+	FORCEINLINE UTargetingComponent* GetTargetingComponent() const { return TargetingComponent; }
 
 	FORCEINLINE virtual UTransformationComponent* GetTransformationComponent()  const override { return TransformationComponent; } ;
 	FORCEINLINE virtual UPandolfoComponent* GetPandolfoComponent() const override { return PandolfoComponent; }

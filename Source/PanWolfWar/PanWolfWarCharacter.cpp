@@ -23,6 +23,7 @@
 
 #include "Components/TransformationComponent.h"
 #include "Components/CombatComponent.h"
+#include "Components/TargetingComponent.h"
 
 #include "NiagaraComponent.h"
 
@@ -93,6 +94,7 @@ APanWolfWarCharacter::APanWolfWarCharacter()
 	InteractComponent = CreateDefaultSubobject<UInteractComponent>(TEXT("InteractComponent"));
 	TransformationComponent = CreateDefaultSubobject<UTransformationComponent>(TEXT("TransformationComponent"));
 	CombatComponent = CreateDefaultSubobject<UCombatComponent>(TEXT("CombatComponent"));
+	TargetingComponent = CreateDefaultSubobject<UTargetingComponent>(TEXT("TargetingComponent"));
 
 	PandolfoComponent = CreateDefaultSubobject<UPandolfoComponent>(TEXT("PandolfoComponent"));
 	PanWolfComponent = CreateDefaultSubobject<UPanWolfComponent>(TEXT("PanWolfComponent"));
@@ -210,6 +212,9 @@ void APanWolfWarCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInpu
 
 		//Transformation
 		EnhancedInputComponent->BindAction(TransformationComponent->AnnulTransformationAction, ETriggerEvent::Started, TransformationComponent, &UTransformationComponent::AnnulTrasnformation);
+
+		//Targeting
+		EnhancedInputComponent->BindAction(TargetingComponent->TargetLockAction, ETriggerEvent::Started, TargetingComponent, &UTargetingComponent::ToggleLock);
 
 		#pragma endregion
 
