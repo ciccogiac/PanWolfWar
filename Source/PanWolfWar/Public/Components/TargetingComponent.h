@@ -22,6 +22,7 @@ public:
 	virtual void Deactivate() override;
 
 	void ToggleLock();
+	void ForceUnLock();
 
 protected:
 	virtual void BeginPlay() override;
@@ -32,6 +33,7 @@ private:
 	void DisableLock();
 
 	bool FindTarget();
+	bool FindNearTarget();
 	bool CanTargetActor(AActor* FindActor);
 	void SetRotationMode(bool bTargetMode);
 
@@ -40,7 +42,7 @@ private:
 	ACharacter* CharacterOwner;
 	APanWolfWarCharacter* PanWolfCharacter;
 
-	bool IsTargeting = false;
+	bool bIsTargeting = false;
 	AActor* TargetActor = nullptr;
 	ITargetInterface* TargetInterface = nullptr;
 
@@ -49,6 +51,10 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	UInputAction* TargetLockAction;
 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	UInputAction* TargetForceUnLockAction;
 
+	FORCEINLINE  bool IsTargeting()  { return bIsTargeting; }
+	FORCEINLINE  AActor* GetTargetActor()  { return TargetActor; }
 		
 };

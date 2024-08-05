@@ -19,6 +19,13 @@ UCombatComponent::UCombatComponent()
 	CharacterOwner = Cast<ACharacter>(GetOwner());
 }
 
+void UCombatComponent::SetCombatEnabled(bool CombatEnabled)
+{
+	bCombatEnabled = CombatEnabled;
+	ResetAttack();
+}
+
+
 void UCombatComponent::BeginPlay()
 {
 	Super::BeginPlay();

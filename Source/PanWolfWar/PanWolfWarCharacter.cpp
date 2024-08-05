@@ -214,7 +214,8 @@ void APanWolfWarCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInpu
 		EnhancedInputComponent->BindAction(TransformationComponent->AnnulTransformationAction, ETriggerEvent::Started, TransformationComponent, &UTransformationComponent::AnnulTrasnformation);
 
 		//Targeting
-		EnhancedInputComponent->BindAction(TargetingComponent->TargetLockAction, ETriggerEvent::Started, TargetingComponent, &UTargetingComponent::ToggleLock);
+		EnhancedInputComponent->BindAction(TargetingComponent->TargetLockAction, ETriggerEvent::Completed, TargetingComponent, &UTargetingComponent::ToggleLock);
+		EnhancedInputComponent->BindAction(TargetingComponent->TargetForceUnLockAction, ETriggerEvent::Completed, TargetingComponent, &UTargetingComponent::ForceUnLock);
 
 		#pragma endregion
 

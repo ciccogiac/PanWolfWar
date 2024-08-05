@@ -46,6 +46,8 @@ class PANWOLFWAR_API UCombatComponent : public UActorComponent
 public:	
 	UCombatComponent();
 
+	void SetCombatEnabled(bool CombatEnabled);
+
 	void PerformAttack(EAttackType AttackType);
 
 	UFUNCTION(BlueprintCallable)
@@ -126,7 +128,6 @@ private:
 	TArray<AActor*> AlreadyHitActor = TArray<AActor*>();
 public:
 	FORCEINLINE bool IsCombatEnabled() const { return bCombatEnabled; }
-	FORCEINLINE void SetCombatEnabled(bool CombatEnabled) { bCombatEnabled = CombatEnabled; }
 	FORCEINLINE bool IsBlocking() const { return bIsBlocking; }
 	FORCEINLINE bool IsAttacking() const { return bIsAttacking; }
 };

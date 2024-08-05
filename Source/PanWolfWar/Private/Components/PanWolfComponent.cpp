@@ -6,6 +6,7 @@
 #include "Components/CombatComponent.h"
 
 #include "PanWolfWar/DebugHelper.h"
+#include "Components/TargetingComponent.h"
 
 UPanWolfComponent::UPanWolfComponent()
 {
@@ -56,7 +57,8 @@ void UPanWolfComponent::Attack()
 {
 	if (!CombatComponent->IsAttacking())
 	{
-		const AActor* ClosestEnemy = CombatComponent->GetClosestEnemy();
+		const bool isTargeting = PanWolfCharacter->GetTargetingComponent()->IsActive() && PanWolfCharacter->GetTargetingComponent()->IsTargeting();
+		const AActor* ClosestEnemy = isTargeting ? PanWolfCharacter->GetTargetingComponent()->GetTargetActor() : CombatComponent->GetClosestEnemy();
 
 		//if (!ClosestEnemy) return;
 
