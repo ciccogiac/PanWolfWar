@@ -140,6 +140,22 @@ void UPandolFlowerComponent::Jump()
 	CharacterOwner->Jump();
 }
 
+void UPandolFlowerComponent::Dodge()
+{
+	if (!PanWolfCharacter->CanPerformDodge()) return;
+
+	//if (PandolfoState != EPandolfoState::EPS_Pandolfo) return;
+
+	if (!PandolFlowerDodgeMontage) return;
+	if (!OwningPlayerAnimInstance) return;
+	if (OwningPlayerAnimInstance->IsAnyMontagePlaying()) return;
+	//if (CharacterOwner->GetCharacterMovement()->GetLastInputVector().Length() < 0.5f) return;
+
+	//CharacterOwner->DisableInput(CharacterOwner->GetLocalViewingPlayerController());
+	//Debug::Print(TEXT("Dodge"));
+	OwningPlayerAnimInstance->Montage_Play(PandolFlowerDodgeMontage);
+}
+
 void UPandolFlowerComponent::Crouch()
 {
 	if ( bInGrapplingAnimation || bMovingWithGrapple || bSwinging ) return;

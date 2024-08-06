@@ -23,5 +23,8 @@ public:
 	virtual void ActivateCollision(FString CollisionPart) = 0;
 	UFUNCTION(BlueprintCallable)
 	virtual void DeactivateCollision(FString CollisionPart) = 0;
-
+	UFUNCTION(BlueprintCallable)
+	virtual void SetInvulnerability(bool NewInvulnerability) = 0;
+	UFUNCTION(BlueprintCallable)
+	virtual FRotator GetDesiredDodgeRotation() = 0;
 };

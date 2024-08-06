@@ -38,6 +38,7 @@ public:
 	void Hide();
 	void UnHide();
 	void Assassination();
+	void Dodge();
 
 protected:
 	virtual void BeginPlay() override;
@@ -107,6 +108,9 @@ private:
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
 	UInputAction* PandolFlower_AssassinAction;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	UInputAction* DodgeAction;
 
 	#pragma endregion
 
@@ -187,6 +191,9 @@ private:
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Grappling Params", meta = (AllowPrivateAccess = "true"))
 	TEnumAsByte<ETraceTypeQuery> VisibleTraceType;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Dodge", meta = (AllowPrivateAccess = "true"))
+	UAnimMontage* PandolFlowerDodgeMontage;
 
 	#pragma endregion
 

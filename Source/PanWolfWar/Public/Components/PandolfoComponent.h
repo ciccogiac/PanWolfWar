@@ -46,6 +46,7 @@ public:
 	void Crouch();
 	void Assassination();
 	void CheckCanAirAssassin();
+	void Dodge();
 
 	void PlayAirAssassination(UAnimInstance* OwningPlayerAnimInstance);
 
@@ -160,6 +161,9 @@ private:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Assassination", meta = (AllowPrivateAccess = "true"))
 	UAnimMontage* AirAssassinDeathMontage;
 
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Dodge", meta = (AllowPrivateAccess = "true"))
+	UAnimMontage* PandolfoDodgeMontage;
+
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Assassination", meta = (AllowPrivateAccess = "true"))
 	TMap<UAnimMontage*, UAnimMontage*> AssassinationMontage_Map;
 
@@ -230,6 +234,9 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input| Transformation")
 	UInputAction* TransformationSelectUPAction;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	UInputAction* DodgeAction;
 
 public:
 	FORCEINLINE UClimbingComponent* GetClimbingComponent()  const { return ClimbingComponent; }

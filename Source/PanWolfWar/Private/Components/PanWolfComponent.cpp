@@ -53,10 +53,30 @@ void UPanWolfComponent::Jump()
 	CharacterOwner->Jump();
 }
 
+void UPanWolfComponent::Dodge()
+{
+	if (!PanWolfCharacter->CanPerformDodge()) return;
+
+	//if (PandolfoState != EPandolfoState::EPS_Pandolfo) return;
+
+	if (!PandolWolfDodgeMontage) return;
+	UAnimInstance* OwningPlayerAnimInstance = CharacterOwner->GetMesh()->GetAnimInstance();
+	if (!OwningPlayerAnimInstance) return;
+	//if (OwningPlayerAnimInstance->IsAnyMontagePlaying()) return;
+	//if (CharacterOwner->GetCharacterMovement()->GetLastInputVector().Length() < 0.5f) return;
+
+	//CharacterOwner->DisableInput(CharacterOwner->GetLocalViewingPlayerController());
+	//Debug::Print(TEXT("Dodge"));
+	OwningPlayerAnimInstance->Montage_Play(PandolWolfDodgeMontage);
+}
+
 void UPanWolfComponent::Attack()
 {
 	if (!CombatComponent->IsAttacking())
 	{
+		if (!PanWolfCharacter->GetTargetingComponent()->IsTargeting())
+			PanWolfCharacter->GetTargetingComponent()->TryLock();
+
 		const bool isTargeting = PanWolfCharacter->GetTargetingComponent()->IsActive() && PanWolfCharacter->GetTargetingComponent()->IsTargeting();
 		const AActor* ClosestEnemy = isTargeting ? PanWolfCharacter->GetTargetingComponent()->GetTargetActor() : CombatComponent->GetClosestEnemy();
 
@@ -67,7 +87,8 @@ void UPanWolfComponent::Attack()
 		EAttackType AttackType = EnemyDirection ? EAttackType::EAT_LightAttack_Right : EAttackType::EAT_LightAttack_Left;
 		CombatComponent->PerformAttack(AttackType);
 	}
-	CombatComponent->PerformAttack(EAttackType::EAT_LightAttack_Right);
+	else
+		CombatComponent->PerformAttack(EAttackType::EAT_LightAttack_Right);
 
 }
 

@@ -59,6 +59,15 @@ bool ABaseEnemy::CanBeTargeted()
 	return !bDied;
 }
 
+void ABaseEnemy::SetInvulnerability(bool NewInvulnerability)
+{
+}
+
+FRotator ABaseEnemy::GetDesiredDodgeRotation()
+{
+	return FRotator();
+}
+
 void ABaseEnemy::SetPlayerVisibility(bool NewVisibility)
 {
 	bSeen = NewVisibility;
@@ -129,7 +138,7 @@ void ABaseEnemy::FindNearestAI()
 	TArray<AActor*> ActorsToIgnore;
 	ActorsToIgnore.Add(Player);
 
-	bool bBlocked = UKismetSystemLibrary::SphereTraceMultiForObjects(this, Start, End,1500.f, Objects, false, ActorsToIgnore, EDrawDebugTrace::ForDuration, Hit, true);
+	bool bBlocked = UKismetSystemLibrary::SphereTraceMultiForObjects(this, Start, End,1500.f, Objects, false, ActorsToIgnore, EDrawDebugTrace::None, Hit, true);
 
 	if (!bBlocked || Hit.Num() <= 0) return;
 
@@ -184,7 +193,12 @@ void ABaseEnemy::GetHit(const FVector& ImpactPoint, AActor* Hitter)
 		//Debug::Print(TEXT("Hit From : ") + Section.ToString());
 		PlayHitReactMontage(Section);
 	}
-	//else Die();
+	else
+	{
+		FName Section = IHitInterface::DirectionalHitReact(GetOwner(), Hitter->GetActorLocation());
+		ApplyHitReactionPhisicsVelocity(Section);
+	}
+		
 
 	CombatComponent->PlayHitSound(ImpactPoint);
 	CombatComponent->SpawnHitParticles(ImpactPoint);
@@ -219,6 +233,7 @@ float ABaseEnemy::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent
 	
 	if (Health <= 0)
 	{
+
 		Die();
 		GetMesh()->SetSimulatePhysics(true);
 		GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
@@ -232,4 +247,20 @@ float ABaseEnemy::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent
 
 		
 	return DamageAmount;
+}
+
+void ABaseEnemy::ApplyHitReactionPhisicsVelocity(FName HitPart)
+{
+	FVector NewVel;
+
+	if (HitPart == FName("FromFront"))
+		NewVel = GetActorForwardVector() * (-5000.f);
+	else if (HitPart == FName(" FromBack"))
+		NewVel = GetActorForwardVector() * (5000.f);
+	else if (HitPart == FName("FromRight") )
+		NewVel = GetActorRightVector() * (-5000.f);
+	else if (HitPart == FName(" FromLeft"))
+		NewVel = GetActorRightVector() * (5000.f);
+
+	GetMesh()->SetPhysicsLinearVelocity(NewVel, false, FName("pelvis"));
 }

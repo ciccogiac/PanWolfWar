@@ -23,6 +23,7 @@ public:
 
 	void ToggleLock();
 	void ForceUnLock();
+	void TryLock();
 
 protected:
 	virtual void BeginPlay() override;
@@ -32,8 +33,7 @@ private:
 	void EnableLock();
 	void DisableLock();
 
-	bool FindTarget();
-	bool FindNearTarget();
+	bool FindNearTarget(bool DoTraceCameraOriented = true);
 	bool CanTargetActor(AActor* FindActor);
 	void SetRotationMode(bool bTargetMode);
 

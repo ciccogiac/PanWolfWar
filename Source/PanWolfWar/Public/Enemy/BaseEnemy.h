@@ -30,7 +30,8 @@ public:
 
 	virtual void ActivateCollision(FString CollisionPart) override;
 	virtual void DeactivateCollision(FString CollisionPart) override;
-
+	virtual void SetInvulnerability(bool NewInvulnerability) override;
+	virtual FRotator GetDesiredDodgeRotation() override;
 	//HitInterface
 	virtual void GetHit(const FVector& ImpactPoint, AActor* Hitter) override;
 
@@ -53,6 +54,7 @@ protected:
 private:	
 
 	void FindNearestAI();
+	void ApplyHitReactionPhisicsVelocity(FName HitPart);
 
 protected:
 	bool bDied = false;

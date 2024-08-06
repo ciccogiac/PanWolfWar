@@ -39,6 +39,8 @@
 
 #include "Components/WidgetComponent.h"
 
+#include "Kismet/KismetMathLibrary.h"
+
 DEFINE_LOG_CATEGORY(LogTemplateCharacter);
 
 //////////////////////////////////////////////////////////////////////////
@@ -224,6 +226,7 @@ void APanWolfWarCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInpu
 		//PandolfoAction
 		EnhancedInputComponent->BindAction(PandolfoComponent->Pandolfo_JumpAction, ETriggerEvent::Started, PandolfoComponent, &UPandolfoComponent::Jump);
 		EnhancedInputComponent->BindAction(PandolfoComponent->Pandolfo_CrouchAction, ETriggerEvent::Completed, PandolfoComponent, &UPandolfoComponent::Crouch);
+		EnhancedInputComponent->BindAction(PandolfoComponent->DodgeAction, ETriggerEvent::Started, PandolfoComponent, &UPandolfoComponent::Dodge);
 		EnhancedInputComponent->BindAction(PandolfoComponent->Pandolfo_SlidingAction, ETriggerEvent::Completed, PandolfoComponent, &UPandolfoComponent::Sliding);
 		EnhancedInputComponent->BindAction(PandolfoComponent->Pandolfo_GlideAction, ETriggerEvent::Triggered, PandolfoComponent, &UPandolfoComponent::TryGliding);
 		EnhancedInputComponent->BindAction(PandolfoComponent->Pandolfo_AssassinAction, ETriggerEvent::Completed, PandolfoComponent, &UPandolfoComponent::Assassination);
@@ -254,7 +257,8 @@ void APanWolfWarCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInpu
 
 		EnhancedInputComponent->BindAction(PandolFlowerComponent->MoveAction, ETriggerEvent::Triggered, PandolFlowerComponent, &UPandolFlowerComponent::Move);
 		EnhancedInputComponent->BindAction(PandolFlowerComponent->HookAction, ETriggerEvent::Started, PandolFlowerComponent, &UPandolFlowerComponent::Hook);
-		EnhancedInputComponent->BindAction(PandolFlowerComponent->JumpAction, ETriggerEvent::Started, PandolFlowerComponent, &UPandolFlowerComponent::Jump);	
+		EnhancedInputComponent->BindAction(PandolFlowerComponent->JumpAction, ETriggerEvent::Started, PandolFlowerComponent, &UPandolFlowerComponent::Jump);
+		EnhancedInputComponent->BindAction(PandolFlowerComponent->DodgeAction, ETriggerEvent::Started, PandolFlowerComponent, &UPandolFlowerComponent::Dodge);
 		EnhancedInputComponent->BindAction(PandolFlowerComponent->PandolFlower_CrouchAction, ETriggerEvent::Started, PandolFlowerComponent, &UPandolFlowerComponent::Crouch);
 		EnhancedInputComponent->BindAction(PandolFlowerComponent->PandolFlower_HideAction, ETriggerEvent::Started, PandolFlowerComponent, &UPandolFlowerComponent::Hide);	
 		EnhancedInputComponent->BindAction(PandolFlowerComponent->PandolFlower_AssassinAction, ETriggerEvent::Started, PandolFlowerComponent, &UPandolFlowerComponent::Assassination);
@@ -268,6 +272,7 @@ void APanWolfWarCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInpu
 
 		#pragma region PanWolf
 		EnhancedInputComponent->BindAction(PanWolfComponent->JumpAction, ETriggerEvent::Started, PanWolfComponent, &UPanWolfComponent::Jump);
+		EnhancedInputComponent->BindAction(PanWolfComponent->DodgeAction, ETriggerEvent::Started, PanWolfComponent, &UPanWolfComponent::Dodge);
 		EnhancedInputComponent->BindAction(PanWolfComponent->AttackAction, ETriggerEvent::Started, PanWolfComponent, &UPanWolfComponent::Attack);
 		#pragma endregion
 
@@ -338,6 +343,32 @@ void APanWolfWarCharacter::Falling()
 	}
 }
 
+bool APanWolfWarCharacter::CanPerformDodge()
+{
+	if (!Attributes->IsAlive() || GetCharacterMovement()->IsFalling()) return false;
+	return true;
+}
+
+FRotator APanWolfWarCharacter::GetDesiredDodgeRotation()
+{
+	if (UKismetMathLibrary::EqualEqual_VectorVector(GetCharacterMovement()->GetLastInputVector(), FVector::ZeroVector, 0.001f)) return GetActorRotation();
+	return UKismetMathLibrary::MakeRotFromX(GetLastMovementInputVector());
+
+}
+
+void APanWolfWarCharacter::StartDodge()
+{
+	if (TargetingComponent->IsTargeting())
+		TargetingComponent->Deactivate();
+}
+
+void APanWolfWarCharacter::EndDodge()
+{
+	CombatComponent->ResetAttack();
+	if (TargetingComponent->IsTargeting())
+		TargetingComponent->Activate();
+}
+
 #pragma endregion
 
 
@@ -356,7 +387,10 @@ bool APanWolfWarCharacter::SetOverlappingObject(AInteractableObject* Interactabl
 	return InteractComponent->SetOverlappingObject(InteractableObject, bEnter);
 }
 
-
+void APanWolfWarCharacter::SetInvulnerability(bool NewInvulnerability)
+{
+	bIsInvulnerable = NewInvulnerability;
+}
 
 
 
@@ -431,11 +465,10 @@ void APanWolfWarCharacter::DeactivateCollision(FString CollisionPart)
 
 void APanWolfWarCharacter::GetHit(const FVector& ImpactPoint, AActor* Hitter)
 {
-	if (IsAlive() && Hitter)
-	{
-		FName Section = IHitInterface::DirectionalHitReact(GetOwner(), Hitter->GetActorLocation());
-		PlayHitReactMontage(Section);
-	}
+	if (!IsAlive() || Hitter || bIsInvulnerable) return;
+
+	FName Section = IHitInterface::DirectionalHitReact(GetOwner(), Hitter->GetActorLocation());
+	PlayHitReactMontage(Section);
 
 	CombatComponent->PlayHitSound(ImpactPoint);
 	CombatComponent->SpawnHitParticles(ImpactPoint);

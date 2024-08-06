@@ -50,9 +50,17 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void SetIsHiding(bool Value, bool DoCrouchCheck = true);
 
+	bool CanPerformDodge();
+	virtual FRotator GetDesiredDodgeRotation() override;
+	UFUNCTION(BlueprintCallable)
+	void StartDodge();
+	UFUNCTION(BlueprintCallable)
+	void EndDodge();
+
 	//Combat Interface
 	virtual void ActivateCollision(FString CollisionPart) override;
 	virtual void DeactivateCollision(FString CollisionPart) override;
+	virtual void SetInvulnerability(bool NewInvulnerability) override;
 
 	//HitInterface
 	virtual void GetHit(const FVector& ImpactPoint, AActor* Hitter) override;
@@ -88,6 +96,7 @@ protected:
 private:
 
 	bool bIsHiding = false;
+	bool bIsInvulnerable = false;
 	TArray<AActor*> EnemyAware = TArray<AActor*>();
 
 	#pragma region Components

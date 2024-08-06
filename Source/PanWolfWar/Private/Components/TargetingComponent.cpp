@@ -7,7 +7,7 @@
 #include <PanWolfWar/PanWolfWarCharacter.h>
 #include "Camera/CameraComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
-
+#include <float.h>
 
 #pragma region EngineFunctions
 
@@ -39,14 +39,14 @@ void UTargetingComponent::TickComponent(float DeltaTime, ELevelTick TickType, FA
 	if (!CanTargetActor(TargetActor)) 
 	{
 		DisableLock();
-		if(FindNearTarget())
+		if(FindNearTarget(false))
 			EnableLock();
 		return; 
 	}
 
 	const FRotator CharacterRotation = CharacterOwner->GetActorRotation();
 	const FRotator LookRotation = UKismetMathLibrary::FindLookAtRotation(CharacterOwner->GetActorLocation(), TargetActor->GetActorLocation());
-	const float RotationYaw = UKismetMathLibrary::RInterpTo(CharacterRotation, LookRotation, DeltaTime, 10.f).Yaw;
+	const float RotationYaw = UKismetMathLibrary::RInterpTo(CharacterRotation, LookRotation, DeltaTime, 5.f).Yaw;
 
 	const FRotator NewRotation = FRotator(CharacterRotation.Roll, RotationYaw, CharacterRotation.Pitch);
 	CharacterOwner->SetActorRotation(NewRotation);
@@ -76,8 +76,15 @@ void UTargetingComponent::ToggleLock()
 	}
 		
 	else
-		if (FindTarget()) 
+		//if (FindTarget()) 
+		if (FindNearTarget())
 			EnableLock();
+}
+
+void UTargetingComponent::TryLock()
+{
+	if (FindNearTarget(false))
+		EnableLock();
 }
 
 void UTargetingComponent::ForceUnLock()
@@ -111,34 +118,22 @@ void UTargetingComponent::DisableLock()
 	Deactivate();
 }
 
-bool UTargetingComponent::FindTarget()
+
+bool UTargetingComponent::FindNearTarget(bool DoTraceCameraOriented)
 {
-
 	const FVector Start = CharacterOwner->GetActorLocation();
-	const FVector End = Start + PanWolfCharacter->GetFollowCamera()->GetForwardVector() * 1250.f;
+	FVector End; float Radius;
 
-	FHitResult Hit;
-	TArray<TEnumAsByte<EObjectTypeQuery> > CombatObjectTypes;
-	CombatObjectTypes.Add(EObjectTypeQuery::ObjectTypeQuery3);
-	if (!UKismetSystemLibrary::SphereTraceSingleForObjects(this, Start, End, 125, CombatObjectTypes, false, TArray<AActor*>(), EDrawDebugTrace::None, Hit, true)) return false;
-
-	AActor* FindActor = Hit.GetActor();
-
-	if (!FindActor->Implements<UTargetInterface>()) return false;
-	TargetInterface = Cast<ITargetInterface>(FindActor);
-	if (!TargetInterface) return false;
-
-	if (!CanTargetActor(FindActor)) return false;
-
-	TargetActor = FindActor;
-	return true;
-}
-
-bool UTargetingComponent::FindNearTarget()
-{
-	
-	const FVector Start = CharacterOwner->GetActorLocation();
-	const FVector End = Start + PanWolfCharacter->GetFollowCamera()->GetForwardVector() * 1250.f;
+	if (DoTraceCameraOriented)
+	{		
+		End = Start + PanWolfCharacter->GetFollowCamera()->GetForwardVector() * 1250.f;
+		Radius = 175.f;
+	}
+	else
+	{
+		End = Start + CharacterOwner->GetActorForwardVector();
+		Radius = 300.f;
+	}
 
 	TArray<FHitResult> Hits;
 	TArray<TEnumAsByte<EObjectTypeQuery> > CombatObjectTypes;
@@ -147,11 +142,11 @@ bool UTargetingComponent::FindNearTarget()
 	ActorsToIgnore.Add(CharacterOwner);
 	if(TargetActor)
 		ActorsToIgnore.Add(TargetActor);
-	if (!UKismetSystemLibrary::SphereTraceMultiForObjects(this, Start, End, 175.f, CombatObjectTypes, false, ActorsToIgnore, EDrawDebugTrace::None, Hits, true)) return false;
+	if (!UKismetSystemLibrary::SphereTraceMultiForObjects(this, Start, End, Radius, CombatObjectTypes, false, ActorsToIgnore, EDrawDebugTrace::None, Hits, true)) return false;
 
 	
-
-	float ClosestDistance = 5000000000.f;
+	
+	float ClosestDistance = FLT_MAX;
 	AActor* ClosestEnemy = nullptr;
 	ITargetInterface* LoopTargetInterface = nullptr;
 	ITargetInterface* ClosestTargetInterface = nullptr;
@@ -184,9 +179,8 @@ bool UTargetingComponent::FindNearTarget()
 	
 	if (!ClosestEnemy || !ClosestTargetInterface) return false;
 
-	Debug::Print(TEXT("OVA"));
-
-	DisableLock();
+	if(bIsTargeting)
+		DisableLock();
 
 	TargetActor = ClosestEnemy;
 	TargetInterface = ClosestTargetInterface;
@@ -208,5 +202,5 @@ bool UTargetingComponent::CanTargetActor(AActor* FindActor)
 void UTargetingComponent::SetRotationMode(bool bTargetMode)
 {
 	CharacterOwner->GetCharacterMovement()->bOrientRotationToMovement = !bTargetMode;
-	CharacterOwner->GetCharacterMovement()->MaxWalkSpeed = bTargetMode ? 250.f : 500.f;
+	CharacterOwner->GetCharacterMovement()->MaxWalkSpeed = bTargetMode ? 350.f : 500.f;
 }

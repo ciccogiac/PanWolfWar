@@ -180,6 +180,23 @@ void UPandolfoComponent::HandleLand()
 		
 }
 
+void UPandolfoComponent::Dodge()
+{
+	if (!PanWolfCharacter->CanPerformDodge()) return;
+
+	if (PandolfoState != EPandolfoState::EPS_Pandolfo) return;
+
+	if (!PandolfoDodgeMontage) return;
+	UAnimInstance* OwningPlayerAnimInstance = CharacterOwner->GetMesh()->GetAnimInstance();
+	if (!OwningPlayerAnimInstance) return;
+	if (OwningPlayerAnimInstance->IsAnyMontagePlaying()) return;
+	//if (CharacterOwner->GetCharacterMovement()->GetLastInputVector().Length() < 0.5f) return;
+
+	//CharacterOwner->DisableInput(CharacterOwner->GetLocalViewingPlayerController());
+	//Debug::Print(TEXT("Dodge"));
+	OwningPlayerAnimInstance->Montage_Play(PandolfoDodgeMontage);
+}
+
 void UPandolfoComponent::Crouch()
 {
 	if (PandolfoState != EPandolfoState::EPS_Pandolfo) return;
