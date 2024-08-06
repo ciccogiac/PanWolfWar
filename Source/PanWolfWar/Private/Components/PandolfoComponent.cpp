@@ -605,7 +605,7 @@ void UPandolfoComponent::TakeKnife(bool Take)
 void UPandolfoComponent::CheckCanAirAssassin()
 {
 	if (PandolfoState != EPandolfoState::EPS_Pandolfo) return;
-
+	if (!CharacterOwner->GetMesh()) return;
 	UAnimInstance* OwningPlayerAnimInstance = CharacterOwner->GetMesh()->GetAnimInstance();
 	if (!OwningPlayerAnimInstance) return;
 	if (OwningPlayerAnimInstance->IsAnyMontagePlaying()) return;

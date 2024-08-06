@@ -63,6 +63,16 @@ void ABaseEnemy::SetInvulnerability(bool NewInvulnerability)
 {
 }
 
+bool ABaseEnemy::IsUnderAttack()
+{
+	return false;
+}
+
+void ABaseEnemy::SetUnderAttack()
+{
+	return ;
+}
+
 FRotator ABaseEnemy::GetDesiredDodgeRotation()
 {
 	return FRotator();
@@ -106,6 +116,11 @@ void ABaseEnemy::Die()
 	GetWorld()->GetTimerManager().ClearTimer(FindEnemies_TimerHandle);
 }
 
+bool ABaseEnemy::IsCombatActorAlive()
+{
+	return bDied;
+}
+
 float ABaseEnemy::PerformAttack()
 {
 	/*UAnimInstance* AnimIstance = GetMesh()->GetAnimInstance();
@@ -114,6 +129,8 @@ float ABaseEnemy::PerformAttack()
 
 	if (MotionWarping && CombatTarget)
 	{
+		CombatComponent->RotateToClosestEnemy(CombatTarget);
+
 		MotionWarping->AddOrUpdateWarpTargetFromComponent(FName("CombatTarget"), CombatTarget->GetRootComponent(), FName(NAME_None), true);
 	}
 
@@ -192,16 +209,19 @@ void ABaseEnemy::GetHit(const FVector& ImpactPoint, AActor* Hitter)
 		FName Section = IHitInterface::DirectionalHitReact(GetOwner(), Hitter->GetActorLocation());
 		//Debug::Print(TEXT("Hit From : ") + Section.ToString());
 		PlayHitReactMontage(Section);
+		
 	}
 	else
 	{
 		FName Section = IHitInterface::DirectionalHitReact(GetOwner(), Hitter->GetActorLocation());
+		GetMesh()->SetSimulatePhysics(true);
+		GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 		ApplyHitReactionPhisicsVelocity(Section);
 	}
 		
-
 	CombatComponent->PlayHitSound(ImpactPoint);
 	CombatComponent->SpawnHitParticles(ImpactPoint);
+	
 }
 
 void ABaseEnemy::PlayHitReactMontage(const FName& SectionName)
@@ -234,9 +254,10 @@ float ABaseEnemy::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent
 	if (Health <= 0)
 	{
 
-		Die();
+		
 		GetMesh()->SetSimulatePhysics(true);
 		GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+		Die();
 		FTimerHandle Die_TimerHandle;
 		GetWorld()->GetTimerManager().SetTimer(Die_TimerHandle, [this]() {this->Destroy(); }, 5.f, false);
 
@@ -254,13 +275,13 @@ void ABaseEnemy::ApplyHitReactionPhisicsVelocity(FName HitPart)
 	FVector NewVel;
 
 	if (HitPart == FName("FromFront"))
-		NewVel = GetActorForwardVector() * (-5000.f);
+		NewVel = GetActorForwardVector() * (-4000.f);
 	else if (HitPart == FName(" FromBack"))
-		NewVel = GetActorForwardVector() * (5000.f);
+		NewVel = GetActorForwardVector() * (4000.f);
 	else if (HitPart == FName("FromRight") )
-		NewVel = GetActorRightVector() * (-5000.f);
+		NewVel = GetActorRightVector() * (-4000.f);
 	else if (HitPart == FName(" FromLeft"))
-		NewVel = GetActorRightVector() * (5000.f);
+		NewVel = GetActorRightVector() * (4000.f);
 
 	GetMesh()->SetPhysicsLinearVelocity(NewVel, false, FName("pelvis"));
 }

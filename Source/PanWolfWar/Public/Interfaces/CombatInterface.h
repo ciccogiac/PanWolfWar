@@ -27,4 +27,12 @@ public:
 	virtual void SetInvulnerability(bool NewInvulnerability) = 0;
 	UFUNCTION(BlueprintCallable)
 	virtual FRotator GetDesiredDodgeRotation() = 0;
+	UFUNCTION(BlueprintCallable)
+	virtual bool IsCombatActorAlive() = 0;
+	UFUNCTION(BlueprintCallable)
+	virtual float PerformAttack() = 0;
+	UFUNCTION(BlueprintCallable)
+	virtual bool IsUnderAttack() = 0;
+	UFUNCTION(BlueprintCallable)
+	virtual void SetUnderAttack() = 0;
 };

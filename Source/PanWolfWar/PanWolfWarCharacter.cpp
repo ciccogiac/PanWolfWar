@@ -40,7 +40,7 @@
 #include "Components/WidgetComponent.h"
 
 #include "Kismet/KismetMathLibrary.h"
-
+#include "Kismet/GameplayStatics.h"
 DEFINE_LOG_CATEGORY(LogTemplateCharacter);
 
 //////////////////////////////////////////////////////////////////////////
@@ -465,13 +465,30 @@ void APanWolfWarCharacter::DeactivateCollision(FString CollisionPart)
 
 void APanWolfWarCharacter::GetHit(const FVector& ImpactPoint, AActor* Hitter)
 {
-	if (!IsAlive() || Hitter || bIsInvulnerable) return;
-
+	if (!IsAlive() || !Hitter || bIsInvulnerable) return;
+	
 	FName Section = IHitInterface::DirectionalHitReact(GetOwner(), Hitter->GetActorLocation());
 	PlayHitReactMontage(Section);
 
 	CombatComponent->PlayHitSound(ImpactPoint);
 	CombatComponent->SpawnHitParticles(ImpactPoint);
+	
+}
+
+void APanWolfWarCharacter::SetUnderAttack()
+{
+	bIsUnderAttack = true;
+	GetWorld()->GetTimerManager().SetTimer(UnderAttack_TimerHandle, [this]() {this->ResetUnderAttack(); }, 1.5f, false);
+}
+
+bool APanWolfWarCharacter::IsUnderAttack()
+{
+	return bIsUnderAttack;
+}
+
+void APanWolfWarCharacter::ResetUnderAttack()
+{
+	bIsUnderAttack = false;
 }
 
 void APanWolfWarCharacter::PlayHitReactMontage(const FName& SectionName)
@@ -512,6 +529,16 @@ void APanWolfWarCharacter::GetHitReactMontage(UAnimMontage*& ReactMontage)
 bool APanWolfWarCharacter::IsAlive()
 {
 	return Attributes && Attributes->IsAlive();
+}
+
+bool APanWolfWarCharacter::IsCombatActorAlive()
+{
+	return IsAlive();
+}
+
+float APanWolfWarCharacter::PerformAttack()
+{
+	return 0.0f;
 }
 
 float APanWolfWarCharacter::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
@@ -560,6 +587,7 @@ void APanWolfWarCharacter::Die()
 	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	FTimerHandle Die_TimerHandle;
 	GetWorld()->GetTimerManager().SetTimer(Die_TimerHandle, [this]() {this->Destroy(); }, 5.f, false);
+
 }
 
 #pragma endregion

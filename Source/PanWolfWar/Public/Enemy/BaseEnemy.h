@@ -32,6 +32,11 @@ public:
 	virtual void DeactivateCollision(FString CollisionPart) override;
 	virtual void SetInvulnerability(bool NewInvulnerability) override;
 	virtual FRotator GetDesiredDodgeRotation() override;
+	virtual bool IsCombatActorAlive() override;
+	virtual float PerformAttack() override;
+	virtual bool IsUnderAttack() override;
+	virtual void SetUnderAttack() override;
+
 	//HitInterface
 	virtual void GetHit(const FVector& ImpactPoint, AActor* Hitter) override;
 
@@ -41,8 +46,7 @@ protected:
 	UFUNCTION(BlueprintCallable)
 	virtual void Die();
 
-	UFUNCTION(BlueprintCallable)
-	float PerformAttack();
+
 
 	virtual float TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, class AController* EventInstigator, AActor* DamageCauser) override;
 	void PlayHitReactMontage(const FName& SectionName);

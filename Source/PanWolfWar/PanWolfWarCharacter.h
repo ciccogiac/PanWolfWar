@@ -61,7 +61,12 @@ public:
 	virtual void ActivateCollision(FString CollisionPart) override;
 	virtual void DeactivateCollision(FString CollisionPart) override;
 	virtual void SetInvulnerability(bool NewInvulnerability) override;
+	virtual bool IsCombatActorAlive() override;
+	virtual float PerformAttack() override;
+	virtual bool IsUnderAttack() override;
+	virtual void SetUnderAttack() override;
 
+	void ResetUnderAttack() ;
 	//HitInterface
 	virtual void GetHit(const FVector& ImpactPoint, AActor* Hitter) override;
 	#pragma region InputCallback
@@ -97,6 +102,8 @@ private:
 
 	bool bIsHiding = false;
 	bool bIsInvulnerable = false;
+	bool bIsUnderAttack = false;
+	FTimerHandle UnderAttack_TimerHandle;
 	TArray<AActor*> EnemyAware = TArray<AActor*>();
 
 	#pragma region Components

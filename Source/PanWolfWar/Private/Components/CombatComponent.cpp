@@ -93,6 +93,7 @@ void UCombatComponent::RotateToClosestEnemy(const AActor* ClosestEnemy)
 
 	const FRotator LookRotator = UKismetMathLibrary::FindLookAtRotation(CharacterOwner->GetActorLocation(), ClosestEnemy->GetActorLocation());
 	CharacterOwner->SetActorRotation(FRotator(0.f, LookRotator.Yaw,0.f));
+
 }
 
 void UCombatComponent::PerformAttack(EAttackType AttackType)
