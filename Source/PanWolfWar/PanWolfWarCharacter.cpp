@@ -41,6 +41,9 @@
 
 #include "Kismet/KismetMathLibrary.h"
 #include "Kismet/GameplayStatics.h"
+
+#include "Components/BoxComponent.h"
+
 DEFINE_LOG_CATEGORY(LogTemplateCharacter);
 
 //////////////////////////////////////////////////////////////////////////
@@ -81,6 +84,12 @@ APanWolfWarCharacter::APanWolfWarCharacter()
 	FollowCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("FollowCamera"));
 	FollowCamera->SetupAttachment(CameraBoom, USpringArmComponent::SocketName); // Attach the camera to the end of the boom and let the boom adjust to match the controller orientation
 	FollowCamera->bUsePawnControlRotation = false; // Camera does not rotate relative to arm
+
+	HidingAssassinBoxComponent = CreateDefaultSubobject<UBoxComponent>(TEXT("HidingAssassinBox"));
+	HidingAssassinBoxComponent->SetupAttachment(RootComponent);
+	HidingAssassinBoxComponent->bHiddenInGame = true;
+	HidingAssassinBoxComponent->SetLineThickness(2.f);
+	HidingAssassinBoxComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 
 	// Create a Niagara Components
 	NiagaraTransformation = CreateDefaultSubobject<UNiagaraComponent>(TEXT("NiagaraTransformation"));
@@ -251,6 +260,7 @@ void APanWolfWarCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInpu
 		// Kite
 		EnhancedInputComponent->BindAction(PandolfoComponent->GetKiteComponent()->KiteMoveAction, ETriggerEvent::Triggered, PandolfoComponent->GetKiteComponent(), &UKiteComponent::KiteMove);	
 		EnhancedInputComponent->BindAction(PandolfoComponent->GetKiteComponent()->KiteJumpAction, ETriggerEvent::Started, PandolfoComponent->GetKiteComponent(), &UKiteComponent::KiteJump);
+		EnhancedInputComponent->BindAction(PandolfoComponent->GetKiteComponent()->KiteExitAction, ETriggerEvent::Started, PandolfoComponent->GetKiteComponent(), &UKiteComponent::KiteExit);
 		#pragma endregion
 
 		#pragma region PandolFlower
@@ -419,10 +429,18 @@ void APanWolfWarCharacter::SetIsHiding(bool Value, bool DoCrouchCheck)
 	bIsHiding = Value;
 	PlayerHidingWidget->SetVisibility(bIsHiding);
 
-	if(bIsHiding)
+	if (bIsHiding)
+	{
 		GetMesh()->SetScalarParameterValueOnMaterials(FName("Emissive Multiplier"), 10.f);
+		HidingAssassinBoxComponent->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+	}
+		
 	else
+	{
 		GetMesh()->SetScalarParameterValueOnMaterials(FName("Emissive Multiplier"), 0.f);
+		HidingAssassinBoxComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	}
+		
 
 }
 
@@ -478,7 +496,7 @@ void APanWolfWarCharacter::GetHit(const FVector& ImpactPoint, AActor* Hitter)
 void APanWolfWarCharacter::SetUnderAttack()
 {
 	bIsUnderAttack = true;
-	GetWorld()->GetTimerManager().SetTimer(UnderAttack_TimerHandle, [this]() {this->ResetUnderAttack(); }, 1.5f, false);
+	GetWorld()->GetTimerManager().SetTimer(UnderAttack_TimerHandle, [this]() {this->ResetUnderAttack(); }, 2.f, false);
 }
 
 bool APanWolfWarCharacter::IsUnderAttack()
@@ -582,12 +600,12 @@ void APanWolfWarCharacter::Die()
 {
 	Tags.Add(FName("Dead"));
 	TransformationComponent->SelectDesiredTransformation(0);
+	PandolfoComponent->ClearAllTimer();
 	GetMesh()->SetSimulatePhysics(true);
 	GetMesh()->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
 	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	FTimerHandle Die_TimerHandle;
 	GetWorld()->GetTimerManager().SetTimer(Die_TimerHandle, [this]() {this->Destroy(); }, 5.f, false);
-
 }
 
 #pragma endregion

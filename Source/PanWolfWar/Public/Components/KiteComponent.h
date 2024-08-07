@@ -20,6 +20,7 @@ public:
 
 	void KiteMove(const FInputActionValue& Value);
 	void KiteJump();
+	void KiteExit();
 
 	virtual void Activate(bool bReset = false) override;
 	virtual void Deactivate() override;
@@ -35,6 +36,9 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input Climb")
 	UInputAction* KiteJumpAction;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input Climb")
+	UInputAction* KiteExitAction;
 
 private:
 	ACharacter* CharacterOwner;

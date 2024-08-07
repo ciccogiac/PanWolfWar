@@ -80,14 +80,19 @@ void UPandolfoComponent::Activate(bool bReset)
 
 	//KiteComponent->Activate();
 
-	GetWorld()->GetTimerManager().SetTimer(AirAssassination_TimerHandle, [this]() {this->CheckCanAirAssassin(); }, 0.25f, true);
-
+	
 	if (!CharacterOwner->GetMovementComponent()->IsMovingOnGround())
 	{
 		bIsGlideTimerActive = true;
 		GetWorld()->GetTimerManager().SetTimer(Glide_TimerHandle, [this]() {this->TryGliding(); }, 0.25f, true);
 	}
+
+	GetWorld()->GetTimerManager().SetTimer(AirAssassination_TimerHandle, [this]() {this->CheckCanAirAssassin(); }, 0.25f, true);
 		
+	if(CharacterOwner->GetCharacterMovement()->IsCrouching())
+		CrouchingTimeline.PlayFromStart();
+	else
+		CrouchingTimeline.Reverse();
 }
 
 void UPandolfoComponent::Deactivate()
@@ -135,14 +140,17 @@ const bool UPandolfoComponent::IsClimbing()
 
 void UPandolfoComponent::Jump()
 {
-	if (!TryClimbOrMantle() && !ClimbingComponent->TryVault())
-	{		
-		if (!PredictJump())
+
+	if (PandolfoState != EPandolfoState::EPS_Gliding)
+	{
+		if (!TryClimbOrMantle() && !ClimbingComponent->TryVault())
 		{
-			CharacterOwner->Jump();
+			if (!PredictJump())
+			{
+				CharacterOwner->Jump();
+			}
 		}
 	}
-
 }
 
 void UPandolfoComponent::HandleFalling()
@@ -470,7 +478,7 @@ void UPandolfoComponent::TryGliding()
 	const FVector End = Start - CharacterOwner->GetActorUpVector() * GlidingHeight;
 	EDrawDebugTrace::Type DebugTrace = ShowDebugTrace ? EDrawDebugTrace::ForDuration : EDrawDebugTrace::None;
 	FHitResult Hit;
-	UKismetSystemLibrary::LineTraceSingle(this, Start, End, ETraceTypeQuery::TraceTypeQuery1, false, TArray<AActor*>(), EDrawDebugTrace::ForDuration, Hit, true);
+	UKismetSystemLibrary::LineTraceSingle(this, Start, End, ETraceTypeQuery::TraceTypeQuery1, false, TArray<AActor*>(), DebugTrace, Hit, true);
 
 	
 	if (!Hit.bBlockingHit && CharacterOwner->GetCharacterMovement()->GetLastUpdateVelocity().Z < -GlidingVelocity)
@@ -700,5 +708,17 @@ void UPandolfoComponent::EnterKiteMode(AKiteBoard* KiteBoard)
 	ClimbingComponent->Deactivate();
 	KiteComponent->SetKiteBoard(KiteBoard);
 	KiteComponent->Activate();
+	PandolfoState = EPandolfoState::EPS_Kiting;
+}
 
+void UPandolfoComponent::ExitKiteMode()
+{
+	KiteComponent->Deactivate();
+	PandolfoState = EPandolfoState::EPS_Pandolfo;
+}
+
+void UPandolfoComponent::ClearAllTimer()
+{
+	GetWorld()->GetTimerManager().ClearTimer(AirAssassination_TimerHandle);
+	GetWorld()->GetTimerManager().ClearTimer(Glide_TimerHandle);
 }

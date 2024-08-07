@@ -17,6 +17,12 @@ public:
 
 	virtual bool Interact(ACharacter* _CharacterOwner = nullptr) override;
 
+	UFUNCTION(BlueprintImplementableEvent)
+	void AttachKite();
+
+	UFUNCTION(BlueprintImplementableEvent)
+	void EnableSeaPhysics();
+
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;

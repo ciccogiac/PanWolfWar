@@ -35,6 +35,8 @@ bool AKiteBoard::Interact(ACharacter* _CharacterOwner)
 	FAttachmentTransformRules AttachmentRules(EAttachmentRule::SnapToTarget, EAttachmentRule::SnapToTarget, EAttachmentRule::KeepWorld, true);
 	_CharacterOwner->AttachToComponent(StaticMesh, AttachmentRules, FName("CharacterPosition"));
 
+	AttachKite();
+
 	return true;
 }
 

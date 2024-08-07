@@ -24,7 +24,8 @@ enum class EPandolfoState : uint8
 	EPS_Pandolfo UMETA(DisplayName = "Pandolfo"),
 	EPS_Climbing UMETA(DisplayName = "Climbing"),
 	EPS_Covering UMETA(DisplayName = "Covering"),
-	EPS_Gliding UMETA(DisplayName = "Gliding")
+	EPS_Gliding UMETA(DisplayName = "Gliding"),
+	EPS_Kiting UMETA(DisplayName = "Kiting")
 };
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
@@ -48,11 +49,16 @@ public:
 	void CheckCanAirAssassin();
 	void Dodge();
 
+
+	void ClearAllTimer();
+
 	void PlayAirAssassination(UAnimInstance* OwningPlayerAnimInstance);
 
 	void PlayStealthAssassination(UAnimInstance* OwningPlayerAnimInstance);
 
 	void EnterKiteMode(AKiteBoard* KiteBoard);
+	UFUNCTION(BlueprintCallable)
+	void ExitKiteMode();
 
 	void TryGliding();
 	void UnGlide();

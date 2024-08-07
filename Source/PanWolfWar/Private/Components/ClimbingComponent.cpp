@@ -575,7 +575,12 @@ bool UClimbingComponent::TryMantle()
 {
 	if (OwningPlayerAnimInstance->IsAnyMontagePlaying()) return false;
 	bool bCanMantle = CanClimbUpon();
-	if (bCanMantle) Deactivate();
+	if (bCanMantle) 
+	{
+		Deactivate();
+		if (PandolfoComponent->IsGliding())
+			PandolfoComponent->UnGlide();
+	}
 	return bCanMantle;
 }
 

@@ -8,6 +8,8 @@
 #include "PanWolfWar/DebugHelper.h"
 #include "Components/TargetingComponent.h"
 
+#include "GameFramework/SpringArmComponent.h"
+
 UPanWolfComponent::UPanWolfComponent()
 {
 	PrimaryComponentTick.bCanEverTick = true;
@@ -34,6 +36,9 @@ void UPanWolfComponent::Activate(bool bReset)
 	CharacterOwner->GetMesh()->AddLocalOffset(FVector(0.f, -25.f, 0.f));
 
 	CombatComponent->SetCombatEnabled(true);
+
+	PanWolfCharacter->GetCameraBoom()->TargetArmLength = 400.f;
+	CharacterOwner->GetCharacterMovement()->bWantsToCrouch = false;
 }
 
 void UPanWolfComponent::Deactivate()
@@ -72,14 +77,21 @@ void UPanWolfComponent::Dodge()
 
 void UPanWolfComponent::Attack()
 {
+
+	if (CharacterOwner->GetMovementComponent()->IsFalling())
+	{
+		
+		CombatComponent->PerformAttack(EAttackType::EAT_HeavyAttack);
+		return;
+	}
+
 	if (!CombatComponent->IsAttacking())
 	{
-		if (!PanWolfCharacter->GetTargetingComponent()->IsTargeting())
-			PanWolfCharacter->GetTargetingComponent()->TryLock();
+		//if (!PanWolfCharacter->GetTargetingComponent()->IsTargeting())
+		//	PanWolfCharacter->GetTargetingComponent()->TryLock();
 
 		const bool isTargeting = PanWolfCharacter->GetTargetingComponent()->IsActive() && PanWolfCharacter->GetTargetingComponent()->IsTargeting();
 		const AActor* ClosestEnemy = isTargeting ? PanWolfCharacter->GetTargetingComponent()->GetTargetActor() : CombatComponent->GetClosestEnemy();
-
 		//if (!ClosestEnemy) return;
 
 		const bool EnemyDirection = CombatComponent->GetEnemyDirection(ClosestEnemy);

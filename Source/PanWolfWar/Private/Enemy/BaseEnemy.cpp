@@ -116,6 +116,12 @@ void ABaseEnemy::Die()
 	GetWorld()->GetTimerManager().ClearTimer(FindEnemies_TimerHandle);
 }
 
+void ABaseEnemy::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+	Super::EndPlay(EndPlayReason);
+	GetWorld()->GetTimerManager().ClearTimer(FindEnemies_TimerHandle);
+}
+
 bool ABaseEnemy::IsCombatActorAlive()
 {
 	return bDied;
@@ -148,7 +154,7 @@ void ABaseEnemy::FindNearestAI()
 
 	const FVector Start = GetActorLocation();
 	const FVector End = Start + GetActorForwardVector();
-	TArray<FHitResult> Hit;
+	TArray<FHitResult> Hit ;
 	TArray<TEnumAsByte<EObjectTypeQuery>> Objects;
 	Objects.Add(EObjectTypeQuery::ObjectTypeQuery3);
 	
@@ -199,7 +205,6 @@ void ABaseEnemy::DeactivateCollision(FString CollisionPart)
 {
 	CombatComponent->DeactivateCollision(CollisionPart);
 }
-
 
 void ABaseEnemy::GetHit(const FVector& ImpactPoint, AActor* Hitter)
 {

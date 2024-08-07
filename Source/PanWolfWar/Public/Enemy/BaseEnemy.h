@@ -55,6 +55,8 @@ protected:
 	virtual void SetTargetVisibility(bool NewVisibility) override;
 	virtual bool CanBeTargeted() override;
 
+	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
+
 private:	
 
 	void FindNearestAI();

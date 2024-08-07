@@ -20,6 +20,10 @@ UKiteComponent::UKiteComponent()
 	PanWolfCharacter = Cast<APanWolfWarCharacter>(CharacterOwner);
 }
 
+void UKiteComponent::KiteExit()
+{
+}
+
 void UKiteComponent::KiteMove(const FInputActionValue& Value)
 {
 	if (!KiteBoard) return;
@@ -44,7 +48,8 @@ void UKiteComponent::KiteMove(const FInputActionValue& Value)
 void UKiteComponent::KiteJump()
 {
 	if (!KiteBoard) return;
-
+	if (FMath::Abs(KiteBoard->GetVelocity().Z) > 10.f) return;
+	
 	KiteBoard->GetBoardMesh()->AddImpulse(CharacterOwner->GetActorUpVector() * KiteMoveForce/2.f);
 }
 
@@ -54,6 +59,10 @@ void UKiteComponent::Activate(bool bReset)
 
 	PanWolfCharacter->AddMappingContext(KiteMappingContext, 2);
 	CharacterOwner->GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Flying);
+
+	if (!KiteBoard) return;
+	KiteBoard->EnableSeaPhysics();
+	KiteBoard->GetBoardMesh()->SetSimulatePhysics(true);
 }
 
 void UKiteComponent::Deactivate()
@@ -61,6 +70,7 @@ void UKiteComponent::Deactivate()
 	Super::Deactivate();
 
 	PanWolfCharacter->RemoveMappingContext(KiteMappingContext);
+	CharacterOwner->GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Falling);
 }
 
 void UKiteComponent::BeginPlay()
