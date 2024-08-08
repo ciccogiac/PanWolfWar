@@ -47,6 +47,8 @@ public:
 
 	void SetMotionWarpTarget(const FName& InWarpTargetName, const FVector& InTargetPosition, const FRotator& InTargetRotation = FRotator::ZeroRotator);
 
+	void SetMetaHumanVisibility(bool bVisible);
+
 	UFUNCTION(BlueprintCallable)
 	void SetIsHiding(bool Value, bool DoCrouchCheck = true);
 
@@ -161,6 +163,20 @@ private:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Movement, meta = (AllowPrivateAccess = "true"))
 	UTargetingComponent* TargetingComponent;
+
+	//MetaHuman
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "MetaHuman", meta = (AllowPrivateAccess = "true"))
+	USkeletalMeshComponent* Torso;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "MetaHuman", meta = (AllowPrivateAccess = "true"))
+	USkeletalMeshComponent* Face;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "MetaHuman", meta = (AllowPrivateAccess = "true"))
+	USkeletalMeshComponent* Feets;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "MetaHuman", meta = (AllowPrivateAccess = "true"))
+	USkeletalMeshComponent* Legs;
 
 	#pragma endregion
 

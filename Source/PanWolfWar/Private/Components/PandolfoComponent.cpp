@@ -62,6 +62,7 @@ void UPandolfoComponent::Activate(bool bReset)
 	PanWolfCharacter->bUseControllerRotationYaw = false;
 
 	PanWolfCharacter->SetTransformationCharacter(SkeletalMeshAsset, Anim);
+	PanWolfCharacter->SetMetaHumanVisibility(true);
 
 	if (PanWolfCharacter->IsHiding())
 		CharacterOwner->GetMesh()->SetScalarParameterValueOnMaterials(FName("Emissive Multiplier"), 10.f);
@@ -108,6 +109,8 @@ void UPandolfoComponent::Deactivate()
 	GetWorld()->GetTimerManager().ClearTimer(AirAssassination_TimerHandle);
 
 	PandolfoState = EPandolfoState::EPS_Pandolfo;
+
+	PanWolfCharacter->SetMetaHumanVisibility(false);
 }
 
 void UPandolfoComponent::BeginPlay()

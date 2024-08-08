@@ -128,6 +128,34 @@ APanWolfWarCharacter::APanWolfWarCharacter()
 		PlayerSeenWidget->SetVisibility(false);
 		PlayerSeenWidget->SetupAttachment(GetRootComponent());
 	}
+
+	/** MetaHuman */
+
+	Torso = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("Torso"));
+	Torso->SetupAttachment(GetMesh());
+
+	Face = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("Face"));
+	Face->SetupAttachment(GetMesh());
+
+	Feets = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("Feets"));
+	Feets->SetupAttachment(GetMesh());
+
+	Legs = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("Legs"));
+	Legs->SetupAttachment(GetMesh());
+
+	Torso->SetLeaderPoseComponent(GetMesh());
+	Feets->SetLeaderPoseComponent(GetMesh());
+	Legs->SetLeaderPoseComponent(GetMesh());
+
+	SetMetaHumanVisibility(false);
+}
+
+void APanWolfWarCharacter::SetMetaHumanVisibility(bool bVisible)
+{
+	Torso->SetVisibility(bVisible);
+	Feets->SetVisibility(bVisible);
+	Legs->SetVisibility(bVisible);
+	Face->SetVisibility(bVisible);
 }
 
 void APanWolfWarCharacter::BeginPlay()
