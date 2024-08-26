@@ -311,7 +311,8 @@ void APanWolfWarCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInpu
 		#pragma region PanWolf
 		EnhancedInputComponent->BindAction(PanWolfComponent->JumpAction, ETriggerEvent::Started, PanWolfComponent, &UPanWolfComponent::Jump);
 		EnhancedInputComponent->BindAction(PanWolfComponent->DodgeAction, ETriggerEvent::Started, PanWolfComponent, &UPanWolfComponent::Dodge);
-		EnhancedInputComponent->BindAction(PanWolfComponent->AttackAction, ETriggerEvent::Started, PanWolfComponent, &UPanWolfComponent::Attack);
+		EnhancedInputComponent->BindAction(PanWolfComponent->LightAttackAction, ETriggerEvent::Started, PanWolfComponent, &UPanWolfComponent::LightAttack);
+		EnhancedInputComponent->BindAction(PanWolfComponent->HeavyAttackAction, ETriggerEvent::Started, PanWolfComponent, &UPanWolfComponent::HeavyAttack);
 		#pragma endregion
 
 

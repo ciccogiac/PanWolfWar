@@ -24,7 +24,8 @@ public:
 	virtual void Deactivate() override;
 
 	void Jump();
-	void Attack();
+	void LightAttack();
+	void HeavyAttack();
 	void Dodge();
 
 protected:
@@ -32,9 +33,30 @@ protected:
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
 private:
+
+	void ResetLightAttackComboCount();
+	void ResetHeavyAttackComboCount();
+
+	UFUNCTION()
+	void OnMontageEnded(UAnimMontage* Montage, bool bInterrupted);
+
+private:
 	APanWolfWarCharacter* PanWolfCharacter;
 	ACharacter* CharacterOwner;
 	UCombatComponent* CombatComponent;
+	UAnimInstance* OwningPlayerAnimInstance;
+
+	int32 CurrentLightAttackComboCount = 1;
+	int32 CurrentHeavyAttackComboCount = 1;
+	bool bJumpToFinisher = false;
+	FTimerHandle ComboLightCountReset_TimerHandle;
+	FTimerHandle ComboHeavyCountReset_TimerHandle;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Attack Montages", meta = (AllowPrivateAccess = "true"))
+	TMap<int32,UAnimMontage*> LightAttackMontages;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Attack Montages", meta = (AllowPrivateAccess = "true"))
+	TMap<int32, UAnimMontage*> HeavyAttackMontages;
 
 	UPROPERTY(Category = Character, EditDefaultsOnly, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<USkeletalMesh> SkeletalMeshAsset;
@@ -44,9 +66,6 @@ private:
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	UInputMappingContext* PanWolfMappingContext;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Assassination", meta = (AllowPrivateAccess = "true"))
-	UAnimMontage* AttackMontage;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Dodge", meta = (AllowPrivateAccess = "true"))
 	UAnimMontage* PandolWolfDodgeMontage;
@@ -60,6 +79,9 @@ public:
 	UInputAction* DodgeAction;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
-	UInputAction* AttackAction;
+	UInputAction* LightAttackAction;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	UInputAction* HeavyAttackAction;
 
 };

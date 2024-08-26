@@ -253,7 +253,7 @@ void UPandolfoComponent::CheckCanHideStandUP()
 	const FVector Start = CharacterOwner->GetActorLocation() + CharacterOwner->GetActorUpVector() * CharacterOwner->BaseEyeHeight * 3.f;
 	const FVector End = Start + CharacterOwner->GetActorForwardVector();
 	FHitResult Hit;
-	UKismetSystemLibrary::SphereTraceSingleForObjects(this, Start, End, 20.f, HidingObjectTypes, false, TArray<AActor*>(), EDrawDebugTrace::ForDuration, Hit, true);
+	UKismetSystemLibrary::SphereTraceSingleForObjects(this, Start, End, 20.f, HidingObjectTypes, false, TArray<AActor*>(), EDrawDebugTrace::None, Hit, true);
 	if (!Hit.bBlockingHit)
 		PanWolfCharacter->SetIsHiding(false);
 }
@@ -415,6 +415,7 @@ void UPandolfoComponent::DoPredictJump()
 
 void UPandolfoComponent::Sliding()
 {
+	if (PandolfoState != EPandolfoState::EPS_Pandolfo) return;
 
 	if (!SlidingMontage) return;
 	UAnimInstance* OwningPlayerAnimInstance = CharacterOwner->GetMesh()->GetAnimInstance();

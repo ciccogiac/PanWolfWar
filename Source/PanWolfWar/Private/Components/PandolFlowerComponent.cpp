@@ -76,6 +76,12 @@ void UPandolFlowerComponent::Move(const FInputActionValue& Value)
 	{ 
 		if (IsCovering)
 		{
+			const FVector CameraForward = FollowCamera->GetForwardVector();
+			const double Dot = FVector::DotProduct(CameraForward, CharacterOwner->GetActorForwardVector());
+			float Multiplier = 1;
+			if (Dot > 0.4f)
+				Multiplier = -1.f;
+
 			FVector2D MovementVector = Value.Get<FVector2D>().GetSafeNormal();
 
 			CoverDirection = MovementVector.X > 0.5f ?
@@ -93,7 +99,7 @@ void UPandolFlowerComponent::Move(const FInputActionValue& Value)
 
 			const FVector MoveDirection = -CharacterOwner->GetActorRightVector();
 
-			CharacterOwner->AddMovementInput(MoveDirection, CoverDirection);
+			CharacterOwner->AddMovementInput(MoveDirection * Multiplier, CoverDirection);
 		}
 		else
 		{
@@ -124,7 +130,9 @@ void UPandolFlowerComponent::Jump()
 
 	if (bSwinging) 
 	{
-		const FVector v = CurrentGrapplePoint->LandingZone_Mesh->GetForwardVector() * PanWolfCharacter->GetVelocity().Length();
+		
+		//const FVector v = CurrentGrapplePoint->LandingZone_Mesh->GetForwardVector() * PanWolfCharacter->GetVelocity().Length();
+		const FVector v = CurrentGrapplePoint->LandingZone_Mesh->GetComponentVelocity().GetSafeNormal() * PanWolfCharacter->GetVelocity().Length();
 		PanWolfCharacter->DetachRootComponentFromParent();
 		CharacterOwner->GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Falling);
 
@@ -134,7 +142,7 @@ void UPandolFlowerComponent::Jump()
 		ResetMovement(); RopeVisibility(false);
 
 		
-		CharacterOwner->LaunchCharacter(v *2.15 , false, false);
+		CharacterOwner->LaunchCharacter(v *2.3 , false, false);
 	}
 
 	CharacterOwner->Jump();
@@ -160,8 +168,17 @@ void UPandolFlowerComponent::Crouch()
 {
 	if ( bInGrapplingAnimation || bMovingWithGrapple || bSwinging ) return;
 
+	if (FlowerHideObject)
+	{
+		SetCharRotation(-CharacterOwner->GetActorForwardVector(), true);
+		SetCharLocation(CharacterOwner->GetActorLocation() + CharacterOwner->GetActorForwardVector() * 70.f,FVector::ZeroVector, true);
+		return;
+	}
+
 	const bool IsCrouched = CharacterOwner->bIsCrouched;
 	CharacterOwner->GetCharacterMovement()->bWantsToCrouch = !IsCrouched;
+
+	
 
 	if (!IsCrouched)
 	{
@@ -252,7 +269,8 @@ void UPandolFlowerComponent::Deactivate()
 	if (bSwinging) {
 		PanWolfCharacter->DetachRootComponentFromParent();
 		CurrentGrapplePoint->ResetLandingZone();
-		ResetMovement(); 
+		ResetMovement();
+		PanWolfCharacter->GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Falling);
 	}	
 
 	DeactivateGrapplePoint();
@@ -348,7 +366,7 @@ void UPandolFlowerComponent::CheckForGrapplePoint()
 		for (const FHitResult& hit : outHits)
 		{
 			const FVector CameraForward = FollowCamera->GetForwardVector();
-			const FVector CameraLocation = FollowCamera->GetComponentLocation();
+			const FVector CameraLocation = FollowCamera->GetComponentLocation() + FollowCamera->GetUpVector() * 100.f;
 			const FVector HitActorLocation = hit.GetActor()->GetActorLocation();
 
 			const FVector Direction = UKismetMathLibrary::GetDirectionUnitVector(CameraLocation, HitActorLocation);
@@ -509,7 +527,7 @@ void UPandolFlowerComponent::StartSwinging()
 	PanWolfCharacter->AttachToComponent(CurrentGrapplePoint->LandingZone_Mesh, AttachmentRules);
 	
 	CurrentGrapplePoint->LandingZone_Mesh->SetSimulatePhysics(true);
-	CurrentGrapplePoint->LandingZone_Mesh->AddImpulse(CurrentGrapplePoint->LandingZone_Mesh->GetForwardVector() * SwingForce *2);
+	CurrentGrapplePoint->LandingZone_Mesh->AddImpulse(CurrentGrapplePoint->LandingZone_Mesh->GetForwardVector() * SwingForce *1.75);
 }
 	#pragma endregion
 
@@ -541,11 +559,11 @@ void UPandolFlowerComponent::Hide()
 		const FVector Start = CharacterOwner->GetActorLocation();
 		const FVector End = Start + CharacterOwner->GetActorForwardVector();
 		FHitResult hit;
-		UKismetSystemLibrary::SphereTraceSingleForObjects(this, Start, End, 60.f, PandolFlowerHideObjectTypes, false, TArray<AActor*>(), EDrawDebugTrace::ForDuration, hit, true);
+		UKismetSystemLibrary::SphereTraceSingleForObjects(this, Start, End, 60.f, PandolFlowerHideObjectTypes, false, TArray<AActor*>(), EDrawDebugTrace::None, hit, true);
 
 		if (!hit.bBlockingHit) return;
 
-		Debug::Print(TEXT("CanHide"));
+		//Debug::Print(TEXT("CanHide"));
 
 		FlowerHideObject = Cast<AFlowerHideObject>(hit.GetActor());
 		if (!FlowerHideObject) return;
@@ -571,11 +589,15 @@ void UPandolFlowerComponent::Hide()
 
 void UPandolFlowerComponent::UnHide()
 {
-	Debug::Print(TEXT("UnHide"));
+	//Debug::Print(TEXT("UnHide"));
 	//hit.GetActor()->SetActorEnableCollision(false);
 
 	if (FlowerHideObject)
+	{
 		FlowerHideObject->ChangeCollisionType(true);
+		FlowerHideObject = nullptr;
+	}
+		
 
 	IsCovering = false;
 
@@ -599,7 +621,7 @@ void UPandolFlowerComponent::SetCharRotation(const FVector ImpactNormal, bool Is
 
 void UPandolFlowerComponent::SetCharLocation(const FVector HitLocation, const FVector HitNormal, bool Istantaneus)
 {
-	FVector NewLocation = HitLocation - UKismetMathLibrary::GetForwardVector(UKismetMathLibrary::MakeRotFromX(HitNormal)) * 30.f;
+	FVector NewLocation = HitLocation - UKismetMathLibrary::GetForwardVector(UKismetMathLibrary::MakeRotFromX(HitNormal)) * 5.f;
 	NewLocation = Istantaneus ? NewLocation : UKismetMathLibrary::VInterpTo(CharacterOwner->GetActorLocation(), NewLocation, GetWorld()->GetDeltaSeconds(), 1.f);
 
 	CharacterOwner->SetActorLocation(NewLocation);

@@ -33,5 +33,6 @@ void AFlowerHideObject::ChangeCollisionType(bool Enabled)
 {
 	ECollisionResponse CollisionType = Enabled ? ECollisionResponse::ECR_Block : ECollisionResponse::ECR_Ignore;
 	Collision_Box->SetCollisionResponseToChannel(ECollisionChannel::ECC_Pawn, CollisionType);
+
 }
 
