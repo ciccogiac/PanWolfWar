@@ -96,7 +96,7 @@ void UCombatComponent::RotateToClosestEnemy(const AActor* ClosestEnemy)
 
 }
 
-void UCombatComponent::PerformAttack(EAttackType AttackType)
+void UCombatComponent::PerformAttack(EAttackType2 AttackType)
 {
 	// Check If Can Perform Attack (ISDead , ISAttacking , IsInOtherState)
 
@@ -147,17 +147,17 @@ void UCombatComponent::ResetAttack()
 	bIsAttacking = false;
 }
 
-TArray<UAnimMontage*> UCombatComponent::GetAttackMontages(EAttackType AttackType)
+TArray<UAnimMontage*> UCombatComponent::GetAttackMontages(EAttackType2 AttackType)
 {
 	switch (AttackType)
 	{
-	case EAttackType::EAT_LightAttack_Right:
+	case EAttackType2::EAT_LightAttack_Right:
 		return Right_LightAttackMontages;
 
-	case EAttackType::EAT_LightAttack_Left:
+	case EAttackType2::EAT_LightAttack_Left:
 		return Left_LightAttackMontages;
 
-	case EAttackType::EAT_HeavyAttack:
+	case EAttackType2::EAT_HeavyAttack:
 		return HeavyAttackMontages;
 
 	default:
@@ -253,7 +253,7 @@ void UCombatComponent::SetCollisionCharacterPartMesh()
 
 	for (size_t i = 0; i < 4; i++)
 	{
-		FCollisionPartStruct* CollisionPartStruct = CollisionStructs.Find(CharacterPart[i]);
+		FCollisionPart2Struct* CollisionPartStruct = CollisionStructs.Find(CharacterPart[i]);
 		if (!CollisionPartStruct) continue;
 
 		CollisionPartStruct->CollisionMesh = CharacterOwner->GetMesh();
@@ -263,7 +263,7 @@ void UCombatComponent::SetCollisionCharacterPartMesh()
 
 void UCombatComponent::SetCollisionWeaponPartMesh(UPrimitiveComponent* Mesh)
 {
-	FCollisionPartStruct* CollisionPartStruct = CollisionStructs.Find(FString("MainWeapon"));
+	FCollisionPart2Struct* CollisionPartStruct = CollisionStructs.Find(FString("MainWeapon"));
 	if (!CollisionPartStruct) return;
 
 	CollisionPartStruct->CollisionMesh = Mesh;

@@ -8,10 +8,10 @@
 
 #include "Kismet/KismetSystemLibrary.h"
 #include "Kismet/KismetMathLibrary.h"
-#include "Kismet/GameplayStatics.h"
 #include <PanWolfWar/PanWolfWarCharacter.h>
-
+#include "Kismet/GameplayStatics.h"
 #include "Components/CombatComponent.h"
+#include "Components/Combat/EnemyCombatComponent.h"
 #include "Components/CapsuleComponent.h"
 
 #include "UserWidgets/BaseEnemyWidget.h"
@@ -44,6 +44,7 @@ ABaseEnemy::ABaseEnemy()
 
 	MotionWarping = CreateDefaultSubobject<UMotionWarpingComponent>(TEXT("Motion Warping"));
 	CombatComponent = CreateDefaultSubobject<UCombatComponent>(TEXT("CombatComponent"));
+	EnemyCombatComponent = CreateDefaultSubobject<UEnemyCombatComponent>(TEXT("EnemyCombatComponent"));
 
 	Tags.Add(FName("Enemy"));
 }
@@ -144,7 +145,7 @@ float ABaseEnemy::PerformAttack()
 	/*float Duration = AnimIstance->Montage_Play(AttackMontage,1.f,EMontagePlayReturnType::Duration);
 	return Duration;*/
 
-	CombatComponent->PerformAttack(EAttackType::EAT_LightAttack_Right);
+	CombatComponent->PerformAttack(EAttackType2::EAT_LightAttack_Right);
 
 	return 1.f;
 }
@@ -243,18 +244,11 @@ void ABaseEnemy::GetHit(const FVector& ImpactPoint, AActor* Hitter)
 		AnimInstance->Montage_Play(HitReact_Montage);
 		GetMesh()->SetScalarParameterValueOnMaterials(FName("HitFxSwitch"), 1.f);
 
-		GetWorld()->GetTimerManager().ClearTimer(HitPause_TimerHandle);
-		UGameplayStatics::SetGlobalTimeDilation(this, 0.1f);
-		GetWorld()->GetTimerManager().SetTimer(HitPause_TimerHandle, [this, Hitter]() {this->HitPause(Hitter); }, 0.025f, false);
 	}
 
-}
+	//EnemyCombatComponent->PlayHitSound(ImpactPoint);
+	/*EnemyCombatComponent->SpawnHitParticles(ImpactPoint);*/
 
-void ABaseEnemy::HitPause(AActor* Hitter)
-{
-	UGameplayStatics::SetGlobalTimeDilation(this, 1.f);
-	
-	Cast<APlayerController>(Cast<ACharacter>(Hitter)->GetController())->ClientStartCameraShake(CameraShake_Wolf);
 }
 
 void ABaseEnemy::PlayHitReactMontage(const FName& SectionName)

@@ -11,8 +11,10 @@
 
 class UBehaviorTree;
 class UCombatComponent;
+class UEnemyCombatComponent;
 class UWidgetComponent;
 class UBaseEnemyWidget;
+
 
 UCLASS()
 class PANWOLFWAR_API ABaseEnemy : public ACharacter, public ICombatInterface, public IHitInterface , public ITargetInterface
@@ -62,8 +64,6 @@ private:
 	void FindNearestAI();
 	void ApplyHitReactionPhisicsVelocity(FName HitPart);
 
-	void HitPause(AActor* Hitter);
-
 protected:
 	bool bDied = false;
 	bool bSeen = false;
@@ -82,6 +82,9 @@ protected:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Movement, meta = (AllowPrivateAccess = "true"))
 	UCombatComponent* CombatComponent;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Movement, meta = (AllowPrivateAccess = "true"))
+	UEnemyCombatComponent* EnemyCombatComponent;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "AI", meta = (AllowPrivateAccess = "true"))
 	UBehaviorTree* BehaviorTree;
@@ -109,11 +112,6 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly, Category = Combat)
 	TArray<UAnimMontage*> HitReact_Montages;
-
-	UPROPERTY(EditDefaultsOnly, Category = Combat)
-	TSubclassOf<UCameraShakeBase> CameraShake_Wolf;
-
-	FTimerHandle HitPause_TimerHandle;
 
 public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "AI")

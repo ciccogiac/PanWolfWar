@@ -11,6 +11,8 @@
 #include "Interfaces/HitInterface.h"
 #include "PanWolfWarCharacter.generated.h"
 
+class UPandoCombatComponent;
+
 class USpringArmComponent;
 class UCameraComponent;
 class UInputMappingContext;
@@ -26,7 +28,7 @@ class UPandolfoComponent;
 class UPanWolfComponent;
 class UPandolFlowerComponent;
 class UPanBirdComponent;
-class UCombatComponent;
+
 class UTargetingComponent;
 
 DECLARE_LOG_CATEGORY_EXTERN(LogTemplateCharacter, Log, All);
@@ -159,8 +161,9 @@ private:
 	UAttributeComponent* Attributes;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Movement, meta = (AllowPrivateAccess = "true"))
-	UCombatComponent* CombatComponent;
+	UPandoCombatComponent* PandoCombatComponent;
 
+	
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Movement, meta = (AllowPrivateAccess = "true"))
 	UTargetingComponent* TargetingComponent;
 
@@ -259,7 +262,7 @@ public:
 	
 	FORCEINLINE virtual UAttributeComponent* GetAttributeComponent()  const override { return Attributes; }
 	FORCEINLINE UInteractComponent* GetInteractComponent() const { return InteractComponent; }
-	FORCEINLINE UCombatComponent* GetCombatComponent() const { return CombatComponent; }
+	FORCEINLINE UPandoCombatComponent* GetCombatComponent() const { return PandoCombatComponent; }
 	FORCEINLINE UTargetingComponent* GetTargetingComponent() const { return TargetingComponent; }
 
 	FORCEINLINE virtual UTransformationComponent* GetTransformationComponent()  const override { return TransformationComponent; } ;

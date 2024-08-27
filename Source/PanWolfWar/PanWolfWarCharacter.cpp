@@ -22,7 +22,7 @@
 #include "Components/InteractComponent.h"
 
 #include "Components/TransformationComponent.h"
-#include "Components/CombatComponent.h"
+#include "Components/Combat/PandoCombatComponent.h"
 #include "Components/TargetingComponent.h"
 
 #include "NiagaraComponent.h"
@@ -104,7 +104,9 @@ APanWolfWarCharacter::APanWolfWarCharacter()
 	Attributes = CreateDefaultSubobject<UAttributeComponent>(TEXT("Attributes"));
 	InteractComponent = CreateDefaultSubobject<UInteractComponent>(TEXT("InteractComponent"));
 	TransformationComponent = CreateDefaultSubobject<UTransformationComponent>(TEXT("TransformationComponent"));
-	CombatComponent = CreateDefaultSubobject<UCombatComponent>(TEXT("CombatComponent"));
+
+	PandoCombatComponent = CreateDefaultSubobject<UPandoCombatComponent>(TEXT("PandoCombatComponent"));
+
 	TargetingComponent = CreateDefaultSubobject<UTargetingComponent>(TEXT("TargetingComponent"));
 
 	PandolfoComponent = CreateDefaultSubobject<UPandolfoComponent>(TEXT("PandolfoComponent"));
@@ -403,7 +405,7 @@ void APanWolfWarCharacter::StartDodge()
 
 void APanWolfWarCharacter::EndDodge()
 {
-	CombatComponent->ResetAttack();
+	PandoCombatComponent->ResetAttack();
 	if (TargetingComponent->IsTargeting())
 		TargetingComponent->Activate();
 }
@@ -502,12 +504,12 @@ void APanWolfWarCharacter::RemoveEnemyAware(AActor* Enemy)
 
 void APanWolfWarCharacter::ActivateCollision(FString CollisionPart)
 {
-	CombatComponent->ActivateCollision(CollisionPart);
+	PandoCombatComponent->ActivateCollision(CollisionPart);
 }
 
 void APanWolfWarCharacter::DeactivateCollision(FString CollisionPart)
 {
-	CombatComponent->DeactivateCollision(CollisionPart);
+	PandoCombatComponent->DeactivateCollision(CollisionPart);
 }
 
 void APanWolfWarCharacter::GetHit(const FVector& ImpactPoint, AActor* Hitter)
@@ -517,8 +519,8 @@ void APanWolfWarCharacter::GetHit(const FVector& ImpactPoint, AActor* Hitter)
 	FName Section = IHitInterface::DirectionalHitReact(GetOwner(), Hitter->GetActorLocation());
 	PlayHitReactMontage(Section);
 
-	CombatComponent->PlayHitSound(ImpactPoint);
-	CombatComponent->SpawnHitParticles(ImpactPoint);
+	PandoCombatComponent->PlayHitSound(ImpactPoint);
+	PandoCombatComponent->SpawnHitParticles(ImpactPoint);
 	
 }
 

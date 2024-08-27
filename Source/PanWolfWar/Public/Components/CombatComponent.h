@@ -7,7 +7,7 @@
 class UAnimMontage;
 
 UENUM(BlueprintType)
-enum class EAttackType : uint8
+enum class EAttackType2 : uint8
 {
 	EAT_LightAttack_Right UMETA(DisplayName = "LightAttack_Right"),
 	EAT_LightAttack_Left UMETA(DisplayName = "LightAttack_Left"),
@@ -15,11 +15,11 @@ enum class EAttackType : uint8
 };
 
 USTRUCT(BlueprintType)
-struct FCollisionPartStruct
+struct FCollisionPart2Struct
 {
 	GENERATED_USTRUCT_BODY()
 
-	FCollisionPartStruct()
+	FCollisionPart2Struct()
 	{
 	}
 
@@ -48,7 +48,7 @@ public:
 
 	void SetCombatEnabled(bool CombatEnabled);
 
-	void PerformAttack(EAttackType AttackType);
+	void PerformAttack(EAttackType2 AttackType);
 
 	UFUNCTION(BlueprintCallable)
 	void ContinueAttack();
@@ -84,7 +84,7 @@ protected:
 
 private:
 
-	TArray<UAnimMontage*> GetAttackMontages(EAttackType AttackType);
+	TArray<UAnimMontage*> GetAttackMontages(EAttackType2 AttackType);
 	void TraceLoop();
 
 	bool ActorIsSameType(AActor* OtherActor);
@@ -97,7 +97,7 @@ private:
 
 	bool bCombatEnabled = false;
 	bool bAttackSaved = false;
-	EAttackType SavedAttackType;
+	EAttackType2 SavedAttackType;
 	bool bIsBlocking = false;
 	int32 AttackCount = 0;
 		
@@ -122,9 +122,9 @@ private:
 	TArray<UAnimMontage*> HeavyAttackMontages;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Collision Parts", meta = (AllowPrivateAccess = "true"))
-	TMap<FString, FCollisionPartStruct> CollisionStructs;
+	TMap<FString, FCollisionPart2Struct> CollisionStructs;
 	
-	FCollisionPartStruct* ActiveCollisionPart = nullptr;
+	FCollisionPart2Struct* ActiveCollisionPart = nullptr;
 	TArray<AActor*> AlreadyHitActor = TArray<AActor*>();
 public:
 	FORCEINLINE bool IsCombatEnabled() const { return bCombatEnabled; }

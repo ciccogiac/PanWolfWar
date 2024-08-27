@@ -10,7 +10,7 @@ class APanWolfWarCharacter;
 class UInputMappingContext;
 class UInputAction;
 class UAnimMontage;
-class UCombatComponent;
+class UPandoCombatComponent;
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class PANWOLFWAR_API UPanWolfComponent : public UActorComponent
@@ -32,33 +32,13 @@ protected:
 	virtual void BeginPlay() override;
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
-private:
 
-	void ResetLightAttackComboCount();
-	void ResetHeavyAttackComboCount();
-
-	bool IsPlayingMontage_ExcludingBlendOut();
-
-	UFUNCTION()
-	void OnMontageEnded(UAnimMontage* Montage, bool bInterrupted);
 
 private:
 	APanWolfWarCharacter* PanWolfCharacter;
 	ACharacter* CharacterOwner;
-	UCombatComponent* CombatComponent;
+	UPandoCombatComponent* CombatComponent;
 	UAnimInstance* OwningPlayerAnimInstance;
-
-	int32 CurrentLightAttackComboCount = 1;
-	int32 CurrentHeavyAttackComboCount = 1;
-	bool bJumpToFinisher = false;
-	FTimerHandle ComboLightCountReset_TimerHandle;
-	FTimerHandle ComboHeavyCountReset_TimerHandle;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Attack Montages", meta = (AllowPrivateAccess = "true"))
-	TMap<int32,UAnimMontage*> LightAttackMontages;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Attack Montages", meta = (AllowPrivateAccess = "true"))
-	TMap<int32, UAnimMontage*> HeavyAttackMontages;
 
 	UPROPERTY(Category = Character, EditDefaultsOnly, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<USkeletalMesh> SkeletalMeshAsset;
