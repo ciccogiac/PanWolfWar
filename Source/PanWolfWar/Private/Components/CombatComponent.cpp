@@ -217,10 +217,9 @@ void UCombatComponent::TraceLoop()
 
 		if (ActorIsSameType(Hit.GetActor())) continue;
 
-		UGameplayStatics::ApplyDamage(Hit.GetActor(), ActiveCollisionPart->Damage, CharacterOwner->GetInstigator()->GetController(), CharacterOwner, UDamageType::StaticClass());
+		//UGameplayStatics::ApplyDamage(Hit.GetActor(), ActiveCollisionPart->Damage, CharacterOwner->GetInstigator()->GetController(), CharacterOwner, UDamageType::StaticClass());
 		ExecuteGetHit(Hit);
 
-		//Debug::Print(TEXT("Hit: ") + Hit.GetActor()->GetName());
 	}
 
 

@@ -7,6 +7,7 @@
 #include "PanWolfWar/DebugHelper.h"
 
 #include "Kismet/KismetSystemLibrary.h"
+#include "Kismet/KismetMathLibrary.h"
 #include "Kismet/GameplayStatics.h"
 #include <PanWolfWar/PanWolfWarCharacter.h>
 
@@ -208,25 +209,52 @@ void ABaseEnemy::DeactivateCollision(FString CollisionPart)
 
 void ABaseEnemy::GetHit(const FVector& ImpactPoint, AActor* Hitter)
 {
-	if (IsAlive() && Hitter)
-	{
-		//DirectionalHitReact(Hitter->GetActorLocation()); 
-		FName Section = IHitInterface::DirectionalHitReact(GetOwner(), Hitter->GetActorLocation());
-		//Debug::Print(TEXT("Hit From : ") + Section.ToString());
-		PlayHitReactMontage(Section);
-		
-	}
-	else
-	{
-		FName Section = IHitInterface::DirectionalHitReact(GetOwner(), Hitter->GetActorLocation());
-		GetMesh()->SetSimulatePhysics(true);
-		GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-		ApplyHitReactionPhisicsVelocity(Section);
-	}
-		
-	CombatComponent->PlayHitSound(ImpactPoint);
-	CombatComponent->SpawnHitParticles(ImpactPoint);
+	//if (IsAlive() && Hitter)
+	//{
+	//	//DirectionalHitReact(Hitter->GetActorLocation()); 
+	//	FName Section = IHitInterface::DirectionalHitReact(GetOwner(), Hitter->GetActorLocation());
+	//	//Debug::Print(TEXT("Hit From : ") + Section.ToString());
+	//	PlayHitReactMontage(Section);
+	//	
+	//}
+	//else
+	//{
+	//	FName Section = IHitInterface::DirectionalHitReact(GetOwner(), Hitter->GetActorLocation());
+	//	GetMesh()->SetSimulatePhysics(true);
+	//	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	//	ApplyHitReactionPhisicsVelocity(Section);
+	//}
+	//	
+	//CombatComponent->PlayHitSound(ImpactPoint);
+	//CombatComponent->SpawnHitParticles(ImpactPoint);
+
+
+	const FRotator NewFaceRotation = UKismetMathLibrary::FindLookAtRotation(GetActorLocation(), Hitter->GetActorLocation());
+	SetActorRotation(NewFaceRotation);
 	
+	/*HitReact_Montages*/
+	if (HitReact_Montages.Num() == 0) return;
+	const int32 RandIndex = UKismetMathLibrary::RandomIntegerInRange(0, HitReact_Montages.Num()-1);
+	UAnimMontage* HitReact_Montage = HitReact_Montages[RandIndex];
+
+	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+	if (AnimInstance && HitReact_Montage)
+	{
+		AnimInstance->Montage_Play(HitReact_Montage);
+		GetMesh()->SetScalarParameterValueOnMaterials(FName("HitFxSwitch"), 1.f);
+
+		GetWorld()->GetTimerManager().ClearTimer(HitPause_TimerHandle);
+		UGameplayStatics::SetGlobalTimeDilation(this, 0.1f);
+		GetWorld()->GetTimerManager().SetTimer(HitPause_TimerHandle, [this, Hitter]() {this->HitPause(Hitter); }, 0.025f, false);
+	}
+
+}
+
+void ABaseEnemy::HitPause(AActor* Hitter)
+{
+	UGameplayStatics::SetGlobalTimeDilation(this, 1.f);
+	
+	Cast<APlayerController>(Cast<ACharacter>(Hitter)->GetController())->ClientStartCameraShake(CameraShake_Wolf);
 }
 
 void ABaseEnemy::PlayHitReactMontage(const FName& SectionName)

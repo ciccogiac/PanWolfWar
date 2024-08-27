@@ -62,6 +62,8 @@ private:
 	void FindNearestAI();
 	void ApplyHitReactionPhisicsVelocity(FName HitPart);
 
+	void HitPause(AActor* Hitter);
+
 protected:
 	bool bDied = false;
 	bool bSeen = false;
@@ -104,6 +106,14 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly, Category = Combat)
 	UAnimMontage* HitReactMontage;
+
+	UPROPERTY(EditDefaultsOnly, Category = Combat)
+	TArray<UAnimMontage*> HitReact_Montages;
+
+	UPROPERTY(EditDefaultsOnly, Category = Combat)
+	TSubclassOf<UCameraShakeBase> CameraShake_Wolf;
+
+	FTimerHandle HitPause_TimerHandle;
 
 public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "AI")
