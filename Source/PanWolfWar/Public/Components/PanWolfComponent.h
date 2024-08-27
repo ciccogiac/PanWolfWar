@@ -37,6 +37,8 @@ private:
 	void ResetLightAttackComboCount();
 	void ResetHeavyAttackComboCount();
 
+	bool IsPlayingMontage_ExcludingBlendOut();
+
 	UFUNCTION()
 	void OnMontageEnded(UAnimMontage* Montage, bool bInterrupted);
 

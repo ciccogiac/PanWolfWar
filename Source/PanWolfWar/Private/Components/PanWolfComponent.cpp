@@ -63,6 +63,9 @@ void UPanWolfComponent::Deactivate()
 
 void UPanWolfComponent::Jump()
 {
+	//if (IsPlayingMontage_ExcludingBlendOut()) return;
+	if (OwningPlayerAnimInstance->IsAnyMontagePlaying()) return;
+
 	CharacterOwner->Jump();
 }
 
@@ -84,15 +87,42 @@ void UPanWolfComponent::Dodge()
 
 void UPanWolfComponent::OnMontageEnded(UAnimMontage* Montage, bool bInterrupted)
 {
+
 	if (LightAttackMontages.FindKey(Montage))
 	{
-		GetWorld()->GetTimerManager().SetTimer(ComboLightCountReset_TimerHandle, [this]() {this->ResetLightAttackComboCount(); }, 0.3f, false);
+		if (bInterrupted) return;
+		GetWorld()->GetTimerManager().SetTimer(ComboLightCountReset_TimerHandle, [this]() {this->ResetLightAttackComboCount(); }, 0.025f, false);
 	}
 
 	else if (HeavyAttackMontages.FindKey(Montage))
 	{
-		GetWorld()->GetTimerManager().SetTimer(ComboHeavyCountReset_TimerHandle, [this]() {this->ResetHeavyAttackComboCount(); }, 0.3f, false);
+		if (bInterrupted) return;
+		GetWorld()->GetTimerManager().SetTimer(ComboHeavyCountReset_TimerHandle, [this]() {this->ResetHeavyAttackComboCount(); }, 0.025f, false);
 	}
+}
+
+bool UPanWolfComponent::IsPlayingMontage_ExcludingBlendOut()
+{
+	if (!OwningPlayerAnimInstance) return false;
+
+	// Ottieni il montaggio corrente
+	UAnimMontage* CurrentMontage = OwningPlayerAnimInstance->GetCurrentActiveMontage();
+
+	if (CurrentMontage && OwningPlayerAnimInstance->Montage_IsPlaying(CurrentMontage))
+	{
+		float CurrentMontagePosition = OwningPlayerAnimInstance->Montage_GetPosition(CurrentMontage);
+		float MontageBlendOutTime = CurrentMontage->BlendOut.GetBlendTime();
+		float MontageDuration = CurrentMontage->GetPlayLength();
+
+		if ((CurrentMontagePosition >= MontageDuration - MontageBlendOutTime))
+		{
+			return false;
+		}
+		else
+			return true;
+	}
+	else
+		return false;
 }
 
 void UPanWolfComponent::LightAttack()
@@ -124,7 +154,27 @@ void UPanWolfComponent::LightAttack()
 
 
 	//
-	if (!OwningPlayerAnimInstance || OwningPlayerAnimInstance->IsAnyMontagePlaying()) return;
+
+	//if (!OwningPlayerAnimInstance) return;
+
+	//// Ottieni il montaggio corrente
+	//UAnimMontage* CurrentMontage = OwningPlayerAnimInstance->GetCurrentActiveMontage();
+
+	//if (CurrentMontage && OwningPlayerAnimInstance->Montage_IsPlaying(CurrentMontage))
+	//{
+	//	float CurrentMontagePosition = OwningPlayerAnimInstance->Montage_GetPosition(CurrentMontage);
+	//	float MontageBlendOutTime = CurrentMontage->BlendOut.GetBlendTime();
+	//	float MontageDuration = CurrentMontage->GetPlayLength();
+
+	//	if (!(CurrentMontagePosition >= MontageDuration - MontageBlendOutTime))
+	//	{
+	//		return;
+	//	}
+	//}
+
+	if (!OwningPlayerAnimInstance) return;
+	if (IsPlayingMontage_ExcludingBlendOut()) return;
+
 
 	GetWorld()->GetTimerManager().ClearTimer(ComboLightCountReset_TimerHandle);
 	UAnimMontage* AttackMontage = *LightAttackMontages.Find(CurrentLightAttackComboCount);
@@ -135,6 +185,8 @@ void UPanWolfComponent::LightAttack()
 	if (CurrentLightAttackComboCount == LightAttackMontages.Num()) { ResetLightAttackComboCount(); return; }
 
 	if (CurrentLightAttackComboCount == (LightAttackMontages.Num() - 1)) { bJumpToFinisher = true; }
+	else ResetHeavyAttackComboCount();
+
 	CurrentLightAttackComboCount++;
 
 	
@@ -144,6 +196,7 @@ void UPanWolfComponent::LightAttack()
 void UPanWolfComponent::ResetLightAttackComboCount()
 {
 	CurrentLightAttackComboCount = 1;
+	/*CurrentHeavyAttackComboCount = 1;*/
 	bJumpToFinisher = false;
 }
 
@@ -151,7 +204,10 @@ void UPanWolfComponent::HeavyAttack()
 {
 	//CombatComponent->PerformAttack(EAttackType::EAT_HeavyAttack);
 
-	if (!OwningPlayerAnimInstance || OwningPlayerAnimInstance->IsAnyMontagePlaying()) return;
+	//if (!OwningPlayerAnimInstance || OwningPlayerAnimInstance->IsAnyMontagePlaying()) return;
+
+	if (!OwningPlayerAnimInstance) return;
+	if (IsPlayingMontage_ExcludingBlendOut()) return;
 
 	GetWorld()->GetTimerManager().ClearTimer(ComboHeavyCountReset_TimerHandle);
 	if (bJumpToFinisher) { CurrentHeavyAttackComboCount = HeavyAttackMontages.Num(); }
@@ -160,13 +216,18 @@ void UPanWolfComponent::HeavyAttack()
 
 	OwningPlayerAnimInstance->Montage_Play(AttackMontage);
 
+	ResetLightAttackComboCount();
+
 	if (CurrentHeavyAttackComboCount == HeavyAttackMontages.Num()) { ResetHeavyAttackComboCount(); return; }
+
+
 	CurrentHeavyAttackComboCount++;
 }
 
 void UPanWolfComponent::ResetHeavyAttackComboCount()
 {
 	CurrentHeavyAttackComboCount = 1;
+	/*CurrentLightAttackComboCount = 1;*/
 	bJumpToFinisher = false;
 }
 
