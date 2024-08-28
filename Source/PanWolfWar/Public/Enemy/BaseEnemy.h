@@ -16,6 +16,7 @@ class UEnemyCombatComponent;
 class UWidgetComponent;
 class UBaseEnemyWidget;
 class UEnemyUIComponent;
+class UEnemyAttributeComponent;
 
 UCLASS()
 class PANWOLFWAR_API ABaseEnemy : public ACharacter, public ICombatInterface, public IHitInterface , public ITargetInterface, public IPawnUIInterface
@@ -78,9 +79,7 @@ private:
 protected:
 	bool bDied = false;
 	bool bSeen = false;
-	float Health = 100.f;
-	float AttackPower = 1.f;
-	float DefensePower = 1.f;
+
 	ACharacter* Player;
 	UAnimInstance* AnimInstance;
 
@@ -115,6 +114,9 @@ protected:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components", meta = (AllowPrivateAccess = "true"))
 	UBaseEnemyWidget* BaseEnemyWidget;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components", meta = (AllowPrivateAccess = "true"))
+	UEnemyAttributeComponent* EnemyAttributeComponent;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Sliding", meta = (AllowPrivateAccess = "true"))
 	class UAnimMontage* AttackMontage;

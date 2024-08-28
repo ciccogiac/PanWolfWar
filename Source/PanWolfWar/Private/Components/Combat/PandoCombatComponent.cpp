@@ -123,9 +123,9 @@ float UPandoCombatComponent::CalculateFinalDamage(float BaseDamage, float Target
 		//Debug::Print(TEXT("ScaledBaseDamageHeavy: ") + FString::SanitizeFloat(BaseDamage));
 	}
 
-	const float FinalDamageDone = BaseDamage * SourceAttackPower / TargetDefensePower;
+	const float FinalDamageDone = BaseDamage * AttackPower / TargetDefensePower;
 
-	return BaseDamage;
+	return FinalDamageDone;
 }
 
 #pragma endregion

@@ -92,4 +92,14 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Collision Trace", meta = (AllowPrivateAccess = "true"))
 	bool ShowDebugTrace = false;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Combat Stats", meta = (AllowPrivateAccess = "true"))
+	float AttackPower = 1.f;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Combat Stats", meta = (AllowPrivateAccess = "true"))
+	float DefensePower = 1.f;
+
+
+public:
+	FORCEINLINE float GetDefensePower() const { return DefensePower; }
 };

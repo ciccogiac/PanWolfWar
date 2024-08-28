@@ -6,6 +6,8 @@
 #include "Kismet/GameplayStatics.h"
 #include "Interfaces/CombatInterface.h"
 
+#include "PanWolfWar/DebugHelper.h"
+
 #pragma region EngineFunctions
 
 UPawnCombatComponent::UPawnCombatComponent()

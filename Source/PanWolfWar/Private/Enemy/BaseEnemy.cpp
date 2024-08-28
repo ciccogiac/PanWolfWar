@@ -18,6 +18,8 @@
 #include "Components/UI/EnemyUIComponent.h"
 #include "Widgets/PanWarWidgetBase.h"
 
+#include "Components/EnemyAttributeComponent.h"
+
 #include "Perception/AISense_Damage.h"
 
 ABaseEnemy::ABaseEnemy()
@@ -37,11 +39,29 @@ ABaseEnemy::ABaseEnemy()
 	CombatComponent = CreateDefaultSubobject<UCombatComponent>(TEXT("CombatComponent"));
 	EnemyCombatComponent = CreateDefaultSubobject<UEnemyCombatComponent>(TEXT("EnemyCombatComponent"));
 	EnemyUIComponent = CreateDefaultSubobject<UEnemyUIComponent>("EnemyUIComponent");
+	EnemyAttributeComponent = CreateDefaultSubobject<UEnemyAttributeComponent>("EnemyAttributeComponent");
 
 	EnemyHealthBarWidgetComponent = CreateDefaultSubobject<UWidgetComponent>(TEXT("EnemyHealthBarWidgetComponent"));
 	EnemyHealthBarWidgetComponent->SetupAttachment(GetMesh());
 
 	Tags.Add(FName("Enemy"));
+}
+
+void ABaseEnemy::BeginPlay()
+{
+	Super::BeginPlay();
+
+	BaseAIController = Cast<ABaseAIController>(GetController());
+	Player = UGameplayStatics::GetPlayerCharacter(this, 0);
+	AnimInstance = GetMesh()->GetAnimInstance();
+
+	/*BaseEnemyWidget = Cast<UBaseEnemyWidget>(EnemyWidgetComponent->GetWidget());*/
+
+	if (UPanWarWidgetBase* HealthWidget = Cast<UPanWarWidgetBase>(EnemyHealthBarWidgetComponent->GetUserWidgetObject()))
+	{
+		HealthWidget->InitEnemyCreatedWidget(this);
+		EnemyUIComponent->OnCurrentHealthChanged.Broadcast(EnemyAttributeComponent->GetHealthPercent());
+	}
 }
 
 UPawnUIComponent* ABaseEnemy::GetPawnUIComponent() const
@@ -106,22 +126,7 @@ void ABaseEnemy::SetPlayerVisibility(bool NewVisibility)
 		
 }
 
-void ABaseEnemy::BeginPlay()
-{
-	Super::BeginPlay();
-	
-	BaseAIController = Cast<ABaseAIController>(GetController());
-	Player =  UGameplayStatics::GetPlayerCharacter(this, 0 );
-	AnimInstance = GetMesh()->GetAnimInstance();
 
-	/*BaseEnemyWidget = Cast<UBaseEnemyWidget>(EnemyWidgetComponent->GetWidget());*/
-
-	if (UPanWarWidgetBase* HealthWidget = Cast<UPanWarWidgetBase>(EnemyHealthBarWidgetComponent->GetUserWidgetObject()))
-	{
-		HealthWidget->InitEnemyCreatedWidget(this);
-		EnemyUIComponent->OnCurrentHealthChanged.Broadcast(Health / 100.f);
-	}
-}
 
 void ABaseEnemy::Die()
 {
@@ -308,10 +313,11 @@ float ABaseEnemy::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent
 		
 	return DamageAmount;*/
 
-	Health = FMath::Clamp(Health - DamageAmount, 0.f, 100.f);
-	EnemyUIComponent->OnCurrentHealthChanged.Broadcast(Health / 100.f);
+	//Health = FMath::Clamp(Health - DamageAmount, 0.f, 100.f);
+	EnemyAttributeComponent->ReceiveDamage(DamageAmount);
+	EnemyUIComponent->OnCurrentHealthChanged.Broadcast(EnemyAttributeComponent->GetHealthPercent());
 
-	if (Health <= 0)
+	if (!EnemyAttributeComponent->IsAlive() && !bDied)
 	{
 		bDied = true;
 
@@ -364,5 +370,5 @@ void ABaseEnemy::ApplyHitReactionPhisicsVelocity(FName HitPart)
 
 float ABaseEnemy::GetDefensePower()
 {
-	return DefensePower;
+	return EnemyCombatComponent->GetDefensePower();
 }
