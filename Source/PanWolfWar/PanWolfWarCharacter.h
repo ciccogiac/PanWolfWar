@@ -69,6 +69,8 @@ public:
 	virtual float PerformAttack() override;
 	virtual bool IsUnderAttack() override;
 	virtual void SetUnderAttack() override;
+	virtual float GetDefensePower() override;
+	virtual void OnDeathEnter() override;
 
 	void ResetUnderAttack() ;
 	//HitInterface

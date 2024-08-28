@@ -4,6 +4,7 @@
 #include "Kismet/KismetSystemLibrary.h"
 #include "Interfaces/HitInterface.h"
 #include "Kismet/GameplayStatics.h"
+#include "Interfaces/CombatInterface.h"
 
 #pragma region EngineFunctions
 
@@ -60,7 +61,8 @@ void UPawnCombatComponent::TraceLoop()
 	TArray<FHitResult> HitResults;
 	TArray<TEnumAsByte<EObjectTypeQuery> > CombatObjectTypes;
 	CombatObjectTypes.Add(EObjectTypeQuery::ObjectTypeQuery3);
-	const bool bTraceHit = UKismetSystemLibrary::SphereTraceMultiForObjects(this, Start, End, Radius, CombatObjectTypes, false, AlreadyHitActor, EDrawDebugTrace::None, HitResults, true);
+	EDrawDebugTrace::Type DebugTraceType = ShowDebugTrace ? EDrawDebugTrace::ForOneFrame : EDrawDebugTrace::None;
+	const bool bTraceHit = UKismetSystemLibrary::SphereTraceMultiForObjects(this, Start, End, Radius, CombatObjectTypes, false, AlreadyHitActor, DebugTraceType, HitResults, true);
 
 	if (!bTraceHit) return;
 
@@ -74,7 +76,7 @@ void UPawnCombatComponent::TraceLoop()
 
 		if (ActorIsSameType(Hit.GetActor())) continue;
 
-		//UGameplayStatics::ApplyDamage(Hit.GetActor(), ActiveCollisionPart->Damage, CharacterOwner->GetInstigator()->GetController(), CharacterOwner, UDamageType::StaticClass());
+		ApplyDamageToActorHit(Hit.GetActor(), ActiveCollisionPart->Damage, CharacterOwner->GetInstigator()->GetController(), CharacterOwner, UDamageType::StaticClass());
 		ExecuteHitActor(Hit);
 
 	}
@@ -91,6 +93,15 @@ bool UPawnCombatComponent::ActorIsSameType(AActor* OtherActor)
 	/*return CharacterOwner->ActorHasTag(TEXT("Enemy")) && OtherActor->ActorHasTag(TEXT("Enemy"));*/
 }
 
+void UPawnCombatComponent::ApplyDamageToActorHit(AActor* DamagedActor, float BaseDamage, AController* EventInstigator, AActor* DamageCauser, TSubclassOf<UDamageType> DamageTypeClass)
+{
+	/*UGameplayStatics::ApplyDamage(Hit.GetActor(), ActiveCollisionPart->Damage, CharacterOwner->GetInstigator()->GetController(), CharacterOwner, UDamageType::StaticClass());*/
+	const float TargetDefensePower = Cast<ICombatInterface>(DamagedActor)->GetDefensePower();
+
+	const float FinalDamage = CalculateFinalDamage(BaseDamage, TargetDefensePower);
+	UGameplayStatics::ApplyDamage(DamagedActor, FinalDamage, EventInstigator, DamageCauser, DamageTypeClass);
+}
+
 bool UPawnCombatComponent::ExecuteHitActor(FHitResult& Hit)
 {
 	IHitInterface* HitInterface = Cast<IHitInterface>(Hit.GetActor());
@@ -101,6 +112,11 @@ bool UPawnCombatComponent::ExecuteHitActor(FHitResult& Hit)
 	}
 
 	return false;
+}
+
+float UPawnCombatComponent::CalculateFinalDamage(float BaseDamage,float TargetDefensePower)
+{
+	return BaseDamage;
 }
 
 #pragma endregion

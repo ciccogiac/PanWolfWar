@@ -107,6 +107,7 @@ void ABaseEnemy::BeginPlay()
 	
 	BaseAIController = Cast<ABaseAIController>(GetController());
 	Player =  UGameplayStatics::GetPlayerCharacter(this, 0 );
+	AnimInstance = GetMesh()->GetAnimInstance();
 
 	BaseEnemyWidget = Cast<UBaseEnemyWidget>(EnemyWidgetComponent->GetWidget());
 }
@@ -229,6 +230,7 @@ void ABaseEnemy::GetHit(const FVector& ImpactPoint, AActor* Hitter)
 	//CombatComponent->PlayHitSound(ImpactPoint);
 	//CombatComponent->SpawnHitParticles(ImpactPoint);
 
+	if (!IsAlive() || !Hitter) return;
 
 	const FRotator NewFaceRotation = UKismetMathLibrary::FindLookAtRotation(GetActorLocation(), Hitter->GetActorLocation());
 	SetActorRotation(NewFaceRotation);
@@ -238,7 +240,6 @@ void ABaseEnemy::GetHit(const FVector& ImpactPoint, AActor* Hitter)
 	const int32 RandIndex = UKismetMathLibrary::RandomIntegerInRange(0, HitReact_Montages.Num()-1);
 	UAnimMontage* HitReact_Montage = HitReact_Montages[RandIndex];
 
-	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
 	if (AnimInstance && HitReact_Montage)
 	{
 		AnimInstance->Montage_Play(HitReact_Montage);
@@ -253,7 +254,7 @@ void ABaseEnemy::GetHit(const FVector& ImpactPoint, AActor* Hitter)
 
 void ABaseEnemy::PlayHitReactMontage(const FName& SectionName)
 {
-	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+	//UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
 	if (AnimInstance && HitReactMontage)
 	{
 		AnimInstance->Montage_Play(HitReactMontage);
@@ -275,7 +276,7 @@ float ABaseEnemy::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent
 	}*/
 
 	
-	Health = FMath::Clamp(Health - DamageAmount, 0.f, 100.f);
+	/*Health = FMath::Clamp(Health - DamageAmount, 0.f, 100.f);
 	BaseEnemyWidget->SetHealthBarPercent(Health/100.f);
 	
 	if (Health <= 0)
@@ -294,7 +295,44 @@ float ABaseEnemy::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent
 		BaseAIController->ReportDamageEvent(this, DamageCauser, DamageAmount, GetActorLocation());
 
 		
+	return DamageAmount;*/
+
+	Health = FMath::Clamp(Health - DamageAmount, 0.f, 100.f);
+
+	if (Health <= 0)
+	{
+		bDied = true;
+
+		if (Death_Montages.Num() != 0)
+		{
+			const int32 RandIndex = UKismetMathLibrary::RandomIntegerInRange(0, Death_Montages.Num() - 1);
+			UAnimMontage* Death_Montage = Death_Montages[RandIndex];
+
+			if (AnimInstance && Death_Montage)
+			{
+				AnimInstance->Montage_Play(Death_Montage);
+			}
+		}
+		if(Death_Sound)
+			UGameplayStatics::PlaySoundAtLocation(this, Death_Sound, GetActorLocation());
+
+		/*GetMesh()->SetSimulatePhysics(true);
+		GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
+		FTimerHandle Die_TimerHandle;
+		GetWorld()->GetTimerManager().SetTimer(Die_TimerHandle, [this]() {this->Destroy(); }, 5.f, false);*/
+	}
+	Debug::Print(TEXT("CurrentHealth: ") + FString::SanitizeFloat(Health));
+
 	return DamageAmount;
+}
+
+void ABaseEnemy::OnDeathEnter()
+{
+	GetMesh()->bPauseAnims = true;
+	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
+	OnEnemyDie_Event();
 }
 
 void ABaseEnemy::ApplyHitReactionPhisicsVelocity(FName HitPart)
@@ -305,10 +343,15 @@ void ABaseEnemy::ApplyHitReactionPhisicsVelocity(FName HitPart)
 		NewVel = GetActorForwardVector() * (-4000.f);
 	else if (HitPart == FName(" FromBack"))
 		NewVel = GetActorForwardVector() * (4000.f);
-	else if (HitPart == FName("FromRight") )
+	else if (HitPart == FName("FromRight"))
 		NewVel = GetActorRightVector() * (-4000.f);
 	else if (HitPart == FName(" FromLeft"))
 		NewVel = GetActorRightVector() * (4000.f);
 
 	GetMesh()->SetPhysicsLinearVelocity(NewVel, false, FName("pelvis"));
+}
+
+float ABaseEnemy::GetDefensePower()
+{
+	return DefensePower;
 }

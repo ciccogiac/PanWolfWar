@@ -62,6 +62,7 @@ protected:
 	virtual bool ExecuteHitActor(FHitResult& Hit);
 
 	virtual void HandleNewAnimInstance();
+	virtual float CalculateFinalDamage(float BaseDamage, float TargetDefensePower);
 
 private:
 
@@ -69,6 +70,7 @@ private:
 
 	bool ActorIsSameType(AActor* OtherActor);
 
+	void ApplyDamageToActorHit(AActor* DamagedActor, float BaseDamage, AController* EventInstigator, AActor* DamageCauser, TSubclassOf<UDamageType> DamageTypeClass);
 
 protected:
 	ACharacter* CharacterOwner;
@@ -87,4 +89,7 @@ protected:
 
 	FCollisionPartStruct* ActiveCollisionPart = nullptr;
 	TArray<AActor*> AlreadyHitActor = TArray<AActor*>();
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Collision Trace", meta = (AllowPrivateAccess = "true"))
+	bool ShowDebugTrace = false;
 };

@@ -45,6 +45,8 @@ void UPandoCombatComponent::LightAttack()
 	if (!AttackMontage) return;
 
 	OwningPlayerAnimInstance->Montage_Play(AttackMontage);
+	LastAttackType = EAttackType::EAT_LightAttack;
+	UsedLightComboCount = CurrentLightAttackComboCount;
 
 	if (CurrentLightAttackComboCount == LightAttackMontages.Num()) { ResetLightAttackComboCount(); return; }
 
@@ -62,6 +64,8 @@ void UPandoCombatComponent::HeavyAttack()
 	if (!AttackMontage) return;
 
 	OwningPlayerAnimInstance->Montage_Play(AttackMontage);
+	LastAttackType = EAttackType::EAT_HeavyAttack;
+	UsedHeavyComboCount = CurrentHeavyAttackComboCount;
 
 	ResetLightAttackComboCount();
 
@@ -97,6 +101,31 @@ void UPandoCombatComponent::OnAttackMontageEnded(UAnimMontage* Montage, bool bIn
 		if (bInterrupted) return;
 		GetWorld()->GetTimerManager().SetTimer(ComboHeavyCountReset_TimerHandle, [this]() {this->ResetHeavyAttackComboCount(); }, 0.025f, false);
 	}
+}
+
+float UPandoCombatComponent::CalculateFinalDamage(float BaseDamage, float TargetDefensePower)
+{
+	if (LastAttackType == EAttackType::EAT_LightAttack)
+	{
+		const float DamageIncreasePercentLight = (UsedLightComboCount - 1)  * 0.05f + 1.f ;
+
+		BaseDamage *= DamageIncreasePercentLight;
+		//Debug::Print(TEXT("LightAttack: ") + FString::SanitizeFloat(UsedLightComboCount ) );
+		//Debug::Print(TEXT("ScaledBaseDamageLight: ") + FString::SanitizeFloat(BaseDamage));
+	}
+
+	else if (LastAttackType == EAttackType::EAT_HeavyAttack)
+	{
+		const float DamageIncreasePercentHeavy = UsedHeavyComboCount * 0.15f + 1.f;
+
+		BaseDamage *= DamageIncreasePercentHeavy;
+		//Debug::Print(TEXT("HeavyAttack: ") + FString::SanitizeFloat(UsedHeavyComboCount));
+		//Debug::Print(TEXT("ScaledBaseDamageHeavy: ") + FString::SanitizeFloat(BaseDamage));
+	}
+
+	const float FinalDamageDone = BaseDamage * SourceAttackPower / TargetDefensePower;
+
+	return BaseDamage;
 }
 
 #pragma endregion

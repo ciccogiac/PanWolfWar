@@ -38,6 +38,8 @@ public:
 	virtual float PerformAttack() override;
 	virtual bool IsUnderAttack() override;
 	virtual void SetUnderAttack() override;
+	virtual float GetDefensePower() override;
+	virtual void OnDeathEnter() override;
 
 	//HitInterface
 	virtual void GetHit(const FVector& ImpactPoint, AActor* Hitter) override;
@@ -59,6 +61,9 @@ protected:
 
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 
+	UFUNCTION(BlueprintImplementableEvent)
+	void OnEnemyDie_Event();
+
 private:	
 
 	void FindNearestAI();
@@ -68,7 +73,10 @@ protected:
 	bool bDied = false;
 	bool bSeen = false;
 	float Health = 100.f;
+	float AttackPower = 1.f;
+	float DefensePower = 1.f;
 	ACharacter* Player;
+	UAnimInstance* AnimInstance;
 
 	FTimerHandle FindEnemies_TimerHandle;
 
@@ -112,6 +120,12 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly, Category = Combat)
 	TArray<UAnimMontage*> HitReact_Montages;
+
+	UPROPERTY(EditDefaultsOnly, Category = Combat)
+	TArray<UAnimMontage*> Death_Montages;
+
+	UPROPERTY(EditAnywhere, Category = Combat)
+	USoundBase* Death_Sound;
 
 public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "AI")

@@ -639,4 +639,14 @@ void APanWolfWarCharacter::Die()
 	GetWorld()->GetTimerManager().SetTimer(Die_TimerHandle, [this]() {this->Destroy(); }, 5.f, false);
 }
 
+float APanWolfWarCharacter::GetDefensePower()
+{
+	return 1.f;
+}
+
+void APanWolfWarCharacter::OnDeathEnter()
+{
+	return ;
+}
+
 #pragma endregion

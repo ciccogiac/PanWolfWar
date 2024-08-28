@@ -35,6 +35,7 @@ private:
 	void ResetHeavyAttackComboCount();
 
 	virtual void HandleNewAnimInstance();
+	virtual float CalculateFinalDamage(float BaseDamage, float TargetDefensePower) override;
 
 	UFUNCTION()
 	void OnAttackMontageEnded(UAnimMontage* Montage, bool bInterrupted);
@@ -57,4 +58,9 @@ private:
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Attack Montages", meta = (AllowPrivateAccess = "true"))
 	TMap<int32, UAnimMontage*> HeavyAttackMontages;
+
+	float SourceAttackPower = 1.f;
+	EAttackType LastAttackType;
+	int32 UsedLightComboCount;
+	int32 UsedHeavyComboCount;
 };

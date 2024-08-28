@@ -35,4 +35,8 @@ public:
 	virtual bool IsUnderAttack() = 0;
 	UFUNCTION(BlueprintCallable)
 	virtual void SetUnderAttack() = 0;
+	UFUNCTION(BlueprintCallable)
+	virtual float GetDefensePower() = 0;
+	UFUNCTION(BlueprintCallable)
+	virtual void OnDeathEnter() = 0;
 };
