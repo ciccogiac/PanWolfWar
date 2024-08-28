@@ -650,3 +650,8 @@ void APanWolfWarCharacter::OnDeathEnter()
 }
 
 #pragma endregion
+
+UPawnUIComponent* APanWolfWarCharacter::GetPawnUIComponent() const
+{
+	return nullptr;
+}

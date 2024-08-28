@@ -15,6 +15,8 @@
 #include "Components/CapsuleComponent.h"
 
 #include "UserWidgets/BaseEnemyWidget.h"
+#include "Components/UI/EnemyUIComponent.h"
+#include "Widgets/PanWarWidgetBase.h"
 
 #include "Perception/AISense_Damage.h"
 
@@ -31,22 +33,25 @@ ABaseEnemy::ABaseEnemy()
 	}
 
 	
-	
-
-	EnemyWidgetComponent = CreateDefaultSubobject<UWidgetComponent>(TEXT("EnemyWidgetComponent"));
-	if (EnemyWidgetComponent)
-	{
-		EnemyWidgetComponent->SetWidgetSpace(EWidgetSpace::Screen);
-		EnemyWidgetComponent->SetVisibility(false);
-		EnemyWidgetComponent->SetupAttachment(GetRootComponent());
-		
-	}
-
 	MotionWarping = CreateDefaultSubobject<UMotionWarpingComponent>(TEXT("Motion Warping"));
 	CombatComponent = CreateDefaultSubobject<UCombatComponent>(TEXT("CombatComponent"));
 	EnemyCombatComponent = CreateDefaultSubobject<UEnemyCombatComponent>(TEXT("EnemyCombatComponent"));
+	EnemyUIComponent = CreateDefaultSubobject<UEnemyUIComponent>("EnemyUIComponent");
+
+	EnemyHealthBarWidgetComponent = CreateDefaultSubobject<UWidgetComponent>(TEXT("EnemyHealthBarWidgetComponent"));
+	EnemyHealthBarWidgetComponent->SetupAttachment(GetMesh());
 
 	Tags.Add(FName("Enemy"));
+}
+
+UPawnUIComponent* ABaseEnemy::GetPawnUIComponent() const
+{
+	return EnemyUIComponent;
+}
+
+UEnemyUIComponent* ABaseEnemy::GetEnemyUIComponent() const
+{
+	return EnemyUIComponent;
 }
 
 void ABaseEnemy::SetTargetVisibility(bool NewVisibility)
@@ -90,13 +95,13 @@ void ABaseEnemy::SetPlayerVisibility(bool NewVisibility)
 		FindNearestAI();
 		GetWorld()->GetTimerManager().SetTimer(FindEnemies_TimerHandle, [this]() {this->FindNearestAI(); }, 3.f, true);
 
-		EnemyWidgetComponent->SetVisibility(true);
+		EnemyHealthBarWidgetComponent->SetVisibility(true);
 	}
 	else
 	{
 		GetWorld()->GetTimerManager().ClearTimer(FindEnemies_TimerHandle);
 
-		EnemyWidgetComponent->SetVisibility(false);
+		EnemyHealthBarWidgetComponent->SetVisibility(false);
 	}
 		
 }
@@ -109,7 +114,13 @@ void ABaseEnemy::BeginPlay()
 	Player =  UGameplayStatics::GetPlayerCharacter(this, 0 );
 	AnimInstance = GetMesh()->GetAnimInstance();
 
-	BaseEnemyWidget = Cast<UBaseEnemyWidget>(EnemyWidgetComponent->GetWidget());
+	/*BaseEnemyWidget = Cast<UBaseEnemyWidget>(EnemyWidgetComponent->GetWidget());*/
+
+	if (UPanWarWidgetBase* HealthWidget = Cast<UPanWarWidgetBase>(EnemyHealthBarWidgetComponent->GetUserWidgetObject()))
+	{
+		HealthWidget->InitEnemyCreatedWidget(this);
+		EnemyUIComponent->OnCurrentHealthChanged.Broadcast(Health / 100.f);
+	}
 }
 
 void ABaseEnemy::Die()
@@ -298,6 +309,7 @@ float ABaseEnemy::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent
 	return DamageAmount;*/
 
 	Health = FMath::Clamp(Health - DamageAmount, 0.f, 100.f);
+	EnemyUIComponent->OnCurrentHealthChanged.Broadcast(Health / 100.f);
 
 	if (Health <= 0)
 	{
@@ -322,7 +334,6 @@ float ABaseEnemy::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent
 		FTimerHandle Die_TimerHandle;
 		GetWorld()->GetTimerManager().SetTimer(Die_TimerHandle, [this]() {this->Destroy(); }, 5.f, false);*/
 	}
-	Debug::Print(TEXT("CurrentHealth: ") + FString::SanitizeFloat(Health));
 
 	return DamageAmount;
 }

@@ -6,6 +6,7 @@
 #include "Interfaces/CombatInterface.h"
 #include "Interfaces/HitInterface.h"
 #include "Interfaces/TargetInterface.h"
+#include "Interfaces/PawnUIInterface.h"
 #include "BaseEnemy.generated.h"
 
 
@@ -14,10 +15,10 @@ class UCombatComponent;
 class UEnemyCombatComponent;
 class UWidgetComponent;
 class UBaseEnemyWidget;
-
+class UEnemyUIComponent;
 
 UCLASS()
-class PANWOLFWAR_API ABaseEnemy : public ACharacter, public ICombatInterface, public IHitInterface , public ITargetInterface
+class PANWOLFWAR_API ABaseEnemy : public ACharacter, public ICombatInterface, public IHitInterface , public ITargetInterface, public IPawnUIInterface
 {
 	GENERATED_BODY()
 
@@ -43,6 +44,11 @@ public:
 
 	//HitInterface
 	virtual void GetHit(const FVector& ImpactPoint, AActor* Hitter) override;
+
+	//~ Begin IPawnUIInterface Interface.
+	virtual UPawnUIComponent* GetPawnUIComponent() const override;
+	virtual UEnemyUIComponent* GetEnemyUIComponent() const override;
+	//~ End IPawnUIInterface Interface
 
 protected:
 	virtual void BeginPlay() override;
@@ -85,7 +91,8 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAcces = "true"))
 	class UMotionWarpingComponent* MotionWarping;
 
-
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "UI")
+	UEnemyUIComponent* EnemyUIComponent;
 	
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Movement, meta = (AllowPrivateAccess = "true"))
@@ -104,7 +111,7 @@ protected:
 	UWidgetComponent* EnemyTargetWidget;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components", meta = (AllowPrivateAccess = "true"))
-	UWidgetComponent* EnemyWidgetComponent;
+	UWidgetComponent* EnemyHealthBarWidgetComponent;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components", meta = (AllowPrivateAccess = "true"))
 	UBaseEnemyWidget* BaseEnemyWidget;

@@ -9,6 +9,7 @@
 #include "Interfaces/CharacterInterface.h"
 #include "Interfaces/CombatInterface.h"
 #include "Interfaces/HitInterface.h"
+#include "Interfaces/PawnUIInterface.h"
 #include "PanWolfWarCharacter.generated.h"
 
 class UPandoCombatComponent;
@@ -34,7 +35,7 @@ class UTargetingComponent;
 DECLARE_LOG_CATEGORY_EXTERN(LogTemplateCharacter, Log, All);
 
 UCLASS(config=Game, Blueprintable)
-class APanWolfWarCharacter : public ACharacter , public IInteractInterface , public ICharacterInterface, public ICombatInterface , public IHitInterface
+class APanWolfWarCharacter : public ACharacter , public IInteractInterface , public ICharacterInterface, public ICombatInterface , public IHitInterface ,  public IPawnUIInterface
 {
 	GENERATED_BODY()
 
@@ -75,6 +76,11 @@ public:
 	void ResetUnderAttack() ;
 	//HitInterface
 	virtual void GetHit(const FVector& ImpactPoint, AActor* Hitter) override;
+
+	//~ Begin IPawnUIInterface Interface.
+	virtual UPawnUIComponent* GetPawnUIComponent() const override;
+	//~ End IPawnUIInterface Interface
+
 	#pragma region InputCallback
 
 	void Move(const FInputActionValue& Value);
