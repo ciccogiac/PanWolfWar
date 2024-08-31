@@ -18,6 +18,13 @@ class UBaseEnemyWidget;
 class UEnemyUIComponent;
 class UEnemyAttributeComponent;
 
+UENUM(BlueprintType)
+enum class EEnemyState : uint8
+{
+	EES_Default UMETA(DisplayName = "Default"),
+	EES_Strafing UMETA(DisplayName = "Strafing"),
+};
+
 UCLASS()
 class PANWOLFWAR_API ABaseEnemy : public ACharacter, public ICombatInterface, public IHitInterface , public ITargetInterface, public IPawnUIInterface
 {
@@ -79,6 +86,7 @@ private:
 protected:
 	bool bDied = false;
 	bool bSeen = false;
+	EEnemyState EnemyState;
 
 	ACharacter* Player;
 	UAnimInstance* AnimInstance;
@@ -151,4 +159,13 @@ public:
 	FORCEINLINE AActor* GetCombatTarget() const { return CombatTarget; }
 
 	FORCEINLINE bool IsAware() const { return bSeen; }
+
+	UFUNCTION(BlueprintCallable)
+	FORCEINLINE void SetEnemyState(EEnemyState NewState) { EnemyState = NewState; }
+
+	UFUNCTION(BlueprintPure, meta = (BlueprintThreadSafe))
+	FORCEINLINE EEnemyState GetEnemyState() const { return EnemyState; }
+
+	UFUNCTION(BlueprintPure, meta = (BlueprintThreadSafe))
+	FORCEINLINE bool IsEnemyStateEqualTo(EEnemyState StateToCheck) const { return EnemyState == StateToCheck; }
 };

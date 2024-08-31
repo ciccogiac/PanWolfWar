@@ -62,6 +62,8 @@ void ABaseEnemy::BeginPlay()
 		HealthWidget->InitEnemyCreatedWidget(this);
 		EnemyUIComponent->OnCurrentHealthChanged.Broadcast(EnemyAttributeComponent->GetHealthPercent());
 	}
+
+	EnemyState = EEnemyState::EES_Default;
 }
 
 UPawnUIComponent* ABaseEnemy::GetPawnUIComponent() const
