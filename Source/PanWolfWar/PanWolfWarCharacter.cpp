@@ -594,38 +594,14 @@ float APanWolfWarCharacter::TakeDamage(float DamageAmount, FDamageEvent const& D
 {
 	if (!Attributes) return 0.f;
 
-	const float Damage = DamageAmount / GetDamageDivisor();
-	Attributes->ReceiveDamage(Damage);
+	//const float Damage = DamageAmount / GetDamageDivisor();
+	Attributes->ReceiveDamage(DamageAmount);
 	if (!Attributes->IsAlive())
 		Die();
 
-	return Damage;
+	return DamageAmount;
 }
 
-float APanWolfWarCharacter::GetDamageDivisor()
-{
-
-	switch (TransformationComponent->GetCurrentTransformationState())
-	{
-	case ETransformationState::ETS_Pandolfo:
-		if (PandolfoComponent->IsActive()) { return Pandolfo_DamageDivisor; }
-		break;
-	case ETransformationState::ETS_PanWolf:
-		if (PanWolfComponent->IsActive()) { return PanWolf_DamageDivisor; }
-		break;
-	case ETransformationState::ETS_PanFlower:
-		if (PandolFlowerComponent->IsActive()) { return PandolFlower_DamageDivisor; }
-		break;
-	case ETransformationState::ETS_PanBird:
-		if (PanBirdComponent->IsActive()) { return PanBird_DamageDivisor; }
-		break;
-	default:
-		return 1.f;
-		break;
-	}
-
-	return 1.f;
-}
 
 void APanWolfWarCharacter::Die()
 {
@@ -641,6 +617,25 @@ void APanWolfWarCharacter::Die()
 
 float APanWolfWarCharacter::GetDefensePower()
 {
+	switch (TransformationComponent->GetCurrentTransformationState())
+	{
+	case ETransformationState::ETS_Pandolfo:
+		if (PandolfoComponent->IsActive()) { return Pandolfo_DefensePower; }
+		break;
+	case ETransformationState::ETS_PanWolf:
+		if (PanWolfComponent->IsActive()) { return PanWolf_DefensePower; }
+		break;
+	case ETransformationState::ETS_PanFlower:
+		if (PandolFlowerComponent->IsActive()) { return PandolFlower_DefensePower; }
+		break;
+	case ETransformationState::ETS_PanBird:
+		if (PanBirdComponent->IsActive()) { return PanBird_DefensePower; }
+		break;
+	default:
+		return 1.f;
+		break;
+	}
+
 	return 1.f;
 }
 

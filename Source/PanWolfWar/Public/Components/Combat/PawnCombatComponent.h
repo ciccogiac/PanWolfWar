@@ -36,8 +36,6 @@ class PANWOLFWAR_API UPawnCombatComponent : public UActorComponent
 public:	
 	UPawnCombatComponent();
 
-	void SetCombatEnabled(bool CombatEnabled, UAnimInstance* PlayerAnimInstance);
-
 	UFUNCTION(BlueprintCallable)
 	virtual void ResetAttack();
 
@@ -61,7 +59,6 @@ protected:
 	bool IsPlayingMontage_ExcludingBlendOut();
 	virtual bool ExecuteHitActor(FHitResult& Hit);
 
-	virtual void HandleNewAnimInstance();
 	virtual float CalculateFinalDamage(float BaseDamage, float TargetDefensePower);
 
 private:
@@ -69,6 +66,7 @@ private:
 	void TraceLoop();
 
 	bool ActorIsSameType(AActor* OtherActor);
+	bool IsTargetPawnHostile(APawn* QueryPawn, APawn* TargetPawn);
 
 	void ApplyDamageToActorHit(AActor* DamagedActor, float BaseDamage, AController* EventInstigator, AActor* DamageCauser, TSubclassOf<UDamageType> DamageTypeClass);
 

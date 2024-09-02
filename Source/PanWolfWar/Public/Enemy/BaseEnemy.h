@@ -86,12 +86,23 @@ private:
 protected:
 	bool bDied = false;
 	bool bSeen = false;
+
+	/** Under Attack */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Under Attack", meta = (AllowPrivateAccess = "true"))
+	float UnderAttack_Time = 6.f;
+
+	bool bIsUnderAttack = false;
+
+	FTimerHandle UnderAttack_TimerHandle;
+
+
 	EEnemyState EnemyState;
 
 	ACharacter* Player;
 	UAnimInstance* AnimInstance;
 
 	FTimerHandle FindEnemies_TimerHandle;
+
 
 	class ABaseAIController* BaseAIController;
 

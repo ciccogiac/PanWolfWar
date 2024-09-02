@@ -11,11 +11,15 @@ void UPandoCombatComponent::BeginPlay()
 	
 }
 
-void UPandoCombatComponent::HandleNewAnimInstance()
+void UPandoCombatComponent::SetCombatEnabled(bool CombatEnabled, UAnimInstance* PlayerAnimInstance)
 {
+	if (!CombatEnabled) return;
+
+	OwningPlayerAnimInstance = PlayerAnimInstance;
 	if (!OwningPlayerAnimInstance) return;
 	OwningPlayerAnimInstance->OnMontageEnded.AddDynamic(this, &UPandoCombatComponent::OnAttackMontageEnded);
 }
+
 
 #pragma region AttackPerforming
 

@@ -19,6 +19,7 @@ class PANWOLFWAR_API UPandoCombatComponent : public UPawnCombatComponent
 public:
 
 	void PerformAttack(EAttackType AttackType);
+	void SetCombatEnabled(bool CombatEnabled, UAnimInstance* PlayerAnimInstance);
 	virtual void ResetAttack() override;
 
 protected:
@@ -28,13 +29,11 @@ private:
 	virtual bool ExecuteHitActor(FHitResult& Hit) override;
 	void HitPause();
 
-
 	void LightAttack();
 	void HeavyAttack();
 	void ResetLightAttackComboCount();
 	void ResetHeavyAttackComboCount();
 
-	virtual void HandleNewAnimInstance();
 	virtual float CalculateFinalDamage(float BaseDamage, float TargetDefensePower) override;
 
 	UFUNCTION()

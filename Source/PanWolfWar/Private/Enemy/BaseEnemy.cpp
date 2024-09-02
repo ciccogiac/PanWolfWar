@@ -94,7 +94,7 @@ void ABaseEnemy::SetInvulnerability(bool NewInvulnerability)
 
 bool ABaseEnemy::IsUnderAttack()
 {
-	return false;
+	return bIsUnderAttack;
 }
 
 void ABaseEnemy::SetUnderAttack()
@@ -154,17 +154,22 @@ float ABaseEnemy::PerformAttack()
 	if (!AnimIstance) return 0.f;
 	if (AnimIstance->IsAnyMontagePlaying() || !AttackMontage) return 0.f;*/
 
-	if (MotionWarping && CombatTarget)
-	{
-		CombatComponent->RotateToClosestEnemy(CombatTarget);
+	//if (MotionWarping && CombatTarget)
+	//{
+	//	CombatComponent->RotateToClosestEnemy(CombatTarget);
 
-		MotionWarping->AddOrUpdateWarpTargetFromComponent(FName("CombatTarget"), CombatTarget->GetRootComponent(), FName(NAME_None), true);
-	}
+	//	MotionWarping->AddOrUpdateWarpTargetFromComponent(FName("CombatTarget"), CombatTarget->GetRootComponent(), FName(NAME_None), true);
+	//}
 
-	/*float Duration = AnimIstance->Montage_Play(AttackMontage,1.f,EMontagePlayReturnType::Duration);
-	return Duration;*/
+	///*float Duration = AnimIstance->Montage_Play(AttackMontage,1.f,EMontagePlayReturnType::Duration);
+	//return Duration;*/
 
-	CombatComponent->PerformAttack(EAttackType2::EAT_LightAttack_Right);
+	//CombatComponent->PerformAttack(EAttackType2::EAT_LightAttack_Right);
+
+	//return 1.f;
+
+	if (!EnemyCombatComponent) return 0.f;
+	EnemyCombatComponent->PerformAttack();
 
 	return 1.f;
 }
@@ -219,12 +224,12 @@ void ABaseEnemy::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent
 
 void ABaseEnemy::ActivateCollision(FString CollisionPart)
 {
-	CombatComponent->ActivateCollision(CollisionPart);
+	EnemyCombatComponent->ActivateCollision(CollisionPart);
 }
 
 void ABaseEnemy::DeactivateCollision(FString CollisionPart)
 {
-	CombatComponent->DeactivateCollision(CollisionPart);
+	EnemyCombatComponent->DeactivateCollision(CollisionPart);
 }
 
 void ABaseEnemy::GetHit(const FVector& ImpactPoint, AActor* Hitter)
@@ -264,6 +269,9 @@ void ABaseEnemy::GetHit(const FVector& ImpactPoint, AActor* Hitter)
 		GetMesh()->SetScalarParameterValueOnMaterials(FName("HitFxSwitch"), 1.f);
 
 	}
+
+	bIsUnderAttack = true;
+	GetWorld()->GetTimerManager().SetTimer(UnderAttack_TimerHandle, [this]() {this->bIsUnderAttack = false; }, UnderAttack_Time, false);
 
 	//EnemyCombatComponent->PlayHitSound(ImpactPoint);
 	/*EnemyCombatComponent->SpawnHitParticles(ImpactPoint);*/
@@ -322,6 +330,7 @@ float ABaseEnemy::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent
 	if (!EnemyAttributeComponent->IsAlive() && !bDied)
 	{
 		bDied = true;
+		Tags.Add(FName("Dead"));
 
 		if (Death_Montages.Num() != 0)
 		{
@@ -335,6 +344,9 @@ float ABaseEnemy::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent
 		}
 		if(Death_Sound)
 			UGameplayStatics::PlaySoundAtLocation(this, Death_Sound, GetActorLocation());
+
+
+		GetWorld()->GetTimerManager().ClearTimer(UnderAttack_TimerHandle);
 
 		/*GetMesh()->SetSimulatePhysics(true);
 		GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);

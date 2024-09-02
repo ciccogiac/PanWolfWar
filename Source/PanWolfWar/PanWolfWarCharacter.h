@@ -105,7 +105,7 @@ protected:
 	bool IsAlive();
 	void Die();
 	virtual float TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, class AController* EventInstigator, AActor* DamageCauser) override;
-	float GetDamageDivisor();
+
 #pragma endregion
 
 #pragma region PrivateVariables
@@ -194,16 +194,16 @@ private:
 	#pragma region Combat Variables
 
 	UPROPERTY(EditDefaultsOnly, Category = Combat)
-	float Pandolfo_DamageDivisor = 1.f;
+	float Pandolfo_DefensePower = 1.f;
 
 	UPROPERTY(EditDefaultsOnly, Category = Combat)
-	float PanWolf_DamageDivisor = 10.f;
+	float PanWolf_DefensePower = 10.f;
 
 	UPROPERTY(EditDefaultsOnly, Category = Combat)
-	float PandolFlower_DamageDivisor = 4.f;
+	float PandolFlower_DefensePower = 4.f;
 
 	UPROPERTY(EditDefaultsOnly, Category = Combat)
-	float PanBird_DamageDivisor = 10.f;
+	float PanBird_DefensePower = 10.f;
 
 	#pragma region HitReact Montages
 

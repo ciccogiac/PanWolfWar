@@ -6,6 +6,8 @@
 #include "Kismet/GameplayStatics.h"
 #include "Interfaces/CombatInterface.h"
 
+#include "GenericTeamAgentInterface.h"
+
 #include "PanWolfWar/DebugHelper.h"
 
 #pragma region EngineFunctions
@@ -23,13 +25,6 @@ void UPawnCombatComponent::BeginPlay()
 
 }
 
-void UPawnCombatComponent::SetCombatEnabled(bool CombatEnabled, UAnimInstance* PlayerAnimInstance)
-{
-	if (!CombatEnabled) return;
-
-	OwningPlayerAnimInstance = PlayerAnimInstance;
-	HandleNewAnimInstance();
-}
 
 #pragma endregion
 
@@ -76,7 +71,8 @@ void UPawnCombatComponent::TraceLoop()
 
 		AlreadyHitActor.Add(HitResults[i].GetActor());
 
-		if (ActorIsSameType(Hit.GetActor())) continue;
+		//if (ActorIsSameType(Hit.GetActor())) continue;
+		if (!IsTargetPawnHostile(Cast<APawn>(CharacterOwner), Cast<APawn>(Hit.GetActor()))) continue;
 
 		ApplyDamageToActorHit(Hit.GetActor(), ActiveCollisionPart->Damage, CharacterOwner->GetInstigator()->GetController(), CharacterOwner, UDamageType::StaticClass());
 		ExecuteHitActor(Hit);
@@ -84,6 +80,21 @@ void UPawnCombatComponent::TraceLoop()
 	}
 
 
+}
+
+bool UPawnCombatComponent::IsTargetPawnHostile(APawn* QueryPawn, APawn* TargetPawn)
+{
+	check(QueryPawn && TargetPawn);
+
+	IGenericTeamAgentInterface* QueryTeamAgent = Cast<IGenericTeamAgentInterface>(QueryPawn->GetController());
+	IGenericTeamAgentInterface* TargetTeamAgent = Cast<IGenericTeamAgentInterface>(TargetPawn->GetController());
+
+	if (QueryTeamAgent && TargetTeamAgent)
+	{
+		return QueryTeamAgent->GetGenericTeamId() != TargetTeamAgent->GetGenericTeamId();
+	}
+
+	return false;
 }
 
 bool UPawnCombatComponent::ActorIsSameType(AActor* OtherActor)
@@ -118,7 +129,9 @@ bool UPawnCombatComponent::ExecuteHitActor(FHitResult& Hit)
 
 float UPawnCombatComponent::CalculateFinalDamage(float BaseDamage,float TargetDefensePower)
 {
-	return BaseDamage;
+	return (BaseDamage * AttackPower / TargetDefensePower);
+
+	//return BaseDamage;
 }
 
 #pragma endregion
@@ -197,8 +210,4 @@ bool UPawnCombatComponent::IsPlayingMontage_ExcludingBlendOut()
 void UPawnCombatComponent::ResetAttack()
 {
 
-}
-
-void UPawnCombatComponent::HandleNewAnimInstance()
-{
 }
