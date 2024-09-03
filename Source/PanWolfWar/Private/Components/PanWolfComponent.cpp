@@ -93,6 +93,7 @@ void UPanWolfComponent::Dodge()
 	const FVector CachedRollingDirection = CharacterOwner->GetCharacterMovement()->GetLastInputVector().GetSafeNormal();
 	const FRotator TargetRotation = UKismetMathLibrary::MakeRotFromX(CachedRollingDirection);
 	PanWolfCharacter->SetMotionWarpTarget(FName("RollingDirection"), FVector::ZeroVector, TargetRotation);
+	PanWolfCharacter->StartDodge();
 	OwningPlayerAnimInstance->Montage_Play(PanWolfDodgeMontage);
 }
 
@@ -150,6 +151,7 @@ void UPanWolfComponent::OnMontageEnded(UAnimMontage* Montage, bool bInterrupted)
 {
 	if (Montage == PanWolfDodgeMontage)
 	{
+		PanWolfCharacter->EndDodge();
 		PanWolfState = EPanWolfState::EPWS_PanWolf;
 	}
 

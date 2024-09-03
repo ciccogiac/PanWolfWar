@@ -25,15 +25,6 @@
 ABaseEnemy::ABaseEnemy()
 {
 	PrimaryActorTick.bCanEverTick = false;
-
-	EnemyTargetWidget = CreateDefaultSubobject<UWidgetComponent>(*FString::Printf(TEXT("PlayerVisibleWidget")));
-	if (EnemyTargetWidget)
-	{
-		EnemyTargetWidget->SetWidgetSpace(EWidgetSpace::Screen);
-		EnemyTargetWidget->SetVisibility(false);
-		EnemyTargetWidget->SetupAttachment(GetRootComponent());
-	}
-
 	
 	MotionWarping = CreateDefaultSubobject<UMotionWarpingComponent>(TEXT("Motion Warping"));
 	CombatComponent = CreateDefaultSubobject<UCombatComponent>(TEXT("CombatComponent"));
@@ -76,17 +67,6 @@ UEnemyUIComponent* ABaseEnemy::GetEnemyUIComponent() const
 	return EnemyUIComponent;
 }
 
-void ABaseEnemy::SetTargetVisibility(bool NewVisibility)
-{
-	if (NewVisibility && !CanBeTargeted())
-		return;
-	EnemyTargetWidget->SetVisibility(NewVisibility);
-}
-
-bool ABaseEnemy::CanBeTargeted()
-{
-	return !bDied;
-}
 
 void ABaseEnemy::SetInvulnerability(bool NewInvulnerability)
 {

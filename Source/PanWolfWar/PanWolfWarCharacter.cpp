@@ -255,8 +255,10 @@ void APanWolfWarCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInpu
 		EnhancedInputComponent->BindAction(TransformationComponent->AnnulTransformationAction, ETriggerEvent::Started, TransformationComponent, &UTransformationComponent::AnnulTrasnformation);
 
 		//Targeting
-		EnhancedInputComponent->BindAction(TargetingComponent->TargetLockAction, ETriggerEvent::Completed, TargetingComponent, &UTargetingComponent::ToggleLock);
-		EnhancedInputComponent->BindAction(TargetingComponent->TargetForceUnLockAction, ETriggerEvent::Completed, TargetingComponent, &UTargetingComponent::ForceUnLock);
+		EnhancedInputComponent->BindAction(TargetingComponent->TargetLockAction, ETriggerEvent::Started, TargetingComponent, &UTargetingComponent::ToggleLock);
+
+		EnhancedInputComponent->BindAction(TargetingComponent->SwitchTargetAction, ETriggerEvent::Triggered, TargetingComponent, &UTargetingComponent::SwitchTargetTriggered);
+		EnhancedInputComponent->BindAction(TargetingComponent->SwitchTargetAction, ETriggerEvent::Completed, TargetingComponent, &UTargetingComponent::SwitchTargetCompleted);
 
 		#pragma endregion
 
@@ -400,7 +402,10 @@ FRotator APanWolfWarCharacter::GetDesiredDodgeRotation()
 void APanWolfWarCharacter::StartDodge()
 {
 	if (TargetingComponent->IsTargeting())
-		TargetingComponent->Deactivate();
+	{	
+		/*TargetingComponent->Deactivate();*/
+		TargetingComponent->DisableLock();
+	}
 }
 
 void APanWolfWarCharacter::EndDodge()

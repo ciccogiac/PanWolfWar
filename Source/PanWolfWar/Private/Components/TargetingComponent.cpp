@@ -4,10 +4,15 @@
 
 #include "Kismet/KismetSystemLibrary.h"
 #include "Kismet/KismetMathLibrary.h"
-#include <PanWolfWar/PanWolfWarCharacter.h>
-#include "Camera/CameraComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
-#include <float.h>
+
+#include "EnhancedInputSubsystems.h"
+#include "Widgets/PanWarWidgetBase.h"
+#include "Blueprint/WidgetLayoutLibrary.h"
+#include "Blueprint/WidgetTree.h"
+#include "Components/SizeBox.h"
+#include "Kismet/GameplayStatics.h"
+#include "GameFramework/Character.h"
 
 #pragma region EngineFunctions
 
@@ -21,7 +26,6 @@ UTargetingComponent::UTargetingComponent()
 	bAutoActivate = false;
 
 	CharacterOwner = Cast<ACharacter>(GetOwner());
-	PanWolfCharacter = Cast<APanWolfWarCharacter>(CharacterOwner);
 }
 
 void UTargetingComponent::BeginPlay()
@@ -33,23 +37,38 @@ void UTargetingComponent::BeginPlay()
 
 void UTargetingComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 {
-	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
+	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);	
 
-	if (!bIsTargeting || !TargetActor) { DisableLock(); return; }
-	if (!CanTargetActor(TargetActor)) 
+	if (!CurrentLockedActor || CurrentLockedActor->ActorHasTag("Dead") || CharacterOwner->ActorHasTag("Dead") )
 	{
-		DisableLock();
-		if(FindNearTarget(false))
-			EnableLock();
-		return; 
+		CancelTargetLockAbility();
+		return;
 	}
 
-	const FRotator CharacterRotation = CharacterOwner->GetActorRotation();
-	const FRotator LookRotation = UKismetMathLibrary::FindLookAtRotation(CharacterOwner->GetActorLocation(), TargetActor->GetActorLocation());
-	const float RotationYaw = UKismetMathLibrary::RInterpTo(CharacterRotation, LookRotation, DeltaTime, 5.f).Yaw;
+	SetTargetLockWidgetPosition();
 
-	const FRotator NewRotation = FRotator(CharacterRotation.Roll, RotationYaw, CharacterRotation.Pitch);
-	CharacterOwner->SetActorRotation(NewRotation);
+	//const bool bShouldOverrideRotation =
+	//	!UWarriorFunctionLibrary::NativeDoesActorHaveTag(GetHeroCharacterFromActorInfo(), WarriorGameplayTags::Player_Status_Rolling)
+	//	&&
+	//	!UWarriorFunctionLibrary::NativeDoesActorHaveTag(GetHeroCharacterFromActorInfo(), WarriorGameplayTags::Player_Status_Blocking);
+
+	const bool bShouldOverrideRotation = true;
+
+	if (bShouldOverrideRotation)
+	{
+		FRotator LookAtRot = UKismetMathLibrary::FindLookAtRotation(
+			CharacterOwner->GetActorLocation(),
+			CurrentLockedActor->GetActorLocation()
+		);
+
+		LookAtRot -= FRotator(TargetLockCameraOffsetDistance, 0.f, 0.f);
+
+		const FRotator CurrentControlRot = CharacterOwner->GetLocalViewingPlayerController()->GetControlRotation();
+		const FRotator TargetRot = FMath::RInterpTo(CurrentControlRot, LookAtRot, DeltaTime, TargetLockRotationInterpSpeed);
+
+		CharacterOwner->GetLocalViewingPlayerController()->SetControlRotation(FRotator(TargetRot.Pitch, TargetRot.Yaw, 0.f));
+		CharacterOwner->SetActorRotation(FRotator(0.f, TargetRot.Yaw, 0.f));
+	}
 }
 
 void UTargetingComponent::Activate(bool bReset)
@@ -60,147 +79,284 @@ void UTargetingComponent::Activate(bool bReset)
 void UTargetingComponent::Deactivate()
 {
 	Super::Deactivate();
+
 }
 
 #pragma endregion
 
 void UTargetingComponent::ToggleLock()
 {
-	if (bIsTargeting)
-	{
-		if (FindNearTarget())
-			EnableLock();
-		else
-			DisableLock();
 
-	}
-		
+	if (!bIsTargeting)
+		TryLockOnTarget();
 	else
-		//if (FindTarget()) 
-		if (FindNearTarget())
-			EnableLock();
-}
-
-void UTargetingComponent::TryLock()
-{
-	if (FindNearTarget(false))
-		EnableLock();
-}
-
-void UTargetingComponent::ForceUnLock()
-{
-	Debug::Print(TEXT("ForceUNlock"));
-	if (bIsTargeting)
 		DisableLock();
 }
 
+
 void UTargetingComponent::EnableLock()
 {
-	//Debug::Print(TEXT("Enable Lock"));
 
 
 	bIsTargeting = true;
-	TargetInterface->SetTargetVisibility(true);
-	SetRotationMode(true);
+
+	InitTargetLockMovement();
+	InitTargetLockMappingContext();
 
 	Activate();
+
+	Debug::Print(TEXT("EnableLock"));
 }
 
 void UTargetingComponent::DisableLock()
 {
-	//Debug::Print(TEXT("Disable Lock"));
 
 	bIsTargeting = false;
-	TargetInterface->SetTargetVisibility(false);
-	TargetActor = nullptr;
-	SetRotationMode(false);
+
+	ResetTargetLockMovement();
+	CleanUp();
+	ResetTargetLockMappingContext();
 
 	Deactivate();
+
+	Debug::Print(TEXT("DisableLock"));
+
 }
 
-
-bool UTargetingComponent::FindNearTarget(bool DoTraceCameraOriented)
+void UTargetingComponent::SwitchTargetTriggered(const FInputActionValue& InputActionValue)
 {
-	const FVector Start = CharacterOwner->GetActorLocation();
-	FVector End; float Radius;
+	SwitchDirection = InputActionValue.Get<FVector2D>();
+}
 
-	if (DoTraceCameraOriented)
-	{		
-		End = Start + PanWolfCharacter->GetFollowCamera()->GetForwardVector() * 1250.f;
-		Radius = 175.f;
+void UTargetingComponent::SwitchTargetCompleted(const FInputActionValue& InputActionValue)
+{
+	GetAvailableActorsToLock();
+
+	TArray<AActor*> ActorsOnLeft;
+	TArray<AActor*> ActorsOnRight;
+	AActor* NewTargetToLock = nullptr;
+
+	GetAvailableActorsAroundTarget(ActorsOnLeft, ActorsOnRight);
+
+	if (SwitchDirection.X <= 0.f)
+	{
+		NewTargetToLock = GetNearestTargetFromAvailableActors(ActorsOnLeft);
 	}
 	else
 	{
-		End = Start + CharacterOwner->GetActorForwardVector();
-		Radius = 300.f;
+		NewTargetToLock = GetNearestTargetFromAvailableActors(ActorsOnRight);
 	}
 
-	TArray<FHitResult> Hits;
-	TArray<TEnumAsByte<EObjectTypeQuery> > CombatObjectTypes;
-	CombatObjectTypes.Add(EObjectTypeQuery::ObjectTypeQuery3);
-	TArray<AActor*> ActorsToIgnore = TArray<AActor*>();
-	ActorsToIgnore.Add(CharacterOwner);
-	if(TargetActor)
-		ActorsToIgnore.Add(TargetActor);
-	if (!UKismetSystemLibrary::SphereTraceMultiForObjects(this, Start, End, Radius, CombatObjectTypes, false, ActorsToIgnore, EDrawDebugTrace::None, Hits, true)) return false;
-
-	
-	
-	float ClosestDistance = FLT_MAX;
-	AActor* ClosestEnemy = nullptr;
-	ITargetInterface* LoopTargetInterface = nullptr;
-	ITargetInterface* ClosestTargetInterface = nullptr;
-
-	for (size_t i = 0; i < Hits.Num(); i++)
+	if (NewTargetToLock)
 	{
-		AActor* LoopActor = Hits[i].GetActor();
+		CurrentLockedActor = NewTargetToLock;
+	}
+}
 
-		if (!LoopActor->Implements<UTargetInterface>()) continue;
-		LoopTargetInterface = Cast<ITargetInterface>(LoopActor);
-		if (!LoopTargetInterface) continue;
+void UTargetingComponent::TryLockOnTarget()
+{
+	GetAvailableActorsToLock();
 
-		//if (!CanTargetActor(LoopActor)) continue;
+	if (AvailableActorsToLock.IsEmpty())
+	{
+		CancelTargetLockAbility();
+		return;
+	}
 
-		const float LoopDistance = UKismetMathLibrary::Vector_Distance(CharacterOwner->GetActorLocation(), LoopActor->GetActorLocation());
-		if (LoopDistance > 1250.f) continue;
-		if (!LoopTargetInterface->CanBeTargeted()) continue;
+	CurrentLockedActor = GetNearestTargetFromAvailableActors(AvailableActorsToLock);
 
+	if (CurrentLockedActor)
+	{
+		DrawTargetLockWidget();
 
-		//LoopActor->GetActorLocation()
-		const float Distance = UKismetMathLibrary::Vector_Distance(LoopActor->GetActorLocation(), Start);
-		if (Distance < ClosestDistance && LoopActor!= TargetActor)
+		SetTargetLockWidgetPosition();
+
+		EnableLock();
+	}
+	else
+	{
+		CancelTargetLockAbility();
+	}
+}
+
+void UTargetingComponent::GetAvailableActorsToLock()
+{
+	AvailableActorsToLock.Empty();
+	TArray<FHitResult> BoxTraceHits;
+
+	UKismetSystemLibrary::BoxTraceMultiForObjects(
+		CharacterOwner,
+		CharacterOwner->GetActorLocation(),
+		CharacterOwner->GetActorLocation() + CharacterOwner->GetActorForwardVector() * BoxTraceDistance,
+		TraceBoxSize / 2.f,
+		CharacterOwner->GetActorForwardVector().ToOrientationRotator(),
+		BoxTraceChannel,
+		false,
+		TArray<AActor*>(),
+		bShowPersistentDebugShape ? EDrawDebugTrace::Persistent : EDrawDebugTrace::None,
+		BoxTraceHits,
+		true
+	);
+
+	for (const FHitResult& TraceHit : BoxTraceHits)
+	{
+		if (AActor* HitActor = TraceHit.GetActor())
 		{
-			ClosestDistance = Distance;
-			ClosestEnemy = LoopActor;
-			ClosestTargetInterface = LoopTargetInterface;
+			if (HitActor != CharacterOwner)
+			{
+				AvailableActorsToLock.AddUnique(HitActor);
+
+			}
 		}
 	}
-
-	
-	if (!ClosestEnemy || !ClosestTargetInterface) return false;
-
-	if(bIsTargeting)
-		DisableLock();
-
-	TargetActor = ClosestEnemy;
-	TargetInterface = ClosestTargetInterface;
-
-	
-	return true;
 }
 
-bool UTargetingComponent::CanTargetActor(AActor* FindActor)
+AActor* UTargetingComponent::GetNearestTargetFromAvailableActors(const TArray<AActor*>& InAvailableActors)
 {
-	const float Distance = UKismetMathLibrary::Vector_Distance(CharacterOwner->GetActorLocation(), FindActor->GetActorLocation());
-	if (Distance > 1250.f) return false;
-
-	if (!TargetInterface->CanBeTargeted()) return false;
-
-	return true;
+	float ClosestDistance = 0.f;
+	return UGameplayStatics::FindNearestActor(CharacterOwner->GetActorLocation(), InAvailableActors, ClosestDistance);
 }
 
-void UTargetingComponent::SetRotationMode(bool bTargetMode)
+void UTargetingComponent::GetAvailableActorsAroundTarget(TArray<AActor*>& OutActorsOnLeft, TArray<AActor*>& OutActorsOnRight)
 {
-	CharacterOwner->GetCharacterMovement()->bOrientRotationToMovement = !bTargetMode;
-	CharacterOwner->GetCharacterMovement()->MaxWalkSpeed = bTargetMode ? 350.f : 500.f;
+	if (!CurrentLockedActor || AvailableActorsToLock.IsEmpty())
+	{
+		CancelTargetLockAbility();
+		return;
+	}
+
+	const FVector PlayerLocation = CharacterOwner->GetActorLocation();
+	const FVector PlayerToCurrentNormalized = (CurrentLockedActor->GetActorLocation() - PlayerLocation).GetSafeNormal();
+
+	for (AActor* AvailableActor : AvailableActorsToLock)
+	{
+		if (!AvailableActor || AvailableActor == CurrentLockedActor) continue;
+
+		const FVector PlayerToAvailableNormalized = (AvailableActor->GetActorLocation() - PlayerLocation).GetSafeNormal();
+
+		const FVector CrossResult = FVector::CrossProduct(PlayerToCurrentNormalized, PlayerToAvailableNormalized);
+
+		if (CrossResult.Z > 0.f)
+		{
+			OutActorsOnRight.AddUnique(AvailableActor);
+		}
+		else
+		{
+			OutActorsOnLeft.AddUnique(AvailableActor);
+		}
+	}
+}
+
+void UTargetingComponent::DrawTargetLockWidget()
+{
+	if (!DrawnTargetLockWidget)
+	{
+		checkf(TargetLockWidgetClass, TEXT("Forgot to assign a valid widget class in Blueprint"));
+
+		DrawnTargetLockWidget = CreateWidget<UPanWarWidgetBase>(CharacterOwner->GetLocalViewingPlayerController(), TargetLockWidgetClass);
+
+		check(DrawnTargetLockWidget);
+
+		DrawnTargetLockWidget->AddToViewport();
+	}
+}
+
+void UTargetingComponent::SetTargetLockWidgetPosition()
+{
+	if (!DrawnTargetLockWidget || !CurrentLockedActor)
+	{
+		CancelTargetLockAbility();
+		return;
+	}
+
+	FVector2D ScreenPosition;
+	UWidgetLayoutLibrary::ProjectWorldLocationToWidgetPosition(
+		CharacterOwner->GetLocalViewingPlayerController(),
+		CurrentLockedActor->GetActorLocation(),
+		ScreenPosition,
+		true
+	);
+
+	if (TargetLockWidgetSize == FVector2D::ZeroVector)
+	{
+		DrawnTargetLockWidget->WidgetTree->ForEachWidget(
+			[this](UWidget* FoundWidget)
+			{
+				if (USizeBox* FoundSizeBox = Cast<USizeBox>(FoundWidget))
+				{
+					TargetLockWidgetSize.X = FoundSizeBox->GetWidthOverride();
+					TargetLockWidgetSize.Y = FoundSizeBox->GetHeightOverride();
+				}
+			}
+		);
+	}
+
+	ScreenPosition -= (TargetLockWidgetSize / 2.f);
+
+	DrawnTargetLockWidget->SetPositionInViewport(ScreenPosition, false);
+}
+
+void UTargetingComponent::InitTargetLockMovement()
+{
+	CachedDefaultMaxWalkSpeed = CharacterOwner->GetCharacterMovement()->MaxWalkSpeed;
+
+	CharacterOwner->GetCharacterMovement()->MaxWalkSpeed = TargetLockMaxWalkSpeed;
+}
+
+void UTargetingComponent::InitTargetLockMappingContext()
+{
+	const ULocalPlayer* LocalPlayer = CharacterOwner->GetLocalViewingPlayerController()->GetLocalPlayer();
+
+	UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(LocalPlayer);
+
+	check(Subsystem)
+
+		Subsystem->AddMappingContext(TargetLockMappingContext, 3);
+}
+
+void UTargetingComponent::CleanUp()
+{
+	AvailableActorsToLock.Empty();
+
+	CurrentLockedActor = nullptr;
+
+	if (DrawnTargetLockWidget)
+	{
+		DrawnTargetLockWidget->RemoveFromParent();
+	}
+
+	DrawnTargetLockWidget = nullptr;
+
+	TargetLockWidgetSize = FVector2D::ZeroVector;
+
+	CachedDefaultMaxWalkSpeed = 0.f;
+}
+
+void UTargetingComponent::ResetTargetLockMovement()
+{
+	if (CachedDefaultMaxWalkSpeed > 0.f)
+	{
+		CharacterOwner->GetCharacterMovement()->MaxWalkSpeed = CachedDefaultMaxWalkSpeed;
+	}
+}
+
+void UTargetingComponent::ResetTargetLockMappingContext()
+{
+	if (!CharacterOwner->GetLocalViewingPlayerController())
+	{
+		return;
+	}
+
+	const ULocalPlayer* LocalPlayer = CharacterOwner->GetLocalViewingPlayerController()->GetLocalPlayer();
+
+	UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(LocalPlayer);
+
+	check(Subsystem)
+
+		Subsystem->RemoveMappingContext(TargetLockMappingContext);
+}
+
+void UTargetingComponent::CancelTargetLockAbility()
+{
+	DisableLock();
 }

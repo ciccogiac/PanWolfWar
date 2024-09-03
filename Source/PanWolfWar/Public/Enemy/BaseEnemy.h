@@ -5,7 +5,6 @@
 #include <Engine/TargetPoint.h>
 #include "Interfaces/CombatInterface.h"
 #include "Interfaces/HitInterface.h"
-#include "Interfaces/TargetInterface.h"
 #include "Interfaces/PawnUIInterface.h"
 #include "BaseEnemy.generated.h"
 
@@ -26,7 +25,7 @@ enum class EEnemyState : uint8
 };
 
 UCLASS()
-class PANWOLFWAR_API ABaseEnemy : public ACharacter, public ICombatInterface, public IHitInterface , public ITargetInterface, public IPawnUIInterface
+class PANWOLFWAR_API ABaseEnemy : public ACharacter, public ICombatInterface, public IHitInterface , public IPawnUIInterface
 {
 	GENERATED_BODY()
 
@@ -69,9 +68,6 @@ protected:
 	virtual float TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, class AController* EventInstigator, AActor* DamageCauser) override;
 	void PlayHitReactMontage(const FName& SectionName);
 	bool IsAlive();
-
-	virtual void SetTargetVisibility(bool NewVisibility) override;
-	virtual bool CanBeTargeted() override;
 
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 
@@ -124,9 +120,6 @@ protected:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Combat)
 	AActor* CombatTarget;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Assassination Components", meta = (AllowPrivateAccess = "true"))
-	UWidgetComponent* EnemyTargetWidget;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components", meta = (AllowPrivateAccess = "true"))
 	UWidgetComponent* EnemyHealthBarWidgetComponent;
