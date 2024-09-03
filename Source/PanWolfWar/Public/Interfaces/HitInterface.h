@@ -18,5 +18,5 @@ class PANWOLFWAR_API IHitInterface
 
 public:
 	virtual void GetHit(const FVector& ImpactPoint, AActor* Hitter) = 0;
-	static FName DirectionalHitReact(const AActor* ActorReacting , const FVector& ImpactPoint);
+	static FName DirectionalHitReact(AActor* InAttacker, AActor* InVictim);
 };

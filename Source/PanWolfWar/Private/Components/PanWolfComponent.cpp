@@ -10,6 +10,8 @@
 
 #include "GameFramework/SpringArmComponent.h"
 
+#include "Kismet/KismetMathLibrary.h"
+
 UPanWolfComponent::UPanWolfComponent()
 {
 	PrimaryComponentTick.bCanEverTick = true;
@@ -29,6 +31,8 @@ void UPanWolfComponent::Activate(bool bReset)
 
 	PanWolfCharacter->AddMappingContext(PanWolfMappingContext, 1);
 
+	PanWolfState = EPanWolfState::EPWS_PanWolf;
+
 	PanWolfCharacter->SetTransformationCharacter(SkeletalMeshAsset, Anim);
 
 	CharacterOwner->GetCharacterMovement()->JumpZVelocity = 800.f;
@@ -45,6 +49,7 @@ void UPanWolfComponent::Activate(bool bReset)
 	if (OwningPlayerAnimInstance)
 	{
 		CombatComponent->SetCombatEnabled(true, OwningPlayerAnimInstance);
+		OwningPlayerAnimInstance->OnMontageEnded.AddDynamic(this, &UPanWolfComponent::OnMontageEnded);
 	}
 }
 
@@ -56,6 +61,8 @@ void UPanWolfComponent::Deactivate()
 	CharacterOwner->GetCapsuleComponent()->SetCapsuleRadius(35.f);
 
 	CombatComponent->SetCombatEnabled(false,nullptr);
+
+	PanWolfState = EPanWolfState::EPWS_PanWolf;
 
 	PanWolfCharacter->RemoveMappingContext(PanWolfMappingContext);
 }
@@ -70,18 +77,23 @@ void UPanWolfComponent::Jump()
 
 void UPanWolfComponent::Dodge()
 {
-	if (!PanWolfCharacter->CanPerformDodge()) return;
+	if (!PanWolfCharacter->CanPerformDodge() || (PanWolfState != EPanWolfState::EPWS_PanWolf)) return;
 
 	//if (PandolfoState != EPandolfoState::EPS_Pandolfo) return;
 
-	if (!PandolWolfDodgeMontage) return;
-	if (!OwningPlayerAnimInstance) return;
+	if (!PanWolfDodgeMontage || !OwningPlayerAnimInstance) return;
+
 	//if (OwningPlayerAnimInstance->IsAnyMontagePlaying()) return;
 	//if (CharacterOwner->GetCharacterMovement()->GetLastInputVector().Length() < 0.5f) return;
 
 	//CharacterOwner->DisableInput(CharacterOwner->GetLocalViewingPlayerController());
 	//Debug::Print(TEXT("Dodge"));
-	OwningPlayerAnimInstance->Montage_Play(PandolWolfDodgeMontage);
+	PanWolfState = EPanWolfState::EPWS_Dodging;
+
+	const FVector CachedRollingDirection = CharacterOwner->GetCharacterMovement()->GetLastInputVector().GetSafeNormal();
+	const FRotator TargetRotation = UKismetMathLibrary::MakeRotFromX(CachedRollingDirection);
+	PanWolfCharacter->SetMotionWarpTarget(FName("RollingDirection"), FVector::ZeroVector, TargetRotation);
+	OwningPlayerAnimInstance->Montage_Play(PanWolfDodgeMontage);
 }
 
 void UPanWolfComponent::LightAttack()
@@ -134,3 +146,15 @@ void UPanWolfComponent::TickComponent(float DeltaTime, ELevelTick TickType, FAct
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 }
 
+void UPanWolfComponent::OnMontageEnded(UAnimMontage* Montage, bool bInterrupted)
+{
+	if (Montage == PanWolfDodgeMontage)
+	{
+		PanWolfState = EPanWolfState::EPWS_PanWolf;
+	}
+
+	else if (Montage == PanWolf_HitReactMontage)
+	{
+		CharacterOwner->GetMesh()->SetScalarParameterValueOnMaterials(FName("HitFxSwitch"), 0.f);
+	}
+}

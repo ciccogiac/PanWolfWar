@@ -1,34 +1,40 @@
 #include "Interfaces/HitInterface.h"
+#include "Kismet/KismetMathLibrary.h"
 
-FName IHitInterface::DirectionalHitReact(const AActor* ActorReacting, const FVector& ImpactPoint)
+FName IHitInterface::DirectionalHitReact(AActor* InAttacker, AActor* InVictim)
 {
-	const FVector Forward = ActorReacting->GetActorForwardVector();
-	//Lower impact point to the enemy actor location z
-	const FVector ImpactLowered(ImpactPoint.X, ImpactPoint.Y, ActorReacting->GetActorLocation().Z);
-	const FVector ToHit = (ImpactLowered - ActorReacting->GetActorLocation()).GetSafeNormal();
+	check(InAttacker && InVictim);
 
+	const FVector VictimForward = InVictim->GetActorForwardVector();
+	const FVector VictimToAttackerNormalized = (InAttacker->GetActorLocation() - InVictim->GetActorLocation()).GetSafeNormal();
 
-	//Forward * ToHit = |Forward| |ToHit| * cos(theta)
-	// |Forward| = 1 , |ToHit| = 1 , so Forward * ToHit = cos(theta)
-	const double CosTheta = FVector::DotProduct(Forward, ToHit);
-	//Take the inverse cosine (Arc-Cosine) of cos (theta) to get theta
-	double Theta = FMath::Acos(CosTheta);
-	//convert from radians to degrees
-	Theta = FMath::RadiansToDegrees(Theta);
+	const float DotResult = FVector::DotProduct(VictimForward, VictimToAttackerNormalized);
+	float Theta = UKismetMathLibrary::DegAcos(DotResult);
 
-	//if CrossProduct points down , Theta should be negative
-	const FVector CrossProduct = FVector::CrossProduct(Forward, ToHit);
+	const FVector CrossProduct = FVector::CrossProduct(VictimForward, VictimToAttackerNormalized);
+
 	if (CrossProduct.Z < 0)
 	{
 		Theta *= -1.f;
 	}
 
-	FName Section("FromBack");
+	if (Theta >= -45.f && Theta <= 45.f)
+	{
+		return FName("FromFront");
+	}
+	else if (Theta < -45.f && Theta >= -135.f)
+	{
+		return FName("FromLeft");
+	}
+	else if (Theta < -135.f || Theta>135.f)
+	{
+		return FName("FromBack");
+	}
+	else if (Theta > 45.f && Theta <= 135.f)
+	{
+		return FName("FromRight");
+	}
 
-	if (Theta >= -45.f && Theta < 45.f) { Section = FName("FromFront"); }
-	else if (Theta >= -135.f && Theta < -45.f) { Section = FName("FromLeft"); }
-	else if (Theta >= 45.f && Theta < 135.f) { Section = FName("FromRight"); }
+	return FName("FromFront");
 
-	return Section;
-	//Debug::Print(TEXT("Hit From : ") + Section.ToString());
 }

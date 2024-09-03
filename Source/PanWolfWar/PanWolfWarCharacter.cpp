@@ -516,7 +516,7 @@ void APanWolfWarCharacter::GetHit(const FVector& ImpactPoint, AActor* Hitter)
 {
 	if (!IsAlive() || !Hitter || bIsInvulnerable) return;
 	
-	FName Section = IHitInterface::DirectionalHitReact(GetOwner(), Hitter->GetActorLocation());
+	FName Section = IHitInterface::DirectionalHitReact(Hitter , GetOwner() );
 	PlayHitReactMontage(Section);
 
 	PandoCombatComponent->PlayHitSound(ImpactPoint);
@@ -549,8 +549,12 @@ void APanWolfWarCharacter::PlayHitReactMontage(const FName& SectionName)
 	GetHitReactMontage(ReactMontage);
 	if (!ReactMontage) return;
 
+	if (AnimInstance->Montage_IsPlaying(ReactMontage)) return;
+
 	AnimInstance->Montage_Play(ReactMontage);
 	AnimInstance->Montage_JumpToSection(SectionName, ReactMontage);
+
+	GetMesh()->SetScalarParameterValueOnMaterials(FName("HitFxSwitch"), 1.f);
 }
 
 void APanWolfWarCharacter::GetHitReactMontage(UAnimMontage*& ReactMontage)
@@ -561,7 +565,7 @@ void APanWolfWarCharacter::GetHitReactMontage(UAnimMontage*& ReactMontage)
 		if (PandolfoComponent->IsActive()) { ReactMontage = Pandolfo_HitReactMontage; }
 		break;
 	case ETransformationState::ETS_PanWolf:
-		if (PanWolfComponent->IsActive()) { ReactMontage = PanWolf_HitReactMontage; }
+		if (PanWolfComponent->IsActive()) { ReactMontage = PanWolfComponent->GetPanWolfHitReactMontage(); }
 		break;
 	case ETransformationState::ETS_PanFlower:
 		if (PandolFlowerComponent->IsActive()) { ReactMontage = PandolFlower_HitReactMontage; }

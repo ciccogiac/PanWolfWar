@@ -213,8 +213,8 @@ private:
 	UPROPERTY(EditDefaultsOnly, Category = Combat)
 	UAnimMontage* PandolFlower_HitReactMontage;
 
-	UPROPERTY(EditDefaultsOnly, Category = Combat)
-	UAnimMontage* PanWolf_HitReactMontage;
+	//UPROPERTY(EditDefaultsOnly, Category = Combat)
+	//UAnimMontage* PanWolf_HitReactMontage;
 
 	UPROPERTY(EditDefaultsOnly, Category = Combat)
 	UAnimMontage* PanBird_HitReactMontage;
