@@ -366,3 +366,12 @@ float ABaseEnemy::GetDefensePower()
 {
 	return EnemyCombatComponent->GetDefensePower();
 }
+
+bool ABaseEnemy::IsBlocking()
+{
+	return false;
+}
+
+void ABaseEnemy::SuccesfulBlock(AActor* Attacker)
+{
+}

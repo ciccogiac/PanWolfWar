@@ -74,8 +74,35 @@ void UPawnCombatComponent::TraceLoop()
 		//if (ActorIsSameType(Hit.GetActor())) continue;
 		if (!IsTargetPawnHostile(Cast<APawn>(CharacterOwner), Cast<APawn>(Hit.GetActor()))) continue;
 
-		ApplyDamageToActorHit(Hit.GetActor(), ActiveCollisionPart->Damage, CharacterOwner->GetInstigator()->GetController(), CharacterOwner, UDamageType::StaticClass());
-		ExecuteHitActor(Hit);
+		//BlockingCheck
+
+		//TODO:: Implement block check
+		bool bIsValidBlock = false;
+		bool bIsPlayerBlocking = false;
+
+		ICombatInterface* CombatInterface = Cast<ICombatInterface>(Hit.GetActor());
+		if (CombatInterface)
+			bIsPlayerBlocking = CombatInterface->IsBlocking();
+
+		const bool bIsMyAttackUnblockable = false;
+
+		if (bIsPlayerBlocking && !bIsMyAttackUnblockable)
+		{
+			bIsValidBlock = IsValidBlock(CharacterOwner, Hit.GetActor());
+		}
+
+		if (bIsValidBlock && CombatInterface)
+		{
+			CombatInterface->SuccesfulBlock(CharacterOwner);
+		}
+
+		else
+		{
+			ApplyDamageToActorHit(Hit.GetActor(), ActiveCollisionPart->Damage, CharacterOwner->GetInstigator()->GetController(), CharacterOwner, UDamageType::StaticClass());
+			ExecuteHitActor(Hit);
+		}
+
+
 
 	}
 
@@ -210,4 +237,12 @@ bool UPawnCombatComponent::IsPlayingMontage_ExcludingBlendOut()
 void UPawnCombatComponent::ResetAttack()
 {
 
+}
+
+bool UPawnCombatComponent::IsValidBlock(AActor* InAttacker, AActor* InDefender)
+{
+	check(InAttacker && InDefender);
+
+	const float DotResult = FVector::DotProduct(InAttacker->GetActorForwardVector(), InDefender->GetActorForwardVector());
+	return DotResult < -0.1f;
 }

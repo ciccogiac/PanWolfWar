@@ -22,6 +22,8 @@ public:
 	void SetCombatEnabled(bool CombatEnabled, UAnimInstance* PlayerAnimInstance);
 	virtual void ResetAttack() override;
 
+	void Counterattack();
+
 protected:
 	virtual void BeginPlay();
 
@@ -31,6 +33,7 @@ private:
 
 	void LightAttack();
 	void HeavyAttack();
+
 	void ResetLightAttackComboCount();
 	void ResetHeavyAttackComboCount();
 
@@ -57,6 +60,9 @@ private:
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Attack Montages", meta = (AllowPrivateAccess = "true"))
 	TMap<int32, UAnimMontage*> HeavyAttackMontages;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Attack Montages", meta = (AllowPrivateAccess = "true"))
+	UAnimMontage* CounterattackMontage;
 
 	EAttackType LastAttackType;
 	int32 UsedLightComboCount;

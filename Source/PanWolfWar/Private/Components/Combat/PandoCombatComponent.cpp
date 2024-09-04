@@ -79,6 +79,12 @@ void UPandoCombatComponent::HeavyAttack()
 	CurrentHeavyAttackComboCount++;
 }
 
+void UPandoCombatComponent::Counterattack()
+{
+	if (!OwningPlayerAnimInstance) return;
+	OwningPlayerAnimInstance->Montage_Play(CounterattackMontage);
+}
+
 void UPandoCombatComponent::ResetLightAttackComboCount()
 {
 	CurrentLightAttackComboCount = 1;
@@ -163,5 +169,4 @@ void UPandoCombatComponent::ResetAttack()
 {
 	Super::ResetAttack();
 
-	Debug::Print(TEXT("RsetAttack"));
 }

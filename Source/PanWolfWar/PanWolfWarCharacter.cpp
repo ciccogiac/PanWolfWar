@@ -317,6 +317,8 @@ void APanWolfWarCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInpu
 		EnhancedInputComponent->BindAction(PanWolfComponent->DodgeAction, ETriggerEvent::Started, PanWolfComponent, &UPanWolfComponent::Dodge);
 		EnhancedInputComponent->BindAction(PanWolfComponent->LightAttackAction, ETriggerEvent::Started, PanWolfComponent, &UPanWolfComponent::LightAttack);
 		EnhancedInputComponent->BindAction(PanWolfComponent->HeavyAttackAction, ETriggerEvent::Started, PanWolfComponent, &UPanWolfComponent::HeavyAttack);
+		EnhancedInputComponent->BindAction(PanWolfComponent->BlockAction, ETriggerEvent::Started, PanWolfComponent, &UPanWolfComponent::Block);
+		EnhancedInputComponent->BindAction(PanWolfComponent->BlockAction, ETriggerEvent::Completed, PanWolfComponent, &UPanWolfComponent::UnBlock);
 		#pragma endregion
 
 
@@ -660,4 +662,22 @@ void APanWolfWarCharacter::OnDeathEnter()
 UPawnUIComponent* APanWolfWarCharacter::GetPawnUIComponent() const
 {
 	return nullptr;
+}
+
+bool APanWolfWarCharacter::IsBlocking()
+{
+	if (TransformationComponent->GetCurrentTransformationState() == ETransformationState::ETS_PanWolf && PanWolfComponent->IsActive())
+	{
+		return PanWolfComponent->IsBlocking();
+	}
+
+	return false;
+}
+
+void APanWolfWarCharacter::SuccesfulBlock(AActor* Attacker)
+{
+	if (TransformationComponent->GetCurrentTransformationState() == ETransformationState::ETS_PanWolf && PanWolfComponent->IsActive())
+	{
+		return PanWolfComponent->SuccesfulBlock(Attacker);
+	}
 }

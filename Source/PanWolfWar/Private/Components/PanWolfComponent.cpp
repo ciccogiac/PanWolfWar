@@ -11,7 +11,9 @@
 #include "GameFramework/SpringArmComponent.h"
 
 #include "Kismet/KismetMathLibrary.h"
-
+#include "Kismet/GameplayStatics.h"
+#include <NiagaraFunctionLibrary.h>
+#include "NiagaraComponent.h"
 
 UPanWolfComponent::UPanWolfComponent()
 {
@@ -66,6 +68,71 @@ void UPanWolfComponent::Deactivate()
 	PanWolfState = EPanWolfState::EPWS_PanWolf;
 
 	PanWolfCharacter->RemoveMappingContext(PanWolfMappingContext);
+}
+
+void UPanWolfComponent::Block()
+{
+
+	if (PanWolfState != EPanWolfState::EPWS_PanWolf || !OwningPlayerAnimInstance) return;
+
+	BlockActivatedTime = UGameplayStatics::GetTimeSeconds(this);
+
+	PanWolfState = EPanWolfState::EPWS_Blocking;
+	OwningPlayerAnimInstance->Montage_Play(PanWolf_BlockMontage);
+
+	AddShield();
+}
+
+void UPanWolfComponent::UnBlock()
+{
+
+	OwningPlayerAnimInstance->Montage_Stop(0.25, PanWolf_BlockMontage);
+	RemoveShield();
+}
+
+void UPanWolfComponent::SuccesfulBlock(AActor* Attacker)
+{
+
+
+	bIsPerfectBlock = (UGameplayStatics::GetTimeSeconds(this) - BlockActivatedTime ) < PerfectBlockTime ? true : false;
+
+	if(Attacker)
+	{
+		const FRotator BlockRotation = UKismetMathLibrary::FindLookAtRotation(CharacterOwner->GetActorLocation(),Attacker->GetActorLocation());
+		CharacterOwner->SetActorRotation(BlockRotation);
+
+		const FVector Force = (CharacterOwner->GetActorForwardVector() * -1.f) * BlockRepulsionForce;
+		CharacterOwner->GetCharacterMovement()->AddForce(Force);
+	}
+
+
+
+	if (ShieldBlock_Sound)
+	{
+		UGameplayStatics::PlaySoundAtLocation(this, ShieldBlock_Sound, CharacterOwner->GetActorLocation());
+
+	}
+
+	UNiagaraFunctionLibrary::SpawnSystemAttached(BlockShieldNiagara, CharacterOwner->GetMesh(), FName("ShieldSocket"), FVector::ZeroVector, FRotator::ZeroRotator, EAttachLocation::KeepRelativeOffset, true);
+
+	if (bIsPerfectBlock)
+	{
+		Debug::Print(TEXT("PerfectBlock"));
+		//JumpToFinisher?
+
+		UNiagaraFunctionLibrary::SpawnSystemAttached(PerfectBlockShieldNiagara, CharacterOwner->GetMesh(), FName("ShieldSocket"), CharacterOwner->GetActorForwardVector() * 30.f, UKismetMathLibrary::MakeRotFromX(CharacterOwner->GetActorForwardVector()), EAttachLocation::KeepRelativeOffset, true);
+	
+		UGameplayStatics::SetGlobalTimeDilation(this,0.2f);
+		/*GetWorld()->GetTimerManager().SetTimer(PerfectBlock_TimerHandle, [this]() {UGameplayStatics::SetGlobalTimeDilation(this, 1.f); }, PerfectBlockTimer, false);*/
+		GetWorld()->GetTimerManager().SetTimer(PerfectBlock_TimerHandle, [this]() {this->ResetPerfectBlock(); }, PerfectBlockTimer, false);
+	}
+
+}
+
+void UPanWolfComponent::ResetPerfectBlock()
+{
+	bIsPerfectBlock = false;
+	UGameplayStatics::SetGlobalTimeDilation(this, 1.f);
 }
 
 void UPanWolfComponent::Jump()
@@ -127,14 +194,21 @@ void UPanWolfComponent::LightAttack()
 	//	CombatComponent->PerformAttack(EAttackType::EAT_LightAttack_Right);
 
 	if (!CombatComponent) return;
-	CombatComponent->PerformAttack(EAttackType::EAT_LightAttack);
+
+	if (bIsPerfectBlock)
+		CombatComponent->Counterattack();
+	else
+		CombatComponent->PerformAttack(EAttackType::EAT_LightAttack);
 
 }
 
 void UPanWolfComponent::HeavyAttack()
 {
 	if (!CombatComponent) return;
-	CombatComponent->PerformAttack(EAttackType::EAT_HeavyAttack);
+	if (bIsPerfectBlock)
+		CombatComponent->Counterattack();
+	else
+		CombatComponent->PerformAttack(EAttackType::EAT_HeavyAttack);
 }
 
 void UPanWolfComponent::BeginPlay()
@@ -161,4 +235,30 @@ void UPanWolfComponent::OnMontageEnded(UAnimMontage* Montage, bool bInterrupted)
 	{
 		CharacterOwner->GetMesh()->SetScalarParameterValueOnMaterials(FName("HitFxSwitch"), 0.f);
 	}
+
+	else if (Montage == PanWolf_BlockMontage)
+	{
+		PanWolfState = EPanWolfState::EPWS_PanWolf;
+		RemoveShield();
+
+		if(UGameplayStatics::GetGlobalTimeDilation(this) < 1.f)
+			UGameplayStatics::SetGlobalTimeDilation(this, 1.f);
+	}
+}
+
+void UPanWolfComponent::AddShield()
+{
+	if (AddShield_Sound)
+	{
+		UGameplayStatics::PlaySoundAtLocation(this, AddShield_Sound, CharacterOwner->GetActorLocation());
+
+	}
+
+	Shield_NiagaraComp = UNiagaraFunctionLibrary::SpawnSystemAttached(ShieldNiagara, CharacterOwner->GetMesh(), FName("ShieldSocket"), FVector::ZeroVector, FRotator::ZeroRotator, EAttachLocation::KeepRelativeOffset, false);
+}
+
+void UPanWolfComponent::RemoveShield()
+{
+	if (Shield_NiagaraComp)
+		Shield_NiagaraComp->DestroyComponent();
 }

@@ -39,4 +39,8 @@ public:
 	virtual float GetDefensePower() = 0;
 	UFUNCTION(BlueprintCallable)
 	virtual void OnDeathEnter() = 0;
+	UFUNCTION(BlueprintCallable)
+	virtual bool IsBlocking() = 0;
+	UFUNCTION(BlueprintCallable)
+	virtual void SuccesfulBlock(AActor* Attacker) = 0;
 };

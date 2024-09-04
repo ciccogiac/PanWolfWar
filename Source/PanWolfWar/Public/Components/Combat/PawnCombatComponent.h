@@ -70,6 +70,8 @@ private:
 
 	void ApplyDamageToActorHit(AActor* DamagedActor, float BaseDamage, AController* EventInstigator, AActor* DamageCauser, TSubclassOf<UDamageType> DamageTypeClass);
 
+	bool IsValidBlock(AActor* InAttacker, AActor* InDefender);
+
 protected:
 	ACharacter* CharacterOwner;
 	UAnimInstance* OwningPlayerAnimInstance = nullptr;

@@ -72,6 +72,8 @@ public:
 	virtual void SetUnderAttack() override;
 	virtual float GetDefensePower() override;
 	virtual void OnDeathEnter() override;
+	virtual bool IsBlocking() override;
+	virtual void SuccesfulBlock(AActor* Attacker) override;
 
 	void ResetUnderAttack() ;
 	//HitInterface

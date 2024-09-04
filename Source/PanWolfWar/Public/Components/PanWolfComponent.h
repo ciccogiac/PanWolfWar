@@ -11,12 +11,15 @@ class UInputMappingContext;
 class UInputAction;
 class UAnimMontage;
 class UPandoCombatComponent;
+class UNiagaraSystem;
+class UNiagaraComponent;
 
 UENUM(BlueprintType)
 enum class EPanWolfState : uint8
 {
 	EPWS_PanWolf UMETA(DisplayName = "PanWolf"),
-	EPWS_Dodging UMETA(DisplayName = "Dodging")
+	EPWS_Dodging UMETA(DisplayName = "Dodging"),
+	EPWS_Blocking UMETA(DisplayName = "Blocking")
 };
 
 
@@ -36,6 +39,10 @@ public:
 	void HeavyAttack();
 	void Dodge();
 
+	void Block();
+	void UnBlock();
+	void SuccesfulBlock(AActor* Attacker);
+
 protected:
 	virtual void BeginPlay() override;
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
@@ -43,6 +50,11 @@ protected:
 private:
 	UFUNCTION()
 	void OnMontageEnded(UAnimMontage* Montage, bool bInterrupted);
+
+	void AddShield();
+	void RemoveShield();
+
+	void ResetPerfectBlock();
 
 private:
 	APanWolfWarCharacter* PanWolfCharacter;
@@ -66,6 +78,41 @@ private:
 
 	UPROPERTY(EditDefaultsOnly, Category = Combat)
 	UAnimMontage* PanWolf_HitReactMontage;
+
+
+	UPROPERTY(EditDefaultsOnly, Category = Combat)
+	UAnimMontage* PanWolf_BlockMontage;
+
+	UPROPERTY(EditDefaultsOnly, Category = Combat)
+	USoundBase* ShieldBlock_Sound;
+
+	UPROPERTY(EditDefaultsOnly, Category = Combat)
+	UNiagaraSystem* BlockShieldNiagara;
+
+	UPROPERTY(EditDefaultsOnly, Category = Combat)
+	UNiagaraSystem* PerfectBlockShieldNiagara;
+
+	UPROPERTY(EditDefaultsOnly, Category = Combat)
+	USoundBase* AddShield_Sound;
+
+	UPROPERTY(EditDefaultsOnly, Category = Combat)
+	UNiagaraSystem* ShieldNiagara;
+
+	UNiagaraComponent* Shield_NiagaraComp;
+
+	UPROPERTY(EditDefaultsOnly, Category = Combat)
+	float BlockRepulsionForce = 2500000.f;
+
+	UPROPERTY(EditDefaultsOnly, Category = Combat)
+	float PerfectBlockTime = 0.25f;
+
+	UPROPERTY(EditDefaultsOnly, Category = Combat)
+	float PerfectBlockTimer = 0.1f;
+
+	float BlockActivatedTime = 0.f;
+	bool bIsPerfectBlock = false;
+
+	FTimerHandle PerfectBlock_TimerHandle;
 		
 public:
 
@@ -81,6 +128,10 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	UInputAction* HeavyAttackAction;
 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	UInputAction* BlockAction;
+
 public:
 	FORCEINLINE UAnimMontage* GetPanWolfHitReactMontage() const { return PanWolf_HitReactMontage; }
+	FORCEINLINE bool IsBlocking() const { return PanWolfState == EPanWolfState::EPWS_Blocking; }
 };
