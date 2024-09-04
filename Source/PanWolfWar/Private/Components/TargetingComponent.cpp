@@ -39,11 +39,18 @@ void UTargetingComponent::TickComponent(float DeltaTime, ELevelTick TickType, FA
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);	
 
-	if (!CurrentLockedActor || CurrentLockedActor->ActorHasTag("Dead") || CharacterOwner->ActorHasTag("Dead") )
+	if (CurrentLockedActor && CurrentLockedActor->ActorHasTag("Dead"))
+	{
+		TryLockOnTarget();
+	}
+
+	/*if (!CurrentLockedActor || CurrentLockedActor->ActorHasTag("Dead") || CharacterOwner->ActorHasTag("Dead") )*/
+	if (!CurrentLockedActor  || CharacterOwner->ActorHasTag("Dead"))
 	{
 		CancelTargetLockAbility();
 		return;
 	}
+
 
 	SetTargetLockWidgetPosition();
 
@@ -52,7 +59,8 @@ void UTargetingComponent::TickComponent(float DeltaTime, ELevelTick TickType, FA
 	//	&&
 	//	!UWarriorFunctionLibrary::NativeDoesActorHaveTag(GetHeroCharacterFromActorInfo(), WarriorGameplayTags::Player_Status_Blocking);
 
-	const bool bShouldOverrideRotation = true;
+
+	const bool bShouldOverrideRotation = !isDodging;
 
 	if (bShouldOverrideRotation)
 	{
@@ -105,7 +113,7 @@ void UTargetingComponent::EnableLock()
 
 	Activate();
 
-	Debug::Print(TEXT("EnableLock"));
+	//Debug::Print(TEXT("EnableLock"));
 }
 
 void UTargetingComponent::DisableLock()
@@ -119,7 +127,7 @@ void UTargetingComponent::DisableLock()
 
 	Deactivate();
 
-	Debug::Print(TEXT("DisableLock"));
+	/*Debug::Print(TEXT("DisableLock"));*/
 
 }
 
@@ -171,7 +179,8 @@ void UTargetingComponent::TryLockOnTarget()
 
 		SetTargetLockWidgetPosition();
 
-		EnableLock();
+		if(!bIsTargeting)
+			EnableLock();
 	}
 	else
 	{
@@ -202,7 +211,7 @@ void UTargetingComponent::GetAvailableActorsToLock()
 	{
 		if (AActor* HitActor = TraceHit.GetActor())
 		{
-			if (HitActor != CharacterOwner)
+			if (HitActor != CharacterOwner && !HitActor->ActorHasTag("Dead"))
 			{
 				AvailableActorsToLock.AddUnique(HitActor);
 

@@ -12,6 +12,7 @@
 
 #include "Kismet/KismetMathLibrary.h"
 
+
 UPanWolfComponent::UPanWolfComponent()
 {
 	PrimaryComponentTick.bCanEverTick = true;
@@ -93,6 +94,7 @@ void UPanWolfComponent::Dodge()
 	const FVector CachedRollingDirection = CharacterOwner->GetCharacterMovement()->GetLastInputVector().GetSafeNormal();
 	const FRotator TargetRotation = UKismetMathLibrary::MakeRotFromX(CachedRollingDirection);
 	PanWolfCharacter->SetMotionWarpTarget(FName("RollingDirection"), FVector::ZeroVector, TargetRotation);
+
 	PanWolfCharacter->StartDodge();
 	OwningPlayerAnimInstance->Montage_Play(PanWolfDodgeMontage);
 }

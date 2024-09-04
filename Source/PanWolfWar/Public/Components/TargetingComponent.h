@@ -58,6 +58,7 @@ private:
 	ACharacter* CharacterOwner;
 
 	bool bIsTargeting = false;
+	bool isDodging = false;
 
 	FVector2D SwitchDirection = FVector2D::ZeroVector;
 
@@ -115,4 +116,6 @@ public:
 
 	FORCEINLINE  bool IsTargeting()  { return bIsTargeting; }
 	FORCEINLINE AActor* GetCurrentLockedActor() const { return CurrentLockedActor; }
+	FORCEINLINE  void SetIsDodging(bool Value) { isDodging = Value; }
+	
 };

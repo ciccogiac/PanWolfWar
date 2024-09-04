@@ -403,8 +403,9 @@ void APanWolfWarCharacter::StartDodge()
 {
 	if (TargetingComponent->IsTargeting())
 	{	
-		/*TargetingComponent->Deactivate();*/
-		TargetingComponent->DisableLock();
+		//TargetingComponent->Deactivate();
+		TargetingComponent->SetIsDodging(true);
+		/*TargetingComponent->DisableLock();*/
 	}
 }
 
@@ -412,7 +413,8 @@ void APanWolfWarCharacter::EndDodge()
 {
 	PandoCombatComponent->ResetAttack();
 	if (TargetingComponent->IsTargeting())
-		TargetingComponent->Activate();
+		TargetingComponent->SetIsDodging(false);
+		//TargetingComponent->Activate();
 }
 
 #pragma endregion
