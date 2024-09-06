@@ -40,7 +40,7 @@ public:
 	virtual void ResetAttack();
 
 	UFUNCTION(BlueprintCallable)
-	void ActivateCollision(FString CollisionPart);
+	void ActivateCollision(FString CollisionPart,bool bIsUnblockableAttack = false);
 
 	UFUNCTION(BlueprintCallable)
 	void DeactivateCollision(FString CollisionPart);
@@ -66,11 +66,8 @@ private:
 	void TraceLoop();
 
 	bool ActorIsSameType(AActor* OtherActor);
-	bool IsTargetPawnHostile(APawn* QueryPawn, APawn* TargetPawn);
 
 	void ApplyDamageToActorHit(AActor* DamagedActor, float BaseDamage, AController* EventInstigator, AActor* DamageCauser, TSubclassOf<UDamageType> DamageTypeClass);
-
-	bool IsValidBlock(AActor* InAttacker, AActor* InDefender);
 
 protected:
 	ACharacter* CharacterOwner;
@@ -98,7 +95,8 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Combat Stats", meta = (AllowPrivateAccess = "true"))
 	float DefensePower = 1.f;
-
+	 
+	bool CachedUnblockableAttack = false;
 
 public:
 	FORCEINLINE float GetDefensePower() const { return DefensePower; }

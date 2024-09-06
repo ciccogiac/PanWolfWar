@@ -63,11 +63,11 @@ public:
 	void EndDodge();
 
 	//Combat Interface
-	virtual void ActivateCollision(FString CollisionPart) override;
+	virtual void ActivateCollision(FString CollisionPart, bool bIsUnblockableAttack = false) override;
 	virtual void DeactivateCollision(FString CollisionPart) override;
 	virtual void SetInvulnerability(bool NewInvulnerability) override;
 	virtual bool IsCombatActorAlive() override;
-	virtual float PerformAttack() override;
+	virtual float PerformAttack(bool bIsUnblockableAttack = false) override;
 	virtual bool IsUnderAttack() override;
 	virtual void SetUnderAttack() override;
 	virtual float GetDefensePower() override;

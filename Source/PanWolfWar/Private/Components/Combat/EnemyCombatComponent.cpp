@@ -12,19 +12,24 @@ void UEnemyCombatComponent::BeginPlay()
 }
 
 
-void UEnemyCombatComponent::PerformAttack()
+void UEnemyCombatComponent::PerformAttack(bool bIsUnblockableAttack)
 {
 
 	if (!OwningPlayerAnimInstance || OwningPlayerAnimInstance->IsAnyMontagePlaying()) return;
 
+	
 
 	if (AttackMontages.Num() == 0) return;
 	const int32 RandIndex = UKismetMathLibrary::RandomIntegerInRange(0, AttackMontages.Num() - 1);
 	UAnimMontage* AttackMontage = AttackMontages[RandIndex];
 	if (!AttackMontage) return;
 
-	OwningPlayerAnimInstance->Montage_Play(AttackMontage);
+	if(bIsUnblockableAttack)
+		GetWorld()->GetTimerManager().SetTimer(UnblockableWarning_TimerHandle, [this, AttackMontage]() {this->OwningPlayerAnimInstance->Montage_Play(AttackMontage); }, UnblockableWarning_Delay, false);
+	else
+		OwningPlayerAnimInstance->Montage_Play(AttackMontage);
 }
+
 
 void UEnemyCombatComponent::ResetAttack()
 {

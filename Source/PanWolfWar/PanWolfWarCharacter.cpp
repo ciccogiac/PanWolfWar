@@ -511,12 +511,12 @@ void APanWolfWarCharacter::RemoveEnemyAware(AActor* Enemy)
 
 #pragma region Combat
 
-void APanWolfWarCharacter::ActivateCollision(FString CollisionPart)
+void APanWolfWarCharacter::ActivateCollision(FString CollisionPart, bool bIsUnblockableAttack)
 {
-	PandoCombatComponent->ActivateCollision(CollisionPart);
+	PandoCombatComponent->ActivateCollision(CollisionPart, bIsUnblockableAttack);
 }
 
-void APanWolfWarCharacter::DeactivateCollision(FString CollisionPart)
+void APanWolfWarCharacter::DeactivateCollision(FString CollisionPart )
 {
 	PandoCombatComponent->DeactivateCollision(CollisionPart);
 }
@@ -598,7 +598,7 @@ bool APanWolfWarCharacter::IsCombatActorAlive()
 	return IsAlive();
 }
 
-float APanWolfWarCharacter::PerformAttack()
+float APanWolfWarCharacter::PerformAttack(bool bIsUnblockableAttack)
 {
 	return 0.0f;
 }

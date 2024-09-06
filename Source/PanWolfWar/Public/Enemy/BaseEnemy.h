@@ -38,18 +38,19 @@ public:
 	virtual void Tick(float DeltaTime) override;
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
-	virtual void ActivateCollision(FString CollisionPart) override;
+	virtual void ActivateCollision(FString CollisionPart , bool bIsUnblockableAttack = false) override;
 	virtual void DeactivateCollision(FString CollisionPart) override;
 	virtual void SetInvulnerability(bool NewInvulnerability) override;
 	virtual FRotator GetDesiredDodgeRotation() override;
 	virtual bool IsCombatActorAlive() override;
-	virtual float PerformAttack() override;
+	virtual float PerformAttack(bool bIsUnblockableAttack = false) override;
 	virtual bool IsUnderAttack() override;
 	virtual void SetUnderAttack() override;
 	virtual float GetDefensePower() override;
 	virtual void OnDeathEnter() override;
 	virtual bool IsBlocking() override;
 	virtual void SuccesfulBlock(AActor* Attacker) override;
+	virtual void FireProjectile() override;
 
 	//HitInterface
 	virtual void GetHit(const FVector& ImpactPoint, AActor* Hitter) override;
@@ -75,6 +76,9 @@ protected:
 
 	UFUNCTION(BlueprintImplementableEvent)
 	void OnEnemyDie_Event();
+
+	UFUNCTION(BlueprintImplementableEvent)
+	void BP_FireProjectile();
 
 private:	
 

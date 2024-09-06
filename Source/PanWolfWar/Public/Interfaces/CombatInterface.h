@@ -20,7 +20,7 @@ class PANWOLFWAR_API ICombatInterface
 public:
 
 	UFUNCTION(BlueprintCallable)
-	virtual void ActivateCollision(FString CollisionPart) = 0;
+	virtual void ActivateCollision(FString CollisionPart, bool bIsUnblockableAttack = false) = 0;
 	UFUNCTION(BlueprintCallable)
 	virtual void DeactivateCollision(FString CollisionPart) = 0;
 	UFUNCTION(BlueprintCallable)
@@ -30,7 +30,7 @@ public:
 	UFUNCTION(BlueprintCallable)
 	virtual bool IsCombatActorAlive() = 0;
 	UFUNCTION(BlueprintCallable)
-	virtual float PerformAttack() = 0;
+	virtual float PerformAttack(bool bIsUnblockableAttack = false) = 0;
 	UFUNCTION(BlueprintCallable)
 	virtual bool IsUnderAttack() = 0;
 	UFUNCTION(BlueprintCallable)
@@ -43,4 +43,6 @@ public:
 	virtual bool IsBlocking() = 0;
 	UFUNCTION(BlueprintCallable)
 	virtual void SuccesfulBlock(AActor* Attacker) = 0;
+	UFUNCTION(BlueprintCallable)
+	virtual void FireProjectile() ;
 };

@@ -6,7 +6,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "Interfaces/CombatInterface.h"
 
-#include "GenericTeamAgentInterface.h"
+#include "PanWarFunctionLibrary.h"
 
 #include "PanWolfWar/DebugHelper.h"
 
@@ -30,7 +30,7 @@ void UPawnCombatComponent::BeginPlay()
 
 #pragma region CollisionTrace
 
-void UPawnCombatComponent::ActivateCollision(FString CollisionPart)
+void UPawnCombatComponent::ActivateCollision(FString CollisionPart  , bool bIsUnblockableAttack)
 {
 	ActiveCollisionPart = CollisionStructs.Find(CollisionPart);
 	if (!ActiveCollisionPart) return;
@@ -38,12 +38,16 @@ void UPawnCombatComponent::ActivateCollision(FString CollisionPart)
 	AlreadyHitActor.Empty();
 
 	GetWorld()->GetTimerManager().SetTimer(Collision_TimerHandle, [this]() {this->TraceLoop(); }, 0.001f, true);
+
+	CachedUnblockableAttack = bIsUnblockableAttack;
 }
 
-void UPawnCombatComponent::DeactivateCollision(FString CollisionPart)
+void UPawnCombatComponent::DeactivateCollision(FString CollisionPart  )
 {
 	GetWorld()->GetTimerManager().ClearTimer(Collision_TimerHandle);
 	ActiveCollisionPart = nullptr;
+
+	CachedUnblockableAttack = false;
 }
 
 void UPawnCombatComponent::TraceLoop()
@@ -72,8 +76,9 @@ void UPawnCombatComponent::TraceLoop()
 		AlreadyHitActor.Add(HitResults[i].GetActor());
 
 		//if (ActorIsSameType(Hit.GetActor())) continue;
-		if (!IsTargetPawnHostile(Cast<APawn>(CharacterOwner), Cast<APawn>(Hit.GetActor()))) continue;
-
+		/*if (!IsTargetPawnHostile(Cast<APawn>(CharacterOwner), Cast<APawn>(Hit.GetActor()))) continue;*/
+		if (!UPanWarFunctionLibrary::IsTargetPawnHostile(Cast<APawn>(CharacterOwner), Cast<APawn>(Hit.GetActor()))) continue;
+		
 		//BlockingCheck
 
 		//TODO:: Implement block check
@@ -84,11 +89,11 @@ void UPawnCombatComponent::TraceLoop()
 		if (CombatInterface)
 			bIsPlayerBlocking = CombatInterface->IsBlocking();
 
-		const bool bIsMyAttackUnblockable = false;
+		const bool bIsMyAttackUnblockable = CachedUnblockableAttack;
 
 		if (bIsPlayerBlocking && !bIsMyAttackUnblockable)
 		{
-			bIsValidBlock = IsValidBlock(CharacterOwner, Hit.GetActor());
+			bIsValidBlock = UPanWarFunctionLibrary::IsValidBlock(CharacterOwner, Hit.GetActor());
 		}
 
 		if (bIsValidBlock && CombatInterface)
@@ -107,21 +112,6 @@ void UPawnCombatComponent::TraceLoop()
 	}
 
 
-}
-
-bool UPawnCombatComponent::IsTargetPawnHostile(APawn* QueryPawn, APawn* TargetPawn)
-{
-	check(QueryPawn && TargetPawn);
-
-	IGenericTeamAgentInterface* QueryTeamAgent = Cast<IGenericTeamAgentInterface>(QueryPawn->GetController());
-	IGenericTeamAgentInterface* TargetTeamAgent = Cast<IGenericTeamAgentInterface>(TargetPawn->GetController());
-
-	if (QueryTeamAgent && TargetTeamAgent)
-	{
-		return QueryTeamAgent->GetGenericTeamId() != TargetTeamAgent->GetGenericTeamId();
-	}
-
-	return false;
 }
 
 bool UPawnCombatComponent::ActorIsSameType(AActor* OtherActor)
@@ -237,12 +227,4 @@ bool UPawnCombatComponent::IsPlayingMontage_ExcludingBlendOut()
 void UPawnCombatComponent::ResetAttack()
 {
 
-}
-
-bool UPawnCombatComponent::IsValidBlock(AActor* InAttacker, AActor* InDefender)
-{
-	check(InAttacker && InDefender);
-
-	const float DotResult = FVector::DotProduct(InAttacker->GetActorForwardVector(), InDefender->GetActorForwardVector());
-	return DotResult < -0.1f;
 }

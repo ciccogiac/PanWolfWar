@@ -128,7 +128,7 @@ bool ABaseEnemy::IsCombatActorAlive()
 	return bDied;
 }
 
-float ABaseEnemy::PerformAttack()
+float ABaseEnemy::PerformAttack(bool bIsUnblockableAttack )
 {
 	/*UAnimInstance* AnimIstance = GetMesh()->GetAnimInstance();
 	if (!AnimIstance) return 0.f;
@@ -149,7 +149,7 @@ float ABaseEnemy::PerformAttack()
 	//return 1.f;
 
 	if (!EnemyCombatComponent) return 0.f;
-	EnemyCombatComponent->PerformAttack();
+	EnemyCombatComponent->PerformAttack(bIsUnblockableAttack);
 
 	return 1.f;
 }
@@ -202,12 +202,12 @@ void ABaseEnemy::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent
 
 
 
-void ABaseEnemy::ActivateCollision(FString CollisionPart)
+void ABaseEnemy::ActivateCollision(FString CollisionPart, bool bIsUnblockableAttack)
 {
-	EnemyCombatComponent->ActivateCollision(CollisionPart);
+	EnemyCombatComponent->ActivateCollision(CollisionPart, bIsUnblockableAttack);
 }
 
-void ABaseEnemy::DeactivateCollision(FString CollisionPart)
+void ABaseEnemy::DeactivateCollision(FString CollisionPart )
 {
 	EnemyCombatComponent->DeactivateCollision(CollisionPart);
 }
@@ -374,4 +374,9 @@ bool ABaseEnemy::IsBlocking()
 
 void ABaseEnemy::SuccesfulBlock(AActor* Attacker)
 {
+}
+
+void ABaseEnemy::FireProjectile()
+{
+	BP_FireProjectile();
 }

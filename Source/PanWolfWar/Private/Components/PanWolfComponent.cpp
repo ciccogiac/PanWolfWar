@@ -241,7 +241,7 @@ void UPanWolfComponent::OnMontageEnded(UAnimMontage* Montage, bool bInterrupted)
 		PanWolfState = EPanWolfState::EPWS_PanWolf;
 		RemoveShield();
 
-		if(UGameplayStatics::GetGlobalTimeDilation(this) < 1.f)
+		if(UGameplayStatics::GetGlobalTimeDilation(this) != 1.f)
 			UGameplayStatics::SetGlobalTimeDilation(this, 1.f);
 	}
 }
