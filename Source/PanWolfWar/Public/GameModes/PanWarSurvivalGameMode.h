@@ -115,4 +115,5 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void RegisterSpawnedEnemies(const TArray<ABaseEnemy*>& InEnemiesToRegister);
 	
+	FORCEINLINE void OnSurvivalGameModeChanged(EPanWarSurvivalGameModeState NewState) { OnSurvivalGameModeStateChanged.Broadcast(NewState); };
 };

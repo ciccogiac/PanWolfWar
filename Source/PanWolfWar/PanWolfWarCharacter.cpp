@@ -44,6 +44,8 @@
 
 #include "Components/BoxComponent.h"
 
+#include "GameModes/PanWarSurvivalGameMode.h"
+
 DEFINE_LOG_CATEGORY(LogTemplateCharacter);
 
 //////////////////////////////////////////////////////////////////////////
@@ -624,6 +626,22 @@ void APanWolfWarCharacter::Die()
 	GetMesh()->SetSimulatePhysics(true);
 	GetMesh()->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
 	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
+	AGameModeBase* GameModeBase = UGameplayStatics::GetGameMode(this);
+	if (GameModeBase)
+	{
+		APanWarSurvivalGameMode* PanWarSurvivalGameMode = Cast<APanWarSurvivalGameMode>(GameModeBase);
+		if(PanWarSurvivalGameMode)
+			PanWarSurvivalGameMode->OnSurvivalGameModeChanged(EPanWarSurvivalGameModeState::PlayerDied);
+	}
+
+	if (APlayerController* PlayerController = GetLocalViewingPlayerController())
+	{
+		PlayerController->SetInputMode(FInputModeUIOnly());
+		PlayerController->bShowMouseCursor = true;
+	}
+	
+
 	FTimerHandle Die_TimerHandle;
 	GetWorld()->GetTimerManager().SetTimer(Die_TimerHandle, [this]() {this->Destroy(); }, 5.f, false);
 }
