@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/GameModeBase.h"
+#include "PanWarTypes/PanWarEnumTypes.h"
 #include "PanWarBaseGameMode.generated.h"
 
 /**
@@ -14,4 +15,13 @@ class PANWOLFWAR_API APanWarBaseGameMode : public AGameModeBase
 {
 	GENERATED_BODY()
 	
+public:
+	APanWarBaseGameMode();
+
+protected:
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Game Settings")
+	EPanWarGameDifficulty CurrentGameDifficulty;
+
+public:
+	FORCEINLINE EPanWarGameDifficulty GetCurrentGameDifficulty() const { return CurrentGameDifficulty; }
 };

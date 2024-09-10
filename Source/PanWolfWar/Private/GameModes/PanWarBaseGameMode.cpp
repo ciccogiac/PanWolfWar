@@ -3,3 +3,8 @@
 
 #include "GameModes/PanWarBaseGameMode.h"
 
+APanWarBaseGameMode::APanWarBaseGameMode()
+{
+	PrimaryActorTick.bCanEverTick = true;
+	PrimaryActorTick.bStartWithTickEnabled = true;
+}
