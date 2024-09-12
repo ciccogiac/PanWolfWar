@@ -439,6 +439,20 @@ bool APanWolfWarCharacter::SetOverlappingObject(AInteractableObject* Interactabl
 	return InteractComponent->SetOverlappingObject(InteractableObject, bEnter);
 }
 
+void APanWolfWarCharacter::ConsumeStone(float StoneValue, EStoneTypes StoneType)
+{
+	switch (StoneType)
+	{
+	case EStoneTypes::EST_HealingStone:
+		Attributes->AddHealth(StoneValue);
+		break;
+	case EStoneTypes::EST_BeerStone:
+		break;
+	default:
+		break;
+	}
+}
+
 void APanWolfWarCharacter::SetInvulnerability(bool NewInvulnerability)
 {
 	bIsInvulnerable = NewInvulnerability;
@@ -698,4 +712,12 @@ void APanWolfWarCharacter::SuccesfulBlock(AActor* Attacker)
 	{
 		return PanWolfComponent->SuccesfulBlock(Attacker);
 	}
+}
+
+float APanWolfWarCharacter::GetHealthPercent()
+{
+	if(Attributes)
+		return Attributes->GetHealthPercent();
+
+	return -1.f;
 }

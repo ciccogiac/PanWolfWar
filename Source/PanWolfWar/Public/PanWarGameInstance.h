@@ -10,7 +10,8 @@ UENUM(BlueprintType)
 enum class EPanWarLevel: uint8
 {
 	MainMenuMap,
-	SurvivalGameModeMap
+	SurvivalGameModeMap,
+	Level_1
 };
 
 USTRUCT(BlueprintType)

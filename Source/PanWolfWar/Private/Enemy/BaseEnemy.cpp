@@ -38,6 +38,7 @@ ABaseEnemy::ABaseEnemy()
 	EnemyHealthBarWidgetComponent->SetupAttachment(GetMesh());
 
 	Tags.Add(FName("Enemy"));
+
 }
 
 void ABaseEnemy::BeginPlay()
@@ -57,6 +58,7 @@ void ABaseEnemy::BeginPlay()
 	}
 
 	EnemyState = EEnemyState::EES_Default;
+
 }
 
 UPawnUIComponent* ABaseEnemy::GetPawnUIComponent() const
@@ -237,24 +239,29 @@ void ABaseEnemy::GetHit(const FVector& ImpactPoint, AActor* Hitter)
 
 	if (!IsAlive() || !Hitter) return;
 
-	const FRotator NewFaceRotation = UKismetMathLibrary::FindLookAtRotation(GetActorLocation(), Hitter->GetActorLocation());
-	SetActorRotation(NewFaceRotation);
-	
 	/*HitReact_Montages*/
-	if (HitReact_Montages.Num() == 0) return;
-	const int32 RandIndex = UKismetMathLibrary::RandomIntegerInRange(0, HitReact_Montages.Num()-1);
-	UAnimMontage* HitReact_Montage = HitReact_Montages[RandIndex];
-
-	if (AnimInstance && HitReact_Montage)
+	if (HitReact_Montages.Num() != 0)
 	{
-		AnimInstance->Montage_Play(HitReact_Montage);
-		GetMesh()->SetScalarParameterValueOnMaterials(FName("HitFxSwitch"), 1.f);
+		const FRotator NewFaceRotation = UKismetMathLibrary::FindLookAtRotation(GetActorLocation(), Hitter->GetActorLocation());
+		SetActorRotation(NewFaceRotation);
 
+		const int32 RandIndex = UKismetMathLibrary::RandomIntegerInRange(0, HitReact_Montages.Num() - 1);
+		UAnimMontage* HitReact_Montage = HitReact_Montages[RandIndex];
+
+		if (AnimInstance && HitReact_Montage)
+		{
+			AnimInstance->Montage_Play(HitReact_Montage);
+
+		}
 	}
+
+	GetMesh()->SetScalarParameterValueOnMaterials(FName("HitFxSwitch"), 1.f);
 
 	bIsUnderAttack = true;
 	GetWorld()->GetTimerManager().SetTimer(UnderAttack_TimerHandle, [this]() {this->bIsUnderAttack = false; }, UnderAttack_Time, false);
 
+	GetWorld()->GetTimerManager().SetTimer(GetHitFX_TimerHandle, [this]() {this->GetMesh()->SetScalarParameterValueOnMaterials(FName("HitFxSwitch"), 0.f); }, GetHitFX_Time, false);
+	
 	//EnemyCombatComponent->PlayHitSound(ImpactPoint);
 	/*EnemyCombatComponent->SpawnHitParticles(ImpactPoint);*/
 
@@ -345,6 +352,8 @@ void ABaseEnemy::OnDeathEnter()
 	GetMesh()->bPauseAnims = true;
 	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 
+	EnemyUIComponent->RemoveEnemyDrawnWidgetsIfAny();
+
 	OnEnemyDie_Event();
 }
 
@@ -381,4 +390,12 @@ void ABaseEnemy::SuccesfulBlock(AActor* Attacker)
 void ABaseEnemy::FireProjectile()
 {
 	BP_FireProjectile();
+}
+
+float ABaseEnemy::GetHealthPercent()
+{
+	if (EnemyAttributeComponent)
+		return EnemyAttributeComponent->GetHealthPercent();
+
+	return -1.f;
 }

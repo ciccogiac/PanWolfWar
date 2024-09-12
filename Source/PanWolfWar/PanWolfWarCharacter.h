@@ -74,6 +74,7 @@ public:
 	virtual void OnDeathEnter() override;
 	virtual bool IsBlocking() override;
 	virtual void SuccesfulBlock(AActor* Attacker) override;
+	virtual float GetHealthPercent() override;
 
 	void ResetUnderAttack() ;
 	//HitInterface
@@ -257,7 +258,7 @@ private:
 	//Interfaces
 
 	virtual bool SetOverlappingObject(AInteractableObject* InteractableObject, bool bEnter = true) override;
-
+	virtual void ConsumeStone(float StoneValue, EStoneTypes StoneType) override;
 
 
 #pragma endregion

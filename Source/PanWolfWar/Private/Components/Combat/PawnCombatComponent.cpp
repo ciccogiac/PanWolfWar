@@ -77,8 +77,9 @@ void UPawnCombatComponent::TraceLoop()
 
 		//if (ActorIsSameType(Hit.GetActor())) continue;
 		/*if (!IsTargetPawnHostile(Cast<APawn>(CharacterOwner), Cast<APawn>(Hit.GetActor()))) continue;*/
+
 		if (!UPanWarFunctionLibrary::IsTargetPawnHostile(Cast<APawn>(CharacterOwner), Cast<APawn>(Hit.GetActor()))) continue;
-		
+
 		//BlockingCheck
 
 		//TODO:: Implement block check

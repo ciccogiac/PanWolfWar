@@ -3,6 +3,9 @@
 #include "Kismet/GameplayStatics.h"
 #include "PanWarTypes/PanWarCountDownAction.h"
 #include "PanWarGameInstance.h"
+#include "SaveGame/PanWarSaveGame.h"
+
+#include "PanWolfWar/DebugHelper.h"
 
 bool UPanWarFunctionLibrary::IsTargetPawnHostile(APawn* QueryPawn, APawn* TargetPawn)
 {
@@ -29,33 +32,36 @@ bool UPanWarFunctionLibrary::IsValidBlock(AActor* InAttacker, AActor* InDefender
 
 void UPanWarFunctionLibrary::SaveCurrentGameDifficulty(EPanWarGameDifficulty InDifficultyToSave)
 {
-   /* USaveGame* SaveGameObject = UGameplayStatics::CreateSaveGameObject(UWarriorSaveGame::StaticClass());
+    USaveGame* SaveGameObject = UGameplayStatics::CreateSaveGameObject(UPanWarSaveGame::StaticClass());
 
-    if (UWarriorSaveGame* WarriorSaveGameObject = Cast<UWarriorSaveGame>(SaveGameObject))
+    if (UPanWarSaveGame* PanWarSaveGameObject = Cast<UPanWarSaveGame>(SaveGameObject))
     {
-        WarriorSaveGameObject->SavedCurrentGameDifficulty = InDifficultyToSave;
+        PanWarSaveGameObject->SavedCurrentGameDifficulty = InDifficultyToSave;
 
-        const bool bWasSaved = UGameplayStatics::SaveGameToSlot(WarriorSaveGameObject, WarriorGameplayTags::GameData_SaveGame_Slot_1.GetTag().ToString(), 0);
+       /* const bool bWasSaved = UGameplayStatics::SaveGameToSlot(PanWarSaveGameObject, WarriorGameplayTags::GameData_SaveGame_Slot_1.GetTag().ToString(), 0);*/
+        const bool bWasSaved = UGameplayStatics::SaveGameToSlot(PanWarSaveGameObject, FString("SaveGame.Slot.1"), 0);
 
         Debug::Print(bWasSaved ? TEXT("Difficulty Saved") : TEXT("Difficulty NOT Saved"));
-    }*/
+    }
 }
 
 bool UPanWarFunctionLibrary::TryLoadSavedGameDifficulty(EPanWarGameDifficulty& OutSavedDifficulty)
 {
-   /* if (UGameplayStatics::DoesSaveGameExist(WarriorGameplayTags::GameData_SaveGame_Slot_1.GetTag().ToString(), 0))
+   /* if (UGameplayStatics::DoesSaveGameExist(WarriorGameplayTags::GameData_SaveGame_Slot_1.GetTag().ToString(), 0))*/
+    if (UGameplayStatics::DoesSaveGameExist(FString("SaveGame.Slot.1"), 0))
     {
-        USaveGame* SaveGameObject = UGameplayStatics::LoadGameFromSlot(WarriorGameplayTags::GameData_SaveGame_Slot_1.GetTag().ToString(), 0);
+       /* USaveGame* SaveGameObject = UGameplayStatics::LoadGameFromSlot(WarriorGameplayTags::GameData_SaveGame_Slot_1.GetTag().ToString(), 0);*/
+        USaveGame* SaveGameObject = UGameplayStatics::LoadGameFromSlot(FString("SaveGame.Slot.1"), 0);
 
-        if (UWarriorSaveGame* WarriorSaveGameObject = Cast<UWarriorSaveGame>(SaveGameObject))
+        if (UPanWarSaveGame* PanWarSaveGameObject = Cast<UPanWarSaveGame>(SaveGameObject))
         {
-            OutSavedDifficulty = WarriorSaveGameObject->SavedCurrentGameDifficulty;
+            OutSavedDifficulty = PanWarSaveGameObject->SavedCurrentGameDifficulty;
 
             Debug::Print(TEXT("Loading Successful"), FColor::Green);
 
             return true;
         }
-    }*/
+    }
 
     return false;
 }

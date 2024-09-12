@@ -50,6 +50,11 @@ void UPandolfoComponent::Activate(bool bReset)
 {
 	Super::Activate();
 
+	if(!CharacterOwner)
+		CharacterOwner = Cast<ACharacter>(GetOwner());
+	if(!PanWolfCharacter)
+		PanWolfCharacter = Cast<APanWolfWarCharacter>(CharacterOwner);
+
 	PanWolfCharacter->AddMappingContext(PandolfoMappingContext, 1);
 
 	PandolfoState = EPandolfoState::EPS_Pandolfo;
@@ -111,6 +116,7 @@ void UPandolfoComponent::Deactivate()
 	PandolfoState = EPandolfoState::EPS_Pandolfo;
 
 	PanWolfCharacter->SetMetaHumanVisibility(false);
+
 }
 
 void UPandolfoComponent::BeginPlay()
@@ -126,6 +132,20 @@ void UPandolfoComponent::BeginPlay()
 	ProgressUpdate.BindUFunction(this, FName("CrouchCameraUpdate"));
 	CrouchingTimeline.AddInterpFloat(CrouchCameraLenght_Curve, ProgressUpdate);
 
+}
+
+void UPandolfoComponent::OnComponentDestroyed(bool bDestroyingHierarchy)
+{
+	//Debug::Print(TEXT("OVA"));
+
+	//FTimerHandle AirAssassination_TimerHandle;
+	//FTimerHandle AirAssassinationCamera_TimerHandle;
+	//FTimerHandle Glide_TimerHandle;
+	//FTimerHandle Sliding_TimerHandle;
+	//FTimerHandle PredictJump_TimerHandle;
+
+	//GetWorld()->GetTimerManager().ClearTimer(AirAssassination_TimerHandle);
+	//GetWorld()->GetTimerManager().ClearAllTimersForObject(this);
 }
 
 void UPandolfoComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
@@ -617,7 +637,7 @@ void UPandolfoComponent::TakeKnife(bool Take)
 void UPandolfoComponent::CheckCanAirAssassin()
 {
 	if (PandolfoState != EPandolfoState::EPS_Pandolfo) return;
-	if (!CharacterOwner->GetMesh()) return;
+	if (!CharacterOwner || !CharacterOwner->GetMesh()) return;
 	UAnimInstance* OwningPlayerAnimInstance = CharacterOwner->GetMesh()->GetAnimInstance();
 	if (!OwningPlayerAnimInstance) return;
 	if (OwningPlayerAnimInstance->IsAnyMontagePlaying()) return;

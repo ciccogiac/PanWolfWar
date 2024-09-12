@@ -51,6 +51,7 @@ public:
 	virtual bool IsBlocking() override;
 	virtual void SuccesfulBlock(AActor* Attacker) override;
 	virtual void FireProjectile() override;
+	virtual float GetHealthPercent() override;
 
 	//HitInterface
 	virtual void GetHit(const FVector& ImpactPoint, AActor* Hitter) override;
@@ -93,9 +94,13 @@ protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Under Attack", meta = (AllowPrivateAccess = "true"))
 	float UnderAttack_Time = 6.f;
 
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Under Attack", meta = (AllowPrivateAccess = "true"))
+	float GetHitFX_Time = 0.3f;
+
 	bool bIsUnderAttack = false;
 
 	FTimerHandle UnderAttack_TimerHandle;
+	FTimerHandle GetHitFX_TimerHandle;
 
 
 	EEnemyState EnemyState;

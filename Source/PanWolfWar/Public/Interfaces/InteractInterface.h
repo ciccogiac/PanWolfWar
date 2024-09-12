@@ -15,6 +15,14 @@ enum class ETransformationObjectTypes : uint8
 	ETOT_PanBird_Object UMETA(DisplayName = "PanBird_Object")
 };
 
+UENUM(BlueprintType)
+enum class EStoneTypes : uint8
+{
+	EST_HealingStone UMETA(DisplayName = "HealingStone"),
+	EST_BeerStone UMETA(DisplayName = "BeerStone")
+};
+
+
 // This class does not need to be modified.
 UINTERFACE(MinimalAPI)
 class UInteractInterface : public UInterface
@@ -33,4 +41,6 @@ public:
 	virtual bool SetOverlappingObject(class AInteractableObject* InteractableObject, bool bEnter=true) = 0;
 
 	static FName GetSelectedFName(ETransformationObjectTypes TransformationObjectType);
+
+	virtual void ConsumeStone(float StoneValue, EStoneTypes StoneType) = 0;
 };

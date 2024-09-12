@@ -45,4 +45,6 @@ public:
 	virtual void SuccesfulBlock(AActor* Attacker) = 0;
 	UFUNCTION(BlueprintCallable)
 	virtual void FireProjectile() ;
+	UFUNCTION(BlueprintCallable)
+	virtual float GetHealthPercent() = 0;
 };

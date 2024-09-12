@@ -28,6 +28,8 @@ APanWarAIController::APanWarAIController(const FObjectInitializer& ObjectInitial
 	EnemyPerceptionComponent->OnTargetPerceptionUpdated.AddUniqueDynamic(this, &ThisClass::OnEnemyPerceptionUpdated);
 
 	SetGenericTeamId(FGenericTeamId(1));
+
+
 }
 
 ETeamAttitude::Type APanWarAIController::GetTeamAttitudeTowards(const AActor& Other) const

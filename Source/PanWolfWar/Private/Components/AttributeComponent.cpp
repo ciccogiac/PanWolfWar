@@ -64,6 +64,11 @@ bool UAttributeComponent::IsAlive()
 void UAttributeComponent::AddHealth(float healthToAdd)
 {
 	Health = FMath::Clamp(Health + healthToAdd, 0.f, MaxHealth);
+
+	if (PanwolfwarOverlay)
+	{
+		PanwolfwarOverlay->SetHealthBarPercent(1 - GetHealthPercent());
+	}
 }
 
 #pragma endregion

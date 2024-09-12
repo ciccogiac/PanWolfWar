@@ -34,6 +34,25 @@ void APanWarSurvivalGameMode::BeginPlay()
 	TotalWavesToSpawn = EnemyWaveSpawnerDataTable->GetRowNames().Num();
 
 	PreLoadNextWaveEnemies();
+
+	switch (CurrentGameDifficulty)
+	{
+	case EPanWarGameDifficulty::Easy:
+		Debug::Print(TEXT("Easy"));
+		break;
+	case EPanWarGameDifficulty::Normal:
+		Debug::Print(TEXT("Normal"));
+		break;
+	case EPanWarGameDifficulty::Hard:
+		Debug::Print(TEXT("Hard"));
+		break;
+	case EPanWarGameDifficulty::VeryHard:
+		Debug::Print(TEXT("VeryHard"));
+		break;
+	default:
+		break;
+	}
+
 }
 
 void APanWarSurvivalGameMode::Tick(float DeltaTime)
