@@ -13,8 +13,6 @@ void UEnemyCombatComponent::BeginPlay()
 	OwningPlayerAnimInstance = CharacterOwner->GetMesh()->GetAnimInstance();
 }
 
-
-
 void UEnemyCombatComponent::PerformAttack()
 {
 
@@ -37,7 +35,6 @@ void UEnemyCombatComponent::PerformAttack()
 	}
 
 }
-
 
 void UEnemyCombatComponent::ResetAttack()
 {

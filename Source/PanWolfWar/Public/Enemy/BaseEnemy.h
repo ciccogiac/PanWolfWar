@@ -6,6 +6,7 @@
 #include "Interfaces/CombatInterface.h"
 #include "Interfaces/HitInterface.h"
 #include "Interfaces/PawnUIInterface.h"
+#include "ScalableFloat.h"
 #include "BaseEnemy.generated.h"
 
 
@@ -25,6 +26,33 @@ enum class EEnemyState : uint8
 	EES_Strafing UMETA(DisplayName = "Strafing"),
 };
 
+USTRUCT(BlueprintType)
+struct FEnemyInitStats
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Stats", meta = (AllowPrivateAccess = "true"))
+	FScalableFloat MaxHealth;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Stats", meta = (AllowPrivateAccess = "true"))
+	FScalableFloat AttackPower;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Stats", meta = (AllowPrivateAccess = "true"))
+	FScalableFloat DefensePower;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Stats", meta = (AllowPrivateAccess = "true"))
+	FScalableFloat BaseDamage;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Stats", meta = (AllowPrivateAccess = "true"))
+	FScalableFloat StoneSpawnChance;
+
+	// Costruttore di default
+	FEnemyInitStats()
+		: MaxHealth(1),AttackPower(1), DefensePower(1), BaseDamage(1), StoneSpawnChance(1)
+	{
+	}
+};
+
 UCLASS()
 class PANWOLFWAR_API ABaseEnemy : public ACharacter, public ICombatInterface, public IHitInterface , public IPawnUIInterface
 {
@@ -40,8 +68,6 @@ public:
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
 	virtual UPawnCombatComponent* GetCombatComponent() const override;
-	virtual void ActivateCollision(FString CollisionPart , bool bIsUnblockableAttack = false) override;
-	virtual void DeactivateCollision(FString CollisionPart) override;
 	virtual void SetInvulnerability(bool NewInvulnerability) override;
 	virtual FRotator GetDesiredDodgeRotation() override;
 	virtual bool IsCombatActorAlive() override;
@@ -93,6 +119,8 @@ protected:
 
 private:	
 
+	void InitEnemyStats();
+
 	void FindNearestAI();
 	void ApplyHitReactionPhisicsVelocity(FName HitPart);
 	void EnableHandToHandCombat();
@@ -100,6 +128,9 @@ private:
 protected:
 	bool bDied = false;
 	bool bSeen = false;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Stats", meta = (AllowPrivateAccess = "true"))
+	FEnemyInitStats EnemyInitStats;
 
 	/** Under Attack */
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Under Attack", meta = (AllowPrivateAccess = "true"))

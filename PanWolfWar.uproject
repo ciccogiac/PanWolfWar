@@ -53,6 +53,10 @@
 				"Linux",
 				"Android"
 			]
+		},
+		{
+			"Name": "GameplayAbilities",
+			"Enabled": true
 		}
 	],
 	"TargetPlatforms": [

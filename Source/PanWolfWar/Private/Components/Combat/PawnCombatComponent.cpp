@@ -18,244 +18,24 @@
 UPawnCombatComponent::UPawnCombatComponent()
 {
 	PrimaryComponentTick.bCanEverTick = false;
-
 	CharacterOwner = Cast<ACharacter>(GetOwner());
-
-
 }
 
 void UPawnCombatComponent::BeginPlay()
 {
 	Super::BeginPlay();
-
 }
 
-void UPawnCombatComponent::EnableHandToHandCombat(UBoxComponent* _LeftHandCollisionBox, UBoxComponent* _RightHandCollisionBox)
+void UPawnCombatComponent::InitializeCombatStats(float _BaseDamage, float _AttackPower, float _DefensePower)
 {
-	LeftHandCollisionBox = _LeftHandCollisionBox;
-	RightHandCollisionBox = _RightHandCollisionBox;
+	BaseAttackDamage = _BaseDamage;
+	AttackPower = _AttackPower;
+	DefensePower = _DefensePower;
 }
-
 
 #pragma endregion
 
 #pragma region CollisionTrace
-
-void UPawnCombatComponent::ActivateCollision(FString CollisionPart  , bool bIsUnblockableAttack)
-{
-	ActiveCollisionPart = CollisionStructs.Find(CollisionPart);
-	if (!ActiveCollisionPart) return;
-
-	AlreadyHitActor.Empty();
-
-	GetWorld()->GetTimerManager().SetTimer(Collision_TimerHandle, [this]() {this->TraceLoop(); }, 0.001f, true);
-
-	CachedUnblockableAttack = bIsUnblockableAttack;
-}
-
-void UPawnCombatComponent::DeactivateCollision(FString CollisionPart  )
-{
-	GetWorld()->GetTimerManager().ClearTimer(Collision_TimerHandle);
-	ActiveCollisionPart = nullptr;
-
-	CachedUnblockableAttack = false;
-}
-
-void UPawnCombatComponent::TraceLoop()
-{
-	if (!ActiveCollisionPart) return;
-
-	//Debug::Print(TEXT("DoTrace"));
-
-	const FVector Start = ActiveCollisionPart->CollisionMesh->GetSocketLocation(ActiveCollisionPart->StartSocketName);
-	const FVector End = ActiveCollisionPart->CollisionMesh->GetSocketLocation(ActiveCollisionPart->EndSocketName);
-	const float Radius = ActiveCollisionPart->TraceRadius;
-	TArray<FHitResult> HitResults;
-	TArray<TEnumAsByte<EObjectTypeQuery> > CombatObjectTypes;
-	CombatObjectTypes.Add(EObjectTypeQuery::ObjectTypeQuery3);
-	EDrawDebugTrace::Type DebugTraceType = ShowDebugTrace ? EDrawDebugTrace::ForOneFrame : EDrawDebugTrace::None;
-	const bool bTraceHit = UKismetSystemLibrary::SphereTraceMultiForObjects(this, Start, End, Radius, CombatObjectTypes, false, AlreadyHitActor, DebugTraceType, HitResults, true);
-
-	if (!bTraceHit) return;
-
-
-	for (size_t i = 0; i < HitResults.Num(); i++)
-	{
-		FHitResult Hit = HitResults[i];
-		if (!Hit.bBlockingHit) continue;
-
-		AlreadyHitActor.Add(HitResults[i].GetActor());
-
-		//if (ActorIsSameType(Hit.GetActor())) continue;
-		/*if (!IsTargetPawnHostile(Cast<APawn>(CharacterOwner), Cast<APawn>(Hit.GetActor()))) continue;*/
-
-		if (!UPanWarFunctionLibrary::IsTargetPawnHostile(Cast<APawn>(CharacterOwner), Cast<APawn>(Hit.GetActor()))) continue;
-
-		//BlockingCheck
-
-		//TODO:: Implement block check
-		bool bIsValidBlock = false;
-		bool bIsPlayerBlocking = false;
-
-		ICombatInterface* CombatInterface = Cast<ICombatInterface>(Hit.GetActor());
-		if (CombatInterface)
-			bIsPlayerBlocking = CombatInterface->IsBlocking();
-
-		const bool bIsMyAttackUnblockable = CachedUnblockableAttack;
-
-		if (bIsPlayerBlocking && !bIsMyAttackUnblockable)
-		{
-			bIsValidBlock = UPanWarFunctionLibrary::IsValidBlock(CharacterOwner, Hit.GetActor());
-		}
-
-		if (bIsValidBlock && CombatInterface)
-		{
-			CombatInterface->SuccesfulBlock(CharacterOwner);
-		}
-
-		else
-		{
-			ApplyDamageToActorHit(Hit.GetActor(), ActiveCollisionPart->Damage, CharacterOwner->GetInstigator()->GetController(), CharacterOwner, UDamageType::StaticClass());
-			ExecuteHitActor(Hit);
-		}
-
-
-
-	}
-
-
-}
-
-bool UPawnCombatComponent::ActorIsSameType(AActor* OtherActor)
-{
-	return (
-		(CharacterOwner->ActorHasTag(TEXT("Enemy")) && OtherActor->ActorHasTag(TEXT("Enemy"))) ||
-		(CharacterOwner->ActorHasTag(TEXT("Player")) && OtherActor->ActorHasTag(TEXT("Player")))
-		);
-	/*return CharacterOwner->ActorHasTag(TEXT("Enemy")) && OtherActor->ActorHasTag(TEXT("Enemy"));*/
-}
-
-void UPawnCombatComponent::ApplyDamageToActorHit(AActor* DamagedActor, float BaseDamage, AController* EventInstigator, AActor* DamageCauser, TSubclassOf<UDamageType> DamageTypeClass)
-{
-	/*UGameplayStatics::ApplyDamage(Hit.GetActor(), ActiveCollisionPart->Damage, CharacterOwner->GetInstigator()->GetController(), CharacterOwner, UDamageType::StaticClass());*/
-	const float TargetDefensePower = Cast<ICombatInterface>(DamagedActor)->GetDefensePower();
-
-	const float FinalDamage = CalculateFinalDamage(BaseDamage, TargetDefensePower);
-	UGameplayStatics::ApplyDamage(DamagedActor, FinalDamage, EventInstigator, DamageCauser, DamageTypeClass);
-}
-
-bool UPawnCombatComponent::ExecuteHitActor(FHitResult& Hit)
-{
-	IHitInterface* HitInterface = Cast<IHitInterface>(Hit.GetActor());
-	if (HitInterface)
-	{
-		HitInterface->GetHit(Hit.ImpactPoint, CharacterOwner);
-		return true;
-	}
-
-	return false;
-}
-
-float UPawnCombatComponent::CalculateFinalDamage(float BaseDamage,float TargetDefensePower)
-{
-	return (BaseDamage * AttackPower / TargetDefensePower);
-
-	//return BaseDamage;
-}
-
-#pragma endregion
-
-#pragma region SetMesh
-
-void UPawnCombatComponent::SetCollisionCharacterPartMesh()
-{
-	TArray<FString> CharacterPart = TArray<FString>();
-	CharacterPart.Add(FString("Hand_R"));
-	CharacterPart.Add(FString("Hand_L"));
-	CharacterPart.Add(FString("Foot_R"));
-	CharacterPart.Add(FString("Foot_L"));
-
-	for (size_t i = 0; i < 4; i++)
-	{
-		FCollisionPartStruct* CollisionPartStruct = CollisionStructs.Find(CharacterPart[i]);
-		if (!CollisionPartStruct) continue;
-
-		CollisionPartStruct->CollisionMesh = CharacterOwner->GetMesh();
-	}
-
-}
-
-void UPawnCombatComponent::SetCollisionWeaponPartMesh(UPrimitiveComponent* Mesh)
-{
-	FCollisionPartStruct* CollisionPartStruct = CollisionStructs.Find(FString("MainWeapon"));
-	if (!CollisionPartStruct) return;
-
-	CollisionPartStruct->CollisionMesh = Mesh;
-}
-
-#pragma endregion
-
-void UPawnCombatComponent::PlayHitSound(const FVector& ImpactPoint)
-{
-	if (HitSound)
-	{
-		UGameplayStatics::PlaySoundAtLocation(this, HitSound, ImpactPoint);
-
-	}
-}
-
-void UPawnCombatComponent::SpawnHitParticles(const FVector& ImpactPoint)
-{
-	if (HitParticles)
-	{
-		UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), HitParticles, ImpactPoint);
-	}
-}
-
-bool UPawnCombatComponent::IsPlayingMontage_ExcludingBlendOut()
-{
-	if (!OwningPlayerAnimInstance) return false;
-
-	// Ottieni il montaggio corrente
-	UAnimMontage* CurrentMontage = OwningPlayerAnimInstance->GetCurrentActiveMontage();
-
-	if (CurrentMontage && OwningPlayerAnimInstance->Montage_IsPlaying(CurrentMontage))
-	{
-		float CurrentMontagePosition = OwningPlayerAnimInstance->Montage_GetPosition(CurrentMontage);
-		float MontageBlendOutTime = CurrentMontage->BlendOut.GetBlendTime();
-		float MontageDuration = CurrentMontage->GetPlayLength();
-
-		if ((CurrentMontagePosition >= MontageDuration - MontageBlendOutTime))
-		{
-			return false;
-		}
-		else
-			return true;
-	}
-	else
-		return false;
-}
-
-void UPawnCombatComponent::ResetAttack()
-{
-
-}
-
-//NEW
-
-void UPawnCombatComponent::EquipWeapon(APanWarWeaponBase* InWeaponToRegister)
-{
-	check(InWeaponToRegister);
-	check(CurrentEquippedWeapon != InWeaponToRegister);
-
-	CurrentEquippedWeapon = InWeaponToRegister;
-	
-}
-
-APanWarWeaponBase* UPawnCombatComponent::GetCurrentEquippedWeapon() const
-{
-	return CurrentEquippedWeapon;
-}
 
 void UPawnCombatComponent::ToggleWeaponCollision(bool bShouldEnable, EToggleDamageType ToggleDamageType)
 {
@@ -267,62 +47,6 @@ void UPawnCombatComponent::ToggleWeaponCollision(bool bShouldEnable, EToggleDama
 	else
 	{
 		ToggleBodyCollision(bShouldEnable, ToggleDamageType);
-	}
-}
-
-void UPawnCombatComponent::ToggleCurrentEquippedWeaponCollision(bool bShouldEnable)
-{
-
-	if (!CurrentEquippedWeapon) return;
-
-	if (bShouldEnable)
-	{
-		AlreadyHitActor.Empty();
-		GetWorld()->GetTimerManager().SetTimer(WeaponCollision_TimerHandle, [this]() {this->BoxCollisionTrace(EToggleDamageType::CurrentEquippedWeapon); }, 0.001f, true);
-	}
-	else
-	{
-		GetWorld()->GetTimerManager().ClearTimer(WeaponCollision_TimerHandle);
-	}
-}
-
-void UPawnCombatComponent::ToggleBodyCollision(bool bShouldEnable, EToggleDamageType ToggleDamageType)
-{
-	if (bShouldEnable)
-	{
-		AlreadyHitActor.Empty();
-
-		switch (ToggleDamageType)
-		{
-		case EToggleDamageType::LeftHand:
-			GetWorld()->GetTimerManager().SetTimer(LeftHandCollision_TimerHandle, [this]() {this->BoxCollisionTrace(EToggleDamageType::LeftHand); }, 0.001f, true);
-			break;
-
-		case EToggleDamageType::RightHand:
-			GetWorld()->GetTimerManager().SetTimer(RightHandCollision_TimerHandle, [this]() {this->BoxCollisionTrace(EToggleDamageType::RightHand); }, 0.001f, true);
-			break;
-
-		default:
-			break;
-		}
-	}
-
-
-	else
-	{
-		switch (ToggleDamageType)
-		{
-		case EToggleDamageType::LeftHand:
-			GetWorld()->GetTimerManager().ClearTimer(LeftHandCollision_TimerHandle);
-			break;
-
-		case EToggleDamageType::RightHand:
-			GetWorld()->GetTimerManager().ClearTimer(RightHandCollision_TimerHandle);
-			break;
-
-		default:
-			break;
-		}
 	}
 }
 
@@ -356,30 +80,7 @@ void UPawnCombatComponent::BoxCollisionTrace(EToggleDamageType ToggleDamageType)
 	CombatObjectTypes.Add(EObjectTypeQuery::ObjectTypeQuery3);
 	EDrawDebugTrace::Type DebugTraceType = ShowDebugTrace ? EDrawDebugTrace::ForOneFrame : EDrawDebugTrace::None;
 
-	//FCollisionQueryParams TraceParams(FName("BoxTrace"), true, this);
-	const bool bTraceHit = UKismetSystemLibrary::BoxTraceMultiForObjects(
-		this,
-		BoxLocation,
-		BoxLocation,
-		BoxExtent,
-		BoxRotation,
-		CombatObjectTypes,
-		false,   
-		AlreadyHitActor,  
-		DebugTraceType,  
-		HitResults,
-		true   
-	);
-
-	/*const FVector Start = ActiveCollisionPart->CollisionMesh->GetSocketLocation(ActiveCollisionPart->StartSocketName);
-	const FVector End = ActiveCollisionPart->CollisionMesh->GetSocketLocation(ActiveCollisionPart->EndSocketName);*/
-	//const float Radius = ActiveCollisionPart->TraceRadius;
-	//TArray<FHitResult> HitResults;
-	//TArray<TEnumAsByte<EObjectTypeQuery> > CombatObjectTypes;
-	//CombatObjectTypes.Add(EObjectTypeQuery::ObjectTypeQuery3);
-	//EDrawDebugTrace::Type DebugTraceType = ShowDebugTrace ? EDrawDebugTrace::ForOneFrame : EDrawDebugTrace::None;
-	//const bool bTraceHit = UKismetSystemLibrary::SphereTraceMultiForObjects(this, Start, End, Radius, CombatObjectTypes, false, AlreadyHitActor, DebugTraceType, HitResults, true);
-
+	const bool bTraceHit = UKismetSystemLibrary::BoxTraceMultiForObjects(this,BoxLocation,BoxLocation + FVector(0.f,0.f,0.1f), BoxExtent, BoxRotation, CombatObjectTypes, false, AlreadyHitActor, DebugTraceType, HitResults, true);
 	if (!bTraceHit) return;
 
 
@@ -390,14 +91,9 @@ void UPawnCombatComponent::BoxCollisionTrace(EToggleDamageType ToggleDamageType)
 
 		AlreadyHitActor.Add(HitResults[i].GetActor());
 
-		//if (ActorIsSameType(Hit.GetActor())) continue;
-		/*if (!IsTargetPawnHostile(Cast<APawn>(CharacterOwner), Cast<APawn>(Hit.GetActor()))) continue;*/
-
 		if (!UPanWarFunctionLibrary::IsTargetPawnHostile(Cast<APawn>(CharacterOwner), Cast<APawn>(Hit.GetActor()))) continue;
 
 		//BlockingCheck
-
-		//TODO:: Implement block check
 		bool bIsValidBlock = false;
 		bool bIsPlayerBlocking = false;
 
@@ -420,7 +116,7 @@ void UPawnCombatComponent::BoxCollisionTrace(EToggleDamageType ToggleDamageType)
 		else
 		{
 			/*ApplyDamageToActorHit(Hit.GetActor(), ActiveCollisionPart->Damage, CharacterOwner->GetInstigator()->GetController(), CharacterOwner, UDamageType::StaticClass());*/
-			ApplyDamageToActorHit(Hit.GetActor(), 10.f, CharacterOwner->GetInstigator()->GetController(), CharacterOwner, UDamageType::StaticClass());
+			ApplyDamageToActorHit(Hit.GetActor(), BaseAttackDamage, CharacterOwner->GetInstigator()->GetController(), CharacterOwner, UDamageType::StaticClass());
 			ExecuteHitActor(Hit);
 		}
 
@@ -428,3 +124,133 @@ void UPawnCombatComponent::BoxCollisionTrace(EToggleDamageType ToggleDamageType)
 
 	}
 }
+
+#pragma endregion
+
+#pragma region HitHandler
+
+void UPawnCombatComponent::ApplyDamageToActorHit(AActor* DamagedActor, float BaseDamage, AController* EventInstigator, AActor* DamageCauser, TSubclassOf<UDamageType> DamageTypeClass)
+{
+	/*UGameplayStatics::ApplyDamage(Hit.GetActor(), ActiveCollisionPart->Damage, CharacterOwner->GetInstigator()->GetController(), CharacterOwner, UDamageType::StaticClass());*/
+	const float TargetDefensePower = Cast<ICombatInterface>(DamagedActor)->GetDefensePower();
+
+	const float FinalDamage = CalculateFinalDamage(BaseDamage, TargetDefensePower);
+	UGameplayStatics::ApplyDamage(DamagedActor, FinalDamage, EventInstigator, DamageCauser, DamageTypeClass);
+}
+
+float UPawnCombatComponent::CalculateFinalDamage(float BaseDamage, float TargetDefensePower)
+{
+	return (BaseDamage * AttackPower / TargetDefensePower);
+
+}
+
+bool UPawnCombatComponent::ExecuteHitActor(FHitResult& Hit)
+{
+	IHitInterface* HitInterface = Cast<IHitInterface>(Hit.GetActor());
+	if (HitInterface)
+	{
+		HitInterface->GetHit(Hit.ImpactPoint, CharacterOwner);
+		return true;
+	}
+
+	return false;
+}
+
+void UPawnCombatComponent::PlayHitSound(const FVector& ImpactPoint)
+{
+	if (HitSound)
+	{
+		UGameplayStatics::PlaySoundAtLocation(this, HitSound, ImpactPoint);
+
+	}
+}
+
+void UPawnCombatComponent::SpawnHitParticles(const FVector& ImpactPoint)
+{
+	if (HitParticles)
+	{
+		UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), HitParticles, ImpactPoint);
+	}
+}
+
+#pragma endregion
+
+#pragma region Weapon
+
+void UPawnCombatComponent::ToggleCurrentEquippedWeaponCollision(bool bShouldEnable)
+{
+	if (!CurrentEquippedWeapon) return;
+
+	if (bShouldEnable)
+	{
+		AlreadyHitActor.Empty();
+		GetWorld()->GetTimerManager().SetTimer(WeaponCollision_TimerHandle, [this]() {this->BoxCollisionTrace(EToggleDamageType::CurrentEquippedWeapon); }, 0.001f, true);
+	}
+	else
+	{
+		GetWorld()->GetTimerManager().ClearTimer(WeaponCollision_TimerHandle);
+	}
+}
+
+void UPawnCombatComponent::EquipWeapon(APanWarWeaponBase* InWeaponToRegister)
+{
+	check(InWeaponToRegister);
+	check(CurrentEquippedWeapon != InWeaponToRegister);
+
+	CurrentEquippedWeapon = InWeaponToRegister;
+
+}
+
+APanWarWeaponBase* UPawnCombatComponent::GetCurrentEquippedWeapon() const
+{
+	return CurrentEquippedWeapon;
+}
+
+#pragma endregion
+
+#pragma region HandToHand
+
+void UPawnCombatComponent::EnableHandToHandCombat(UBoxComponent* _LeftHandCollisionBox, UBoxComponent* _RightHandCollisionBox)
+{
+	LeftHandCollisionBox = _LeftHandCollisionBox;
+	RightHandCollisionBox = _RightHandCollisionBox;
+}
+
+void UPawnCombatComponent::ToggleBodyCollision(bool bShouldEnable, EToggleDamageType ToggleDamageType)
+{
+	AlreadyHitActor.Empty();
+
+	switch (ToggleDamageType)
+	{
+	case EToggleDamageType::LeftHand:
+		bShouldEnable ?
+			GetWorld()->GetTimerManager().SetTimer(LeftHandCollision_TimerHandle, [this]() {this->BoxCollisionTrace(EToggleDamageType::LeftHand); }, 0.001f, true)
+			:
+			GetWorld()->GetTimerManager().ClearTimer(LeftHandCollision_TimerHandle);
+		break;
+
+	case EToggleDamageType::RightHand:
+		bShouldEnable ?
+			GetWorld()->GetTimerManager().SetTimer(RightHandCollision_TimerHandle, [this]() {this->BoxCollisionTrace(EToggleDamageType::RightHand); }, 0.001f, true)
+			:
+			GetWorld()->GetTimerManager().ClearTimer(RightHandCollision_TimerHandle);
+
+		break;
+
+	default:
+		break;
+	}
+
+}
+
+#pragma endregion
+
+
+
+void UPawnCombatComponent::ResetAttack()
+{
+
+}
+
+
+

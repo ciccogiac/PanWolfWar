@@ -64,8 +64,6 @@ public:
 
 	//Combat Interface
 	virtual UPawnCombatComponent* GetCombatComponent() const override;
-	virtual void ActivateCollision(FString CollisionPart, bool bIsUnblockableAttack = false) override;
-	virtual void DeactivateCollision(FString CollisionPart) override;
 	virtual void SetInvulnerability(bool NewInvulnerability) override;
 	virtual bool IsCombatActorAlive() override;
 	virtual float PerformAttack() override;

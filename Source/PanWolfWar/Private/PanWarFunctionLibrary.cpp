@@ -4,6 +4,7 @@
 #include "PanWarTypes/PanWarCountDownAction.h"
 #include "PanWarGameInstance.h"
 #include "SaveGame/PanWarSaveGame.h"
+#include "GameModes/PanWarBaseGameMode.h"
 
 #include "PanWolfWar/DebugHelper.h"
 
@@ -28,6 +29,62 @@ bool UPanWarFunctionLibrary::IsValidBlock(AActor* InAttacker, AActor* InDefender
 
 	const float DotResult = FVector::DotProduct(InAttacker->GetActorForwardVector(), InDefender->GetActorForwardVector());
 	return DotResult < -0.1f;
+}
+
+bool UPanWarFunctionLibrary::IsPlayingMontage_ExcludingBlendOut(UAnimInstance* OwningPlayerAnimInstance)
+{
+    if (!OwningPlayerAnimInstance) return false;
+
+    // Ottieni il montaggio corrente
+    UAnimMontage* CurrentMontage = OwningPlayerAnimInstance->GetCurrentActiveMontage();
+
+    if (CurrentMontage && OwningPlayerAnimInstance->Montage_IsPlaying(CurrentMontage))
+    {
+        float CurrentMontagePosition = OwningPlayerAnimInstance->Montage_GetPosition(CurrentMontage);
+        float MontageBlendOutTime = CurrentMontage->BlendOut.GetBlendTime();
+        float MontageDuration = CurrentMontage->GetPlayLength();
+
+        if ((CurrentMontagePosition >= MontageDuration - MontageBlendOutTime))
+        {
+            return false;
+        }
+        else
+            return true;
+    }
+    else
+        return false;
+}
+
+int32 UPanWarFunctionLibrary::GetCurrentGameDifficulty(AActor* CallerReference)
+{
+    int32 CurrentDifficultyLevel = 1;
+
+    if (APanWarBaseGameMode* BaseGameMode = CallerReference->GetWorld()->GetAuthGameMode<APanWarBaseGameMode>())
+    {
+        switch (BaseGameMode->GetCurrentGameDifficulty())
+        {
+        case EPanWarGameDifficulty::Easy:
+            CurrentDifficultyLevel = 1;
+            break;
+
+        case EPanWarGameDifficulty::Normal:
+            CurrentDifficultyLevel = 2;
+            break;
+
+        case EPanWarGameDifficulty::Hard:
+            CurrentDifficultyLevel = 3;
+            break;
+
+        case EPanWarGameDifficulty::VeryHard:
+            CurrentDifficultyLevel = 4;
+            break;
+
+        default:
+            break;
+        }
+    }
+
+    return CurrentDifficultyLevel;
 }
 
 void UPanWarFunctionLibrary::SaveCurrentGameDifficulty(EPanWarGameDifficulty InDifficultyToSave)

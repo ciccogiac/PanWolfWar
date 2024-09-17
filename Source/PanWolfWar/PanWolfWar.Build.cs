@@ -1,6 +1,7 @@
 // Copyright Epic Games, Inc. All Rights Reserved.
 
 using UnrealBuildTool;
+using UnrealBuildTool.Rules;
 
 public class PanWolfWar : ModuleRules
 {
@@ -8,6 +9,6 @@ public class PanWolfWar : ModuleRules
 	{
 		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
 
-		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore", "EnhancedInput", "MotionWarping" , "Niagara" , "CableComponent" , "AIModule" , "AnimGraphRuntime" , "NavigationSystem" , "MoviePlayer" });
+		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore", "EnhancedInput", "MotionWarping" , "Niagara" , "CableComponent" , "AIModule" , "AnimGraphRuntime" , "NavigationSystem" , "MoviePlayer", "GameplayAbilities" });
 	}
 }

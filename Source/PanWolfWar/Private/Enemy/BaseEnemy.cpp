@@ -23,6 +23,7 @@
 #include "Perception/AISense_Damage.h"
 
 #include "Components/BoxComponent.h"
+#include "PanWarFunctionLibrary.h"
 
 ABaseEnemy::ABaseEnemy()
 {
@@ -92,13 +93,15 @@ void ABaseEnemy::EnableHandToHandCombat()
 
 void ABaseEnemy::BeginPlay()
 {
-	Super::BeginPlay();
+	Super::BeginPlay(); 
 
 	BaseAIController = Cast<ABaseAIController>(GetController());
 	Player = UGameplayStatics::GetPlayerCharacter(this, 0);
 	AnimInstance = GetMesh()->GetAnimInstance();
 
-	/*BaseEnemyWidget = Cast<UBaseEnemyWidget>(EnemyWidgetComponent->GetWidget());*/
+
+	InitEnemyStats();
+
 
 	if (UPanWarWidgetBase* HealthWidget = Cast<UPanWarWidgetBase>(EnemyHealthBarWidgetComponent->GetUserWidgetObject()))
 	{
@@ -112,6 +115,21 @@ void ABaseEnemy::BeginPlay()
 	}
 
 	EnemyState = EEnemyState::EES_Default;
+
+}
+
+void ABaseEnemy::InitEnemyStats()
+{
+	int32 CurrentGameDifficulty = UPanWarFunctionLibrary::GetCurrentGameDifficulty(this);
+
+	float MaxHealth =EnemyInitStats.MaxHealth.GetValueAtLevel(CurrentGameDifficulty);
+	float StoneSpawnChance = EnemyInitStats.StoneSpawnChance.GetValueAtLevel(CurrentGameDifficulty);
+	EnemyAttributeComponent->InitializeAttributeStats(MaxHealth, StoneSpawnChance);
+
+	float AttackPower = EnemyInitStats.AttackPower.GetValueAtLevel(CurrentGameDifficulty);
+	float DefensePower = EnemyInitStats.DefensePower.GetValueAtLevel(CurrentGameDifficulty);
+	float BaseDamage = EnemyInitStats.BaseDamage.GetValueAtLevel(CurrentGameDifficulty);
+	EnemyCombatComponent->InitializeCombatStats(BaseDamage, AttackPower, DefensePower);
 
 }
 
@@ -258,17 +276,6 @@ void ABaseEnemy::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent
 
 }
 
-
-
-void ABaseEnemy::ActivateCollision(FString CollisionPart, bool bIsUnblockableAttack)
-{
-	EnemyCombatComponent->ActivateCollision(CollisionPart, bIsUnblockableAttack);
-}
-
-void ABaseEnemy::DeactivateCollision(FString CollisionPart )
-{
-	EnemyCombatComponent->DeactivateCollision(CollisionPart);
-}
 
 void ABaseEnemy::GetHit(const FVector& ImpactPoint, AActor* Hitter)
 {

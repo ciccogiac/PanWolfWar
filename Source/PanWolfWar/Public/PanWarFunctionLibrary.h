@@ -25,6 +25,12 @@ public:
 	UFUNCTION(BlueprintPure, Category = "PanWar|FunctionLibrary")
 	static bool IsValidBlock(AActor* InAttacker, AActor* InDefender);
 
+	UFUNCTION(BlueprintPure, Category = "PanWar|FunctionLibrary")
+	static bool IsPlayingMontage_ExcludingBlendOut(UAnimInstance* OwningPlayerAnimInstance);
+
+	UFUNCTION(BlueprintCallable, Category = "PanWar|FunctionLibrary")
+	static int32 GetCurrentGameDifficulty(AActor* CallerReference);
+
 	UFUNCTION(BlueprintCallable, Category = "PanWar|FunctionLibrary")
 	static void SaveCurrentGameDifficulty(EPanWarGameDifficulty InDifficultyToSave);
 
@@ -41,4 +47,6 @@ public:
 
 	UFUNCTION(BlueprintPure, Category = "PanWar|FunctionLibrary", meta = (WorldContext = "WorldContextObject"))
 	static UPanWarGameInstance* GetPanWarGameInstance(const UObject* WorldContextObject);
+
+
 };

@@ -15,6 +15,7 @@ class PANWOLFWAR_API UEnemyAttributeComponent : public UActorComponent
 public:	
 	UEnemyAttributeComponent();
 
+	void InitializeAttributeStats(float _MaxHealth , float _StoneSpawnProbability);
 	float GetHealthPercent();
 	bool IsAlive();
 	void AddHealth(float healthToAdd);
@@ -26,13 +27,16 @@ protected:
 #pragma region Variables
 
 	// Health
-	UPROPERTY(EditAnywhere, Category = "Actor Attributes")
-	float Health;
+	float CurrentHealth = 100.f;
+	float MaxHealth = 100.f;
 
-	UPROPERTY(EditAnywhere, Category = "Actor Attributes")
-	float MaxHealth;
+	// StoneSpawn
+	float StoneSpawnProbability = 0.6f;
 
 #pragma endregion
 
+public:
+	UFUNCTION(BlueprintCallable)
+	FORCEINLINE float GetStoneSpawnProbability() const { return StoneSpawnProbability; }
 		
 };

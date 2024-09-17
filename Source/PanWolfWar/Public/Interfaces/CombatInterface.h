@@ -23,10 +23,6 @@ public:
 	UFUNCTION(BlueprintCallable)
 	virtual UPawnCombatComponent* GetCombatComponent() const = 0;
 	UFUNCTION(BlueprintCallable)
-	virtual void ActivateCollision(FString CollisionPart, bool bIsUnblockableAttack = false) = 0;
-	UFUNCTION(BlueprintCallable)
-	virtual void DeactivateCollision(FString CollisionPart) = 0;
-	UFUNCTION(BlueprintCallable)
 	virtual void SetInvulnerability(bool NewInvulnerability) = 0;
 	UFUNCTION(BlueprintCallable)
 	virtual FRotator GetDesiredDodgeRotation() = 0;

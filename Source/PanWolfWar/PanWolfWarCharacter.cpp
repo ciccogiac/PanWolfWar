@@ -552,16 +552,6 @@ void APanWolfWarCharacter::RemoveEnemyAware(AActor* Enemy)
 
 #pragma region Combat
 
-void APanWolfWarCharacter::ActivateCollision(FString CollisionPart, bool bIsUnblockableAttack)
-{
-	PandoCombatComponent->ActivateCollision(CollisionPart, bIsUnblockableAttack);
-}
-
-void APanWolfWarCharacter::DeactivateCollision(FString CollisionPart )
-{
-	PandoCombatComponent->DeactivateCollision(CollisionPart);
-}
-
 void APanWolfWarCharacter::GetHit(const FVector& ImpactPoint, AActor* Hitter)
 {
 	if (!IsAlive() || !Hitter || bIsInvulnerable) return;
@@ -569,6 +559,7 @@ void APanWolfWarCharacter::GetHit(const FVector& ImpactPoint, AActor* Hitter)
 	FName Section = IHitInterface::DirectionalHitReact(Hitter , GetOwner() );
 	PlayHitReactMontage(Section);
 
+	PandoCombatComponent->ResetAttack();
 	PandoCombatComponent->PlayHitSound(ImpactPoint);
 	PandoCombatComponent->SpawnHitParticles(ImpactPoint);
 	

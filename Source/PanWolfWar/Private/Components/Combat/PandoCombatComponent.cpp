@@ -2,6 +2,7 @@
 
 #include "Kismet/GameplayStatics.h"
 #include "GameFramework/Character.h"
+#include "PanWarFunctionLibrary.h"
 
 #include "PanWolfWar/DebugHelper.h"
 
@@ -26,7 +27,7 @@ void UPandoCombatComponent::SetCombatEnabled(bool CombatEnabled, UAnimInstance* 
 void UPandoCombatComponent::PerformAttack(EAttackType AttackType)
 {
 	if (!OwningPlayerAnimInstance) return;
-	if (IsPlayingMontage_ExcludingBlendOut()) return;
+	if (UPanWarFunctionLibrary::IsPlayingMontage_ExcludingBlendOut(OwningPlayerAnimInstance)) return;
 
 	switch (AttackType)
 	{
@@ -120,8 +121,6 @@ float UPandoCombatComponent::CalculateFinalDamage(float BaseDamage, float Target
 		const float DamageIncreasePercentLight = (UsedLightComboCount - 1)  * 0.05f + 1.f ;
 
 		BaseDamage *= DamageIncreasePercentLight;
-		//Debug::Print(TEXT("LightAttack: ") + FString::SanitizeFloat(UsedLightComboCount ) );
-		//Debug::Print(TEXT("ScaledBaseDamageLight: ") + FString::SanitizeFloat(BaseDamage));
 	}
 
 	else if (LastAttackType == EAttackType::EAT_HeavyAttack)
@@ -129,8 +128,6 @@ float UPandoCombatComponent::CalculateFinalDamage(float BaseDamage, float Target
 		const float DamageIncreasePercentHeavy = UsedHeavyComboCount * 0.15f + 1.f;
 
 		BaseDamage *= DamageIncreasePercentHeavy;
-		//Debug::Print(TEXT("HeavyAttack: ") + FString::SanitizeFloat(UsedHeavyComboCount));
-		//Debug::Print(TEXT("ScaledBaseDamageHeavy: ") + FString::SanitizeFloat(BaseDamage));
 	}
 
 	const float FinalDamageDone = BaseDamage * AttackPower / TargetDefensePower;
@@ -149,7 +146,7 @@ bool UPandoCombatComponent::ExecuteHitActor(FHitResult& Hit)
 	/** HitPause */
 
 	GetWorld()->GetTimerManager().ClearTimer(HitPause_TimerHandle);
-	UGameplayStatics::SetGlobalTimeDilation(this, 0.1f);
+	UGameplayStatics::SetGlobalTimeDilation(this, 0.3f);
 	GetWorld()->GetTimerManager().SetTimer(HitPause_TimerHandle, [this]() {this->HitPause(); }, 0.025f, false);
 
 	return true;
@@ -169,4 +166,7 @@ void UPandoCombatComponent::ResetAttack()
 {
 	Super::ResetAttack();
 
+	CurrentLightAttackComboCount = 1;
+	CurrentHeavyAttackComboCount = 1;
+	bJumpToFinisher = false;
 }
