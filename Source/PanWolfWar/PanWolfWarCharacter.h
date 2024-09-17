@@ -63,11 +63,12 @@ public:
 	void EndDodge();
 
 	//Combat Interface
+	virtual UPawnCombatComponent* GetCombatComponent() const override;
 	virtual void ActivateCollision(FString CollisionPart, bool bIsUnblockableAttack = false) override;
 	virtual void DeactivateCollision(FString CollisionPart) override;
 	virtual void SetInvulnerability(bool NewInvulnerability) override;
 	virtual bool IsCombatActorAlive() override;
-	virtual float PerformAttack(bool bIsUnblockableAttack = false) override;
+	virtual float PerformAttack() override;
 	virtual bool IsUnderAttack() override;
 	virtual void SetUnderAttack() override;
 	virtual float GetDefensePower() override;
@@ -75,6 +76,8 @@ public:
 	virtual bool IsBlocking() override;
 	virtual void SuccesfulBlock(AActor* Attacker) override;
 	virtual float GetHealthPercent() override;
+
+	void SetCollisionHandBoxExtent(FVector Extent);
 
 	void ResetUnderAttack() ;
 	//HitInterface
@@ -196,6 +199,12 @@ private:
 
 	#pragma region Combat Variables
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Combat | HandToHand", meta = (AllowPrivateAccess = "true"))
+	UBoxComponent* LeftHandCollisionBox;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Combat | HandToHand", meta = (AllowPrivateAccess = "true"))
+	UBoxComponent* RightHandCollisionBox;
+
 	UPROPERTY(EditDefaultsOnly, Category = Combat)
 	float Pandolfo_DefensePower = 1.f;
 
@@ -273,7 +282,6 @@ public:
 	
 	FORCEINLINE virtual UAttributeComponent* GetAttributeComponent()  const override { return Attributes; }
 	FORCEINLINE UInteractComponent* GetInteractComponent() const { return InteractComponent; }
-	FORCEINLINE UPandoCombatComponent* GetCombatComponent() const { return PandoCombatComponent; }
 	FORCEINLINE UTargetingComponent* GetTargetingComponent() const { return TargetingComponent; }
 
 	FORCEINLINE virtual UTransformationComponent* GetTransformationComponent()  const override { return TransformationComponent; } ;
@@ -284,6 +292,8 @@ public:
 
 	FORCEINLINE UNiagaraComponent* GetNiagaraTransformation() { return NiagaraTransformation; }
 	FORCEINLINE UNiagaraComponent* GetNiagaraTransformationEffect() { return NiagaraApplyTransformationEffect; }
+
+
 
 
 	UFUNCTION(BlueprintCallable)

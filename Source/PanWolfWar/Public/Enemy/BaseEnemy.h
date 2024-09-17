@@ -16,6 +16,7 @@ class UWidgetComponent;
 class UBaseEnemyWidget;
 class UEnemyUIComponent;
 class UEnemyAttributeComponent;
+class UBoxComponent;
 
 UENUM(BlueprintType)
 enum class EEnemyState : uint8
@@ -38,12 +39,13 @@ public:
 	virtual void Tick(float DeltaTime) override;
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
+	virtual UPawnCombatComponent* GetCombatComponent() const override;
 	virtual void ActivateCollision(FString CollisionPart , bool bIsUnblockableAttack = false) override;
 	virtual void DeactivateCollision(FString CollisionPart) override;
 	virtual void SetInvulnerability(bool NewInvulnerability) override;
 	virtual FRotator GetDesiredDodgeRotation() override;
 	virtual bool IsCombatActorAlive() override;
-	virtual float PerformAttack(bool bIsUnblockableAttack = false) override;
+	virtual float PerformAttack() override;
 	virtual bool IsUnderAttack() override;
 	virtual void SetUnderAttack() override;
 	virtual float GetDefensePower() override;
@@ -60,6 +62,8 @@ public:
 	virtual UPawnUIComponent* GetPawnUIComponent() const override;
 	virtual UEnemyUIComponent* GetEnemyUIComponent() const override;
 	//~ End IPawnUIInterface Interface
+
+
 
 protected:
 	virtual void BeginPlay() override;
@@ -81,10 +85,17 @@ protected:
 	UFUNCTION(BlueprintImplementableEvent)
 	void BP_FireProjectile();
 
+#if WITH_EDITOR
+	//~ Begin UObject Interface.
+	virtual void PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent) override;
+	//~ End UObject Interface
+#endif
+
 private:	
 
 	void FindNearestAI();
 	void ApplyHitReactionPhisicsVelocity(FName HitPart);
+	void EnableHandToHandCombat();
 
 protected:
 	bool bDied = false;
@@ -159,6 +170,21 @@ protected:
 	UPROPERTY(EditAnywhere, Category = Combat)
 	USoundBase* Death_Sound;
 
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Combat | HandToHand")
+	bool bEnableHandToHandCombat = false;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Combat | HandToHand")
+	UBoxComponent* LeftHandCollisionBox;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Combat | HandToHand", meta = (EditCondition = "bEnableHandToHandCombat"))
+	FName LeftHandCollisionBoxAttachBoneName;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Combat | HandToHand")
+	UBoxComponent* RightHandCollisionBox;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Combat | HandToHand", meta = (EditCondition = "bEnableHandToHandCombat"))
+	FName RightHandCollisionBoxAttachBoneName;
+
 public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "AI")
 	TArray<ATargetPoint*> PatrolPoints;
@@ -183,4 +209,6 @@ public:
 
 	UFUNCTION(BlueprintPure, meta = (BlueprintThreadSafe))
 	FORCEINLINE bool IsEnemyStateEqualTo(EEnemyState StateToCheck) const { return EnemyState == StateToCheck; }
+
+	/*FORCEINLINE virtual UPawnCombatComponent* GetCombatComponent()  override { return EnemyCombatComponent; }*/
 };

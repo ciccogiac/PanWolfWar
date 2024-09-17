@@ -251,6 +251,8 @@ private:
 
 	#pragma endregion
 
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Combat", meta = (AllowPrivateAccess = "true"))
+	FVector CombatHandBoxExtent;
 
 #pragma endregion
 

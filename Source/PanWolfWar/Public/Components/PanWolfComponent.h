@@ -113,6 +113,10 @@ private:
 	bool bIsPerfectBlock = false;
 
 	FTimerHandle PerfectBlock_TimerHandle;
+
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Combat", meta = (AllowPrivateAccess = "true"))
+	FVector CombatHandBoxExtent;
 		
 public:
 

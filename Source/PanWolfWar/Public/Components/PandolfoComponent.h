@@ -213,6 +213,10 @@ private:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "PredictJump Params", meta = (AllowPrivateAccess = "true"))
 	TEnumAsByte<EObjectTypeQuery> PredictJumpObjectTypes;
 
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Combat", meta = (AllowPrivateAccess = "true"))
+	FVector CombatHandBoxExtent;
+
 public:
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Pandolfo State ")

@@ -54,6 +54,8 @@ void UPanWolfComponent::Activate(bool bReset)
 		CombatComponent->SetCombatEnabled(true, OwningPlayerAnimInstance);
 		OwningPlayerAnimInstance->OnMontageEnded.AddDynamic(this, &UPanWolfComponent::OnMontageEnded);
 	}
+
+	PanWolfCharacter->SetCollisionHandBoxExtent(CombatHandBoxExtent);
 }
 
 void UPanWolfComponent::Deactivate()
@@ -215,7 +217,7 @@ void UPanWolfComponent::BeginPlay()
 {
 	Super::BeginPlay();	
 
-	CombatComponent = PanWolfCharacter->GetCombatComponent();
+	CombatComponent = Cast<UPandoCombatComponent>(PanWolfCharacter->GetCombatComponent());
 }
 
 void UPanWolfComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)

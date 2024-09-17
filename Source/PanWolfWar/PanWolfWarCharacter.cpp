@@ -152,6 +152,21 @@ APanWolfWarCharacter::APanWolfWarCharacter()
 	Legs->SetLeaderPoseComponent(GetMesh());
 
 	SetMetaHumanVisibility(false);
+
+	LeftHandCollisionBox = CreateDefaultSubobject<UBoxComponent>("LeftHandCollisionBox");
+	LeftHandCollisionBox->SetupAttachment(GetMesh());
+	LeftHandCollisionBox->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
+	RightHandCollisionBox = CreateDefaultSubobject<UBoxComponent>("RightHandCollisionBox");
+	RightHandCollisionBox->SetupAttachment(GetMesh());
+	RightHandCollisionBox->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
+	LeftHandCollisionBox->SetActive(false);
+	RightHandCollisionBox->SetActive(false);
+
+	LeftHandCollisionBox->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, FName("Hand_L_Combat"));
+	RightHandCollisionBox->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, FName("Hand_R_Combat"));
+
 }
 
 void APanWolfWarCharacter::SetMetaHumanVisibility(bool bVisible)
@@ -170,6 +185,10 @@ void APanWolfWarCharacter::BeginPlay()
 
 	AddMappingContext(DefaultMappingContext, 0);
 
+	if (PandoCombatComponent)
+	{
+		PandoCombatComponent->EnableHandToHandCombat(LeftHandCollisionBox, RightHandCollisionBox);
+	}
 }
 
 #pragma endregion
@@ -195,6 +214,12 @@ void APanWolfWarCharacter::SetTransformationCharacter(TObjectPtr<USkeletalMesh> 
 	GetMesh()->SetAnimInstanceClass(Anim);
 	GetMesh()->SetRelativeLocation(FVector(0.f, 0.f, -GetCapsuleComponent()->GetScaledCapsuleHalfHeight()));
 
+}
+
+void APanWolfWarCharacter::SetCollisionHandBoxExtent(FVector Extent)
+{
+	LeftHandCollisionBox->SetBoxExtent(Extent);
+	RightHandCollisionBox->SetBoxExtent(Extent);
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -614,7 +639,7 @@ bool APanWolfWarCharacter::IsCombatActorAlive()
 	return IsAlive();
 }
 
-float APanWolfWarCharacter::PerformAttack(bool bIsUnblockableAttack)
+float APanWolfWarCharacter::PerformAttack()
 {
 	return 0.0f;
 }
@@ -720,4 +745,9 @@ float APanWolfWarCharacter::GetHealthPercent()
 		return Attributes->GetHealthPercent();
 
 	return -1.f;
+}
+
+UPawnCombatComponent* APanWolfWarCharacter::GetCombatComponent() const
+{
+	return PandoCombatComponent;
 }

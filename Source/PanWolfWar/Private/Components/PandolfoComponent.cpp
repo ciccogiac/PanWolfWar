@@ -81,6 +81,8 @@ void UPandolfoComponent::Activate(bool bReset)
 
 	ClimbingComponent->SetAnimationBindings();
 
+	PanWolfCharacter->SetCollisionHandBoxExtent(CombatHandBoxExtent);
+
 	Knife->AttachToComponent(CharacterOwner->GetMesh(),FAttachmentTransformRules::SnapToTargetNotIncludingScale,FName("foot_Knife_Socket"));
 	Knife->SetVisibility(true);
 

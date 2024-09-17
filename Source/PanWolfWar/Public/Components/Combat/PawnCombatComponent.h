@@ -4,6 +4,9 @@
 #include "Components/ActorComponent.h"
 #include "PawnCombatComponent.generated.h"
 
+class APanWarWeaponBase;
+class UBoxComponent;
+
 USTRUCT(BlueprintType)
 struct FCollisionPartStruct
 {
@@ -26,6 +29,14 @@ struct FCollisionPartStruct
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	float Damage;
+};
+
+UENUM(BlueprintType)
+enum class EToggleDamageType : uint8
+{
+	CurrentEquippedWeapon,
+	LeftHand,
+	RightHand
 };
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
@@ -54,6 +65,17 @@ public:
 	void PlayHitSound(const FVector& ImpactPoint);
 	void SpawnHitParticles(const FVector& ImpactPoint);
 
+	UFUNCTION(BlueprintCallable, Category = "Combat")
+	void EquipWeapon(APanWarWeaponBase* InWeaponToRegister);
+
+	UFUNCTION(BlueprintCallable, Category = "Combat")
+	APanWarWeaponBase* GetCurrentEquippedWeapon() const;
+
+	UFUNCTION(BlueprintCallable, Category = "Combat")
+	void ToggleWeaponCollision(bool bShouldEnable, EToggleDamageType ToggleDamageType = EToggleDamageType::CurrentEquippedWeapon);
+
+	void EnableHandToHandCombat(UBoxComponent* _LeftHandCollisionBox, UBoxComponent* _RightHandCollisionBox);
+
 protected:
 	virtual void BeginPlay() override;
 	bool IsPlayingMontage_ExcludingBlendOut();
@@ -61,9 +83,16 @@ protected:
 
 	virtual float CalculateFinalDamage(float BaseDamage, float TargetDefensePower);
 
+	virtual void ToggleCurrentEquippedWeaponCollision(bool bShouldEnable);
+	virtual void ToggleBodyCollision(bool bShouldEnable, EToggleDamageType ToggleDamageType);
+
+
+
 private:
 
 	void TraceLoop();
+
+	void BoxCollisionTrace(EToggleDamageType ToggleDamageType);
 
 	bool ActorIsSameType(AActor* OtherActor);
 
@@ -74,6 +103,10 @@ protected:
 	UAnimInstance* OwningPlayerAnimInstance = nullptr;
 
 	FTimerHandle Collision_TimerHandle;
+
+	FTimerHandle WeaponCollision_TimerHandle;
+	FTimerHandle RightHandCollision_TimerHandle;
+	FTimerHandle LeftHandCollision_TimerHandle;
 
 	UPROPERTY(EditAnywhere, Category = Combat)
 	USoundBase* HitSound;
@@ -97,6 +130,14 @@ protected:
 	float DefensePower = 1.f;
 	 
 	bool CachedUnblockableAttack = false;
+
+	
+
+private:
+
+	APanWarWeaponBase* CurrentEquippedWeapon;
+	UBoxComponent* LeftHandCollisionBox;
+	UBoxComponent* RightHandCollisionBox;
 
 public:
 	FORCEINLINE float GetDefensePower() const { return DefensePower; }

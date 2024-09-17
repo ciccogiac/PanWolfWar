@@ -251,6 +251,8 @@ void UPandolFlowerComponent::Activate(bool bReset)
 
 	CameraBoom->TargetArmLength = 400.f;
 
+	PanWolfCharacter->SetCollisionHandBoxExtent(CombatHandBoxExtent);
+
 
 	GetWorld()->GetTimerManager().SetTimer(AirAssassination_TimerHandle, [this]() {this->CheckCanAirAssassin(); }, 0.25f, true);
 }

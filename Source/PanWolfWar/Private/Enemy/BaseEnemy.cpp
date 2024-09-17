@@ -22,6 +22,8 @@
 
 #include "Perception/AISense_Damage.h"
 
+#include "Components/BoxComponent.h"
+
 ABaseEnemy::ABaseEnemy()
 {
 	PrimaryActorTick.bCanEverTick = false;
@@ -37,8 +39,55 @@ ABaseEnemy::ABaseEnemy()
 	EnemyHealthBarWidgetComponent = CreateDefaultSubobject<UWidgetComponent>(TEXT("EnemyHealthBarWidgetComponent"));
 	EnemyHealthBarWidgetComponent->SetupAttachment(GetMesh());
 
-	Tags.Add(FName("Enemy"));
+	LeftHandCollisionBox = CreateDefaultSubobject<UBoxComponent>("LeftHandCollisionBox");
+	LeftHandCollisionBox->SetupAttachment(GetMesh());
+	LeftHandCollisionBox->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 
+	RightHandCollisionBox = CreateDefaultSubobject<UBoxComponent>("RightHandCollisionBox");
+	RightHandCollisionBox->SetupAttachment(GetMesh());
+	RightHandCollisionBox->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
+	LeftHandCollisionBox->SetActive(false);
+	RightHandCollisionBox->SetActive(false);
+
+	EnableHandToHandCombat();
+
+	Tags.Add(FName("Enemy"));
+}
+
+void ABaseEnemy::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent)
+{
+	Super::PostEditChangeProperty(PropertyChangedEvent);
+
+	if (PropertyChangedEvent.GetMemberPropertyName() == GET_MEMBER_NAME_CHECKED(ThisClass, bEnableHandToHandCombat))
+	{
+		EnableHandToHandCombat();
+	}
+
+	if (PropertyChangedEvent.GetMemberPropertyName() == GET_MEMBER_NAME_CHECKED(ThisClass, LeftHandCollisionBoxAttachBoneName))
+	{
+		LeftHandCollisionBox->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, LeftHandCollisionBoxAttachBoneName);
+	}
+
+	if (PropertyChangedEvent.GetMemberPropertyName() == GET_MEMBER_NAME_CHECKED(ThisClass, RightHandCollisionBoxAttachBoneName))
+	{
+		RightHandCollisionBox->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, RightHandCollisionBoxAttachBoneName);
+	}
+}
+
+void ABaseEnemy::EnableHandToHandCombat()
+{
+	if (bEnableHandToHandCombat)
+	{
+		LeftHandCollisionBox->SetVisibility(true);
+		RightHandCollisionBox->SetVisibility(true);
+
+	}
+	else
+	{
+		LeftHandCollisionBox->SetVisibility(false);
+		RightHandCollisionBox->SetVisibility(false);
+	}
 }
 
 void ABaseEnemy::BeginPlay()
@@ -55,6 +104,11 @@ void ABaseEnemy::BeginPlay()
 	{
 		HealthWidget->InitEnemyCreatedWidget(this);
 		EnemyUIComponent->OnCurrentHealthChanged.Broadcast(EnemyAttributeComponent->GetHealthPercent());
+	}
+
+	if (bEnableHandToHandCombat && EnemyCombatComponent)
+	{
+		EnemyCombatComponent->EnableHandToHandCombat(LeftHandCollisionBox, RightHandCollisionBox);
 	}
 
 	EnemyState = EEnemyState::EES_Default;
@@ -132,7 +186,7 @@ bool ABaseEnemy::IsCombatActorAlive()
 	return bDied;
 }
 
-float ABaseEnemy::PerformAttack(bool bIsUnblockableAttack )
+float ABaseEnemy::PerformAttack()
 {
 	/*UAnimInstance* AnimIstance = GetMesh()->GetAnimInstance();
 	if (!AnimIstance) return 0.f;
@@ -153,7 +207,7 @@ float ABaseEnemy::PerformAttack(bool bIsUnblockableAttack )
 	//return 1.f;
 
 	if (!EnemyCombatComponent) return 0.f;
-	EnemyCombatComponent->PerformAttack(bIsUnblockableAttack);
+	EnemyCombatComponent->PerformAttack();
 
 	return 1.f;
 }
@@ -398,4 +452,9 @@ float ABaseEnemy::GetHealthPercent()
 		return EnemyAttributeComponent->GetHealthPercent();
 
 	return -1.f;
+}
+
+UPawnCombatComponent* ABaseEnemy::GetCombatComponent() const
+{
+	return EnemyCombatComponent;
 }
