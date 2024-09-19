@@ -162,9 +162,6 @@ protected:
 
 	FTimerHandle FindEnemies_TimerHandle;
 
-
-	class ABaseAIController* BaseAIController;
-
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAcces = "true"))
 	class UMotionWarpingComponent* MotionWarping;
 

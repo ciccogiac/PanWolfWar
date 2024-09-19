@@ -1,7 +1,6 @@
 #include "Enemy/BaseEnemy.h"
 
 #include "Components/WidgetComponent.h"
-#include <Enemy/BaseAIController.h>
 #include "MotionWarpingComponent.h"
 
 #include "PanWolfWar/DebugHelper.h"
@@ -141,7 +140,6 @@ void ABaseEnemy::BeginPlay()
 {
 	Super::BeginPlay(); 
 
-	BaseAIController = Cast<ABaseAIController>(GetController());
 	Player = UGameplayStatics::GetPlayerCharacter(this, 0);
 	AnimInstance = GetMesh()->GetAnimInstance();
 
@@ -240,7 +238,7 @@ void ABaseEnemy::SetEnemyAware(bool NewVisibility)
 
 void ABaseEnemy::Die()
 {
-	BaseAIController->Die();
+	//BaseAIController->Die();
 	bDied = true;
 	GetWorld()->GetTimerManager().ClearTimer(FindEnemies_TimerHandle);
 }
@@ -291,7 +289,7 @@ void ABaseEnemy::FindNearestAI()
 			ABaseEnemy* Enemy = Cast<ABaseEnemy>(EnemyHit.GetActor());
 			if (!Enemy) continue;
 			if (Enemy->bSeen) continue;
-			Enemy->BaseAIController->FindNewEnemy(Player);
+			/*Enemy->BaseAIController->FindNewEnemy(Player);*/
 		}
 			
 	}
