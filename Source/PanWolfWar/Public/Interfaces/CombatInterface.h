@@ -46,4 +46,7 @@ public:
 	virtual void FireProjectile() ;
 	UFUNCTION(BlueprintCallable)
 	virtual float GetHealthPercent() = 0;
+
+	UFUNCTION(BlueprintCallable)
+	virtual void AssassinationKilled();
 };

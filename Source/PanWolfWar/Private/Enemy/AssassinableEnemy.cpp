@@ -50,9 +50,9 @@ void AAssassinableEnemy::BeginPlay()
 	GetMesh()->SetVectorParameterValueOnMaterials(FName("Emission"), UKismetMathLibrary::Conv_LinearColorToVector(FLinearColor::Red));
 }
 
-void AAssassinableEnemy::SetPlayerVisibility(bool NewVisibility)
+void AAssassinableEnemy::SetEnemyAware(bool NewVisibility)
 {
-	Super::SetPlayerVisibility(NewVisibility);
+	Super::SetEnemyAware(NewVisibility);
 
 	if (NewVisibility && PandolfoComponent)
 	{

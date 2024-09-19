@@ -18,6 +18,9 @@ class UBaseEnemyWidget;
 class UEnemyUIComponent;
 class UEnemyAttributeComponent;
 class UBoxComponent;
+class UAssassinableComponent;
+
+
 
 UENUM(BlueprintType)
 enum class EEnemyState : uint8
@@ -53,19 +56,22 @@ struct FEnemyInitStats
 	}
 };
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnEnemyDeath);
+
 UCLASS()
 class PANWOLFWAR_API ABaseEnemy : public ACharacter, public ICombatInterface, public IHitInterface , public IPawnUIInterface
 {
 	GENERATED_BODY()
 
 public:
+	FOnEnemyDeath OnEnemyDeath;
+
 	ABaseEnemy();
 
-	UFUNCTION(BlueprintCallable)
-	virtual void SetPlayerVisibility(bool NewVisibility);
 
-	virtual void Tick(float DeltaTime) override;
-	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
+
+	UFUNCTION(BlueprintCallable)
+	virtual void SetEnemyAware(bool NewVisibility);
 
 	virtual UPawnCombatComponent* GetCombatComponent() const override;
 	virtual void SetInvulnerability(bool NewInvulnerability) override;
@@ -80,6 +86,7 @@ public:
 	virtual void SuccesfulBlock(AActor* Attacker) override;
 	virtual void FireProjectile() override;
 	virtual float GetHealthPercent() override;
+	virtual void AssassinationKilled() override;
 
 	//HitInterface
 	virtual void GetHit(const FVector& ImpactPoint, AActor* Hitter) override;
@@ -89,7 +96,9 @@ public:
 	virtual UEnemyUIComponent* GetEnemyUIComponent() const override;
 	//~ End IPawnUIInterface Interface
 
-
+	void SetAssassinationWidgetVisibility(bool bNewVisibility);
+	void SetCollisionBoxAssassination(ECollisionEnabled::Type NewCollision);
+	void AssassinationInitializeDie();
 
 protected:
 	virtual void BeginPlay() override;
@@ -123,6 +132,7 @@ private:
 
 	void FindNearestAI();
 	void ApplyHitReactionPhisicsVelocity(FName HitPart);
+	void EnableAssassination();
 	void EnableHandToHandCombat();
 
 protected:
@@ -168,6 +178,9 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Movement, meta = (AllowPrivateAccess = "true"))
 	UEnemyCombatComponent* EnemyCombatComponent;
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Movement, meta = (AllowPrivateAccess = "true"))
+	UAssassinableComponent* AssassinableComponent;
+
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "AI", meta = (AllowPrivateAccess = "true"))
 	UBehaviorTree* BehaviorTree;
 
@@ -201,6 +214,18 @@ protected:
 	UPROPERTY(EditAnywhere, Category = Combat)
 	USoundBase* Death_Sound;
 
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Combat | Assassination")
+	bool bEnableAssassination = false;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Combat | Assassination", meta = (AllowPrivateAccess = "true"))
+	class UBoxComponent* AssassinationBoxComponent;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Combat | Assassination", meta = (AllowPrivateAccess = "true"))
+	class UWidgetComponent* AssassinationWidgetComponent;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Combat | Assassination", meta = (AllowPrivateAccess = "true"))
+	USkeletalMeshComponent* Assassination_Preview_Mesh;
+
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Combat | HandToHand")
 	bool bEnableHandToHandCombat = false;
 
@@ -216,6 +241,8 @@ protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Combat | HandToHand", meta = (EditCondition = "bEnableHandToHandCombat"))
 	FName RightHandCollisionBoxAttachBoneName;
 
+
+
 public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "AI")
 	TArray<ATargetPoint*> PatrolPoints;
@@ -230,7 +257,7 @@ public:
 	UFUNCTION(BlueprintCallable)
 	FORCEINLINE AActor* GetCombatTarget() const { return CombatTarget; }
 
-	FORCEINLINE bool IsAware() const { return bSeen; }
+	FORCEINLINE bool IsEnemyAware() const { return bSeen; }
 
 	UFUNCTION(BlueprintCallable)
 	FORCEINLINE void SetEnemyState(EEnemyState NewState) { EnemyState = NewState; }
@@ -241,5 +268,7 @@ public:
 	UFUNCTION(BlueprintPure, meta = (BlueprintThreadSafe))
 	FORCEINLINE bool IsEnemyStateEqualTo(EEnemyState StateToCheck) const { return EnemyState == StateToCheck; }
 
-	/*FORCEINLINE virtual UPawnCombatComponent* GetCombatComponent()  override { return EnemyCombatComponent; }*/
+	FORCEINLINE UAssassinableComponent* GetAssassinableComponent()  const { return AssassinableComponent; }
+	FORCEINLINE FTransform GetAssassinationTransform() const { return Assassination_Preview_Mesh->GetComponentTransform(); }
+	FORCEINLINE ACharacter* GetPlayer() const { return Player; }
 };

@@ -294,14 +294,11 @@ public:
 
 
 
-	UFUNCTION(BlueprintCallable)
-	FORCEINLINE bool IsHiding() const { return bIsHiding; }
+	FORCEINLINE virtual bool IsHiding() const override { return bIsHiding; }
 
-	UFUNCTION(BlueprintCallable)
-	void AddEnemyAware(AActor* Enemy);
 
-	UFUNCTION(BlueprintCallable)
-	void RemoveEnemyAware(AActor* Enemy);
+	virtual void AddEnemyAware(AActor* Enemy) override;
+	virtual void RemoveEnemyAware(AActor* Enemy) override;
 
 	UFUNCTION(BlueprintCallable)
 	FORCEINLINE TArray<AActor*> GetEnemyAware() { return EnemyAware; }

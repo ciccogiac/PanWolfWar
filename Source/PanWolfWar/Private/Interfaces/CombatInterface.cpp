@@ -3,3 +3,7 @@
 void ICombatInterface::FireProjectile()
 {
 }
+
+void ICombatInterface::AssassinationKilled()
+{
+}

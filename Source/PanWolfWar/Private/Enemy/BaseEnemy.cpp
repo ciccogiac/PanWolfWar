@@ -25,6 +25,8 @@
 #include "Components/BoxComponent.h"
 #include "PanWarFunctionLibrary.h"
 
+#include "Enemy/AssassinableComponent.h"
+
 ABaseEnemy::ABaseEnemy()
 {
 	PrimaryActorTick.bCanEverTick = false;
@@ -36,6 +38,7 @@ ABaseEnemy::ABaseEnemy()
 	EnemyCombatComponent = CreateDefaultSubobject<UEnemyCombatComponent>(TEXT("EnemyCombatComponent"));
 	EnemyUIComponent = CreateDefaultSubobject<UEnemyUIComponent>("EnemyUIComponent");
 	EnemyAttributeComponent = CreateDefaultSubobject<UEnemyAttributeComponent>("EnemyAttributeComponent");
+	AssassinableComponent = CreateDefaultSubobject<UAssassinableComponent>("AssassinableComponent");
 
 	EnemyHealthBarWidgetComponent = CreateDefaultSubobject<UWidgetComponent>(TEXT("EnemyHealthBarWidgetComponent"));
 	EnemyHealthBarWidgetComponent->SetupAttachment(GetMesh());
@@ -52,6 +55,23 @@ ABaseEnemy::ABaseEnemy()
 	RightHandCollisionBox->SetActive(false);
 
 	EnableHandToHandCombat();
+
+	AssassinationBoxComponent = CreateDefaultSubobject<UBoxComponent>(TEXT("AssassinationBoxComponent"));
+	AssassinationBoxComponent->SetupAttachment(GetMesh());
+	AssassinationBoxComponent->bHiddenInGame = true;
+	AssassinationBoxComponent->SetLineThickness(2.f);
+	AssassinationBoxComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
+	AssassinationWidgetComponent = CreateDefaultSubobject<UWidgetComponent>(*FString::Printf(TEXT("AssassinationWidgetComponent")));
+	AssassinationWidgetComponent->SetupAttachment(GetRootComponent());
+	AssassinationWidgetComponent->SetVisibility(false);
+
+	Assassination_Preview_Mesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("Assassination_Preview_Mesh"));
+	Assassination_Preview_Mesh->SetupAttachment(GetMesh());
+	Assassination_Preview_Mesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	Assassination_Preview_Mesh->bHiddenInGame = true;
+
+	EnableAssassination();
 
 	Tags.Add(FName("Enemy"));
 }
@@ -73,6 +93,32 @@ void ABaseEnemy::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEv
 	if (PropertyChangedEvent.GetMemberPropertyName() == GET_MEMBER_NAME_CHECKED(ThisClass, RightHandCollisionBoxAttachBoneName))
 	{
 		RightHandCollisionBox->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, RightHandCollisionBoxAttachBoneName);
+	}
+
+	if (PropertyChangedEvent.GetMemberPropertyName() == GET_MEMBER_NAME_CHECKED(ThisClass, bEnableAssassination))
+	{
+		EnableAssassination();
+	}
+	
+}
+
+void ABaseEnemy::EnableAssassination()
+{
+	if (bEnableAssassination)
+	{
+		AssassinationBoxComponent->SetVisibility(true);
+		AssassinationWidgetComponent->SetVisibility(true);
+		Assassination_Preview_Mesh->SetVisibility(true);
+		SetCollisionBoxAssassination(ECollisionEnabled::QueryOnly);
+		Tags.Add(FName("Assassinable"));
+	}
+	else
+	{
+		AssassinationBoxComponent->SetVisibility(false);
+		AssassinationWidgetComponent->SetVisibility(false);
+		Assassination_Preview_Mesh->SetVisibility(false);
+		SetCollisionBoxAssassination(ECollisionEnabled::NoCollision);
+		Tags.Remove(FName("Assassinable"));
 	}
 }
 
@@ -116,6 +162,12 @@ void ABaseEnemy::BeginPlay()
 
 	EnemyState = EEnemyState::EES_Default;
 
+	if (bEnableAssassination && AssassinableComponent)
+	{
+		AssassinationBoxComponent->OnComponentBeginOverlap.AddDynamic(AssassinableComponent, &UAssassinableComponent::BoxCollisionEnter);
+		AssassinationBoxComponent->OnComponentEndOverlap.AddDynamic(AssassinableComponent, &UAssassinableComponent::BoxCollisionExit);
+	}
+
 }
 
 void ABaseEnemy::InitEnemyStats()
@@ -143,7 +195,6 @@ UEnemyUIComponent* ABaseEnemy::GetEnemyUIComponent() const
 	return EnemyUIComponent;
 }
 
-
 void ABaseEnemy::SetInvulnerability(bool NewInvulnerability)
 {
 }
@@ -163,24 +214,25 @@ FRotator ABaseEnemy::GetDesiredDodgeRotation()
 	return FRotator();
 }
 
-void ABaseEnemy::SetPlayerVisibility(bool NewVisibility)
+void ABaseEnemy::SetEnemyAware(bool NewVisibility)
 {
+	/*Debug::Print(TEXT("ChangeVisibility"));*/
 	bSeen = NewVisibility;
 	//PlayerVisibleWidget->SetVisibility(NewVisibility);
 
-	if (bSeen && !bDied)
-	{
-		FindNearestAI();
-		GetWorld()->GetTimerManager().SetTimer(FindEnemies_TimerHandle, [this]() {this->FindNearestAI(); }, 3.f, true);
+	//if (bSeen && !bDied)
+	//{
+	//	/*FindNearestAI();
+	//	GetWorld()->GetTimerManager().SetTimer(FindEnemies_TimerHandle, [this]() {this->FindNearestAI(); }, 3.f, true);*/
 
-		EnemyHealthBarWidgetComponent->SetVisibility(true);
-	}
-	else
-	{
-		GetWorld()->GetTimerManager().ClearTimer(FindEnemies_TimerHandle);
+	//	EnemyHealthBarWidgetComponent->SetVisibility(true);
+	//}
+	//else
+	//{
+	//	/*GetWorld()->GetTimerManager().ClearTimer(FindEnemies_TimerHandle);*/
 
-		EnemyHealthBarWidgetComponent->SetVisibility(false);
-	}
+	//	EnemyHealthBarWidgetComponent->SetVisibility(false);
+	//}
 		
 }
 
@@ -206,23 +258,6 @@ bool ABaseEnemy::IsCombatActorAlive()
 
 float ABaseEnemy::PerformAttack()
 {
-	/*UAnimInstance* AnimIstance = GetMesh()->GetAnimInstance();
-	if (!AnimIstance) return 0.f;
-	if (AnimIstance->IsAnyMontagePlaying() || !AttackMontage) return 0.f;*/
-
-	//if (MotionWarping && CombatTarget)
-	//{
-	//	CombatComponent->RotateToClosestEnemy(CombatTarget);
-
-	//	MotionWarping->AddOrUpdateWarpTargetFromComponent(FName("CombatTarget"), CombatTarget->GetRootComponent(), FName(NAME_None), true);
-	//}
-
-	///*float Duration = AnimIstance->Montage_Play(AttackMontage,1.f,EMontagePlayReturnType::Duration);
-	//return Duration;*/
-
-	//CombatComponent->PerformAttack(EAttackType2::EAT_LightAttack_Right);
-
-	//return 1.f;
 
 	if (!EnemyCombatComponent) return 0.f;
 	EnemyCombatComponent->PerformAttack();
@@ -263,19 +298,6 @@ void ABaseEnemy::FindNearestAI()
 
 
 }
-
-void ABaseEnemy::Tick(float DeltaTime)
-{
-	Super::Tick(DeltaTime);
-
-}
-
-void ABaseEnemy::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
-{
-	Super::SetupPlayerInputComponent(PlayerInputComponent);
-
-}
-
 
 void ABaseEnemy::GetHit(const FVector& ImpactPoint, AActor* Hitter)
 {
@@ -374,6 +396,8 @@ float ABaseEnemy::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent
 	return DamageAmount;*/
 
 	//Health = FMath::Clamp(Health - DamageAmount, 0.f, 100.f);
+	float ActualDamage = Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
+
 	EnemyAttributeComponent->ReceiveDamage(DamageAmount);
 	EnemyUIComponent->OnCurrentHealthChanged.Broadcast(EnemyAttributeComponent->GetHealthPercent());
 
@@ -381,6 +405,7 @@ float ABaseEnemy::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent
 	{
 		bDied = true;
 		Tags.Add(FName("Dead"));
+		OnEnemyDeath.Broadcast();
 
 		if (Death_Montages.Num() != 0)
 		{
@@ -403,6 +428,12 @@ float ABaseEnemy::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent
 
 		FTimerHandle Die_TimerHandle;
 		GetWorld()->GetTimerManager().SetTimer(Die_TimerHandle, [this]() {this->Destroy(); }, 5.f, false);*/
+	}
+
+	else if (DamageAmount > 0.0f)
+	{
+		// Notifica manuale dell'evento di danno al sistema di percezione AI
+		UAISense_Damage::ReportDamageEvent(this, this, DamageCauser, DamageAmount, GetActorLocation(), GetActorLocation());
 	}
 
 	return DamageAmount;
@@ -464,4 +495,26 @@ float ABaseEnemy::GetHealthPercent()
 UPawnCombatComponent* ABaseEnemy::GetCombatComponent() const
 {
 	return EnemyCombatComponent;
+}
+
+void ABaseEnemy::SetAssassinationWidgetVisibility(bool bNewVisibility)
+{
+	AssassinationWidgetComponent->SetVisibility(bNewVisibility);
+}
+
+void ABaseEnemy::SetCollisionBoxAssassination(ECollisionEnabled::Type NewCollision)
+{
+	AssassinationBoxComponent->SetCollisionEnabled(NewCollision);
+}
+
+void ABaseEnemy::AssassinationInitializeDie()
+{
+	bDied = true;
+	Tags.Add(FName("Dead"));
+	//SetCollisionBoxAssassination(ECollisionEnabled::NoCollision);
+}
+
+void ABaseEnemy::AssassinationKilled()
+{
+	AssassinableComponent->Killed();
 }

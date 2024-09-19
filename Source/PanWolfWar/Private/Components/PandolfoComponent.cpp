@@ -25,8 +25,9 @@
 
 #include <Components/TimelineComponent.h>
 
-#include "Enemy/AssassinableEnemy.h"
 #include "Camera/CameraComponent.h"
+#include "Enemy/AssassinableComponent.h"
+#include "Enemy/BaseEnemy.h"
 
 UPandolfoComponent::UPandolfoComponent()
 {
@@ -593,7 +594,7 @@ void UPandolfoComponent::PlayAirAssassination(UAnimInstance* OwningPlayerAnimIns
 	const FRotator WarpRotator = FRotator(0.f, UKismetMathLibrary::FindLookAtRotation(CharacterOwner->GetActorLocation(), WarpLocation).Yaw, 0.f);
 	PanWolfCharacter->SetMotionWarpTarget(FName("AssasinationWarp"), WarpLocation, WarpRotator);
 
-	AssassinableOverlapped->DisableBoxAssassination();
+	AssassinableOverlapped->SetCollisionBoxAssassination(ECollisionEnabled::NoCollision);
 	OwningPlayerAnimInstance->Montage_Play(AirAssassinMontage);
 }
 
@@ -601,22 +602,30 @@ void UPandolfoComponent::PlayStealthAssassination(UAnimInstance* OwningPlayerAni
 {
 	if (!AssassinableOverlapped) return;
 
-	int32 MapIndex = FMath::RandRange(0, AssassinationMontage_Map.Num() - 1);
+	/*int32 MapIndex = FMath::RandRange(0, AssassinationMontage_Map.Num() - 1);
 	TPair<UAnimMontage*, UAnimMontage*> MontageCouple = AssassinationMontage_Map.Get(FSetElementId::FromInteger(MapIndex));
 	if (!MontageCouple.Key) return;
-	if (!MontageCouple.Value) return;
+	if (!MontageCouple.Value) return;*/
+
+	if (AssassinationMontage_Map.Num() == 0) return;
+
+	int32 AssassinationIndex = FMath::RandRange(1, AssassinationMontage_Map.Num());
+	UAnimMontage* AssassinationMontage = *AssassinationMontage_Map.Find(AssassinationIndex); 
+	if (AssassinationIndex == 0 || AssassinationIndex > AssassinationMontage_Map.Num()) return;
+	if (!AssassinationMontage ) return;
+
 	const FTransform AssassinTransform = AssassinableOverlapped->GetAssassinationTransform();
 	const FVector WarpLocation = AssassinTransform.GetLocation();
 	const FRotator WarpRotator = AssassinTransform.Rotator() + FRotator(0.f, 90.f, 0.f);
 	PanWolfCharacter->SetMotionWarpTarget(FName("AssasinationWarp"), WarpLocation, WarpRotator);
-	OwningPlayerAnimInstance->Montage_Play(MontageCouple.Key);
-	AssassinableOverlapped->Assassinated(MontageCouple.Value, this);
+	OwningPlayerAnimInstance->Montage_Play(AssassinationMontage);
+	AssassinableOverlapped->GetAssassinableComponent()->Assassinated(AssassinationIndex, this);
 }
 
 void UPandolfoComponent::AirKill()
 {
 	if(AssassinableOverlapped)
-		AssassinableOverlapped->Assassinated(AirAssassinDeathMontage,this, true);
+		AssassinableOverlapped->GetAssassinableComponent()->Assassinated(0,this, true);
 }
 
 void UPandolfoComponent::RiattachCamera()
@@ -655,7 +664,7 @@ void UPandolfoComponent::CheckCanAirAssassin()
 	{
 		if (AIR_AssassinableOverlapped)
 		{
-			AIR_AssassinableOverlapped->MarkAsTarget(false);
+			AIR_AssassinableOverlapped->GetAssassinableComponent()->MarkAsTarget(false);
 			AIR_AssassinableOverlapped = nullptr;
 		}
 		return;
@@ -668,7 +677,7 @@ void UPandolfoComponent::CheckCanAirAssassin()
 	{
 		if (AIR_AssassinableOverlapped)
 		{
-			AIR_AssassinableOverlapped->MarkAsTarget(false);
+			AIR_AssassinableOverlapped->GetAssassinableComponent()->MarkAsTarget(false);
 			AIR_AssassinableOverlapped = nullptr;
 		}
 		return;
@@ -708,21 +717,21 @@ void UPandolfoComponent::DetectAirAssassinableEnemy()
 		UKismetSystemLibrary::LineTraceSingle(this, LineStart, LineEnd, ETraceTypeQuery::TraceTypeQuery1, false, TArray<AActor*>(), DebugTrace, LineHit, true);
 		if (LineHit.bBlockingHit) return;
 
-		AAssassinableEnemy* TemporaryOverlapped = Cast<AAssassinableEnemy>(PredictResult.HitResult.GetActor());
-		if (!TemporaryOverlapped || TemporaryOverlapped->IsDead() || TemporaryOverlapped->IsAware()) return;
+		ABaseEnemy* TemporaryOverlapped = Cast<ABaseEnemy>(PredictResult.HitResult.GetActor());
+		if (!TemporaryOverlapped || !TemporaryOverlapped->ActorHasTag("Assassinable") || TemporaryOverlapped->IsDead() || TemporaryOverlapped->IsEnemyAware()) return;
 
 		if (AIR_AssassinableOverlapped)
 		{
-			AIR_AssassinableOverlapped->MarkAsTarget(false);
+			AIR_AssassinableOverlapped->GetAssassinableComponent()->MarkAsTarget(false);
 		}
 		
 		AIR_AssassinableOverlapped = TemporaryOverlapped;
-		AIR_AssassinableOverlapped->MarkAsTarget(true);
+		AIR_AssassinableOverlapped->GetAssassinableComponent()->MarkAsTarget(true);
 	}
 	
 	else if (AIR_AssassinableOverlapped)
 	{
-		AIR_AssassinableOverlapped->MarkAsTarget(false);
+		AIR_AssassinableOverlapped->GetAssassinableComponent()->MarkAsTarget(false);
 		AIR_AssassinableOverlapped = nullptr;
 	}
 }

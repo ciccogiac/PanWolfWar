@@ -16,7 +16,7 @@ class UAnimMontage;
 class UKiteComponent;
 class AKiteBoard;
 class USneakCoverComponent;
-class AAssassinableEnemy;
+class ABaseEnemy;
 
 UENUM(BlueprintType)
 enum class EPandolfoState : uint8
@@ -121,8 +121,8 @@ private:
 	UCapsuleComponent* Capsule;
 	USpringArmComponent* CameraBoom;
 
-	AAssassinableEnemy* AssassinableOverlapped = nullptr;
-	AAssassinableEnemy* AIR_AssassinableOverlapped = nullptr;
+	ABaseEnemy* AssassinableOverlapped = nullptr;
+	ABaseEnemy* AIR_AssassinableOverlapped = nullptr;
 	FTimerHandle AirAssassination_TimerHandle;
 	FTimerHandle AirAssassinationCamera_TimerHandle;
 
@@ -165,14 +165,11 @@ private:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Assassination", meta = (AllowPrivateAccess = "true"))
 	UAnimMontage* AirAssassinMontage;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Assassination", meta = (AllowPrivateAccess = "true"))
-	UAnimMontage* AirAssassinDeathMontage;
-
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Dodge", meta = (AllowPrivateAccess = "true"))
 	UAnimMontage* PandolfoDodgeMontage;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Assassination", meta = (AllowPrivateAccess = "true"))
-	TMap<UAnimMontage*, UAnimMontage*> AssassinationMontage_Map;
+	TMap<int32, UAnimMontage*> AssassinationMontage_Map;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Sliding", meta = (AllowPrivateAccess = "true"))
 	UCurveFloat* CameraHeight_Curve;
@@ -253,8 +250,8 @@ public:
 	FORCEINLINE UClimbingComponent* GetClimbingComponent()  const { return ClimbingComponent; }
 	FORCEINLINE USneakCoverComponent* GetSneakCoverComponent()  const { return SneakCoverComponent; }
 	FORCEINLINE UKiteComponent* GetKiteComponent()  const { return KiteComponent; }
-	FORCEINLINE void SetAssassinableEnemy(AAssassinableEnemy* Enemy) { AssassinableOverlapped = Enemy; }
-	FORCEINLINE void SetAssassinableAirEnemy(AAssassinableEnemy* Enemy) { AIR_AssassinableOverlapped = Enemy; }
+	FORCEINLINE void SetAssassinableEnemy(ABaseEnemy* Enemy) { AssassinableOverlapped = Enemy; }
+	FORCEINLINE void SetAssassinableAirEnemy(ABaseEnemy* Enemy) { AIR_AssassinableOverlapped = Enemy; }
 	FORCEINLINE bool IsAssassinableEnemy() { return (AssassinableOverlapped!= nullptr || AIR_AssassinableOverlapped != nullptr); }
 
 	UFUNCTION(BlueprintCallable, Category = "Gliding")
