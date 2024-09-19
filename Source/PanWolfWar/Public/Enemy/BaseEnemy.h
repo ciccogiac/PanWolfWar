@@ -9,12 +9,9 @@
 #include "ScalableFloat.h"
 #include "BaseEnemy.generated.h"
 
-
-class UBehaviorTree;
-class UCombatComponent;
 class UEnemyCombatComponent;
 class UWidgetComponent;
-class UBaseEnemyWidget;
+class UPawnUIComponent;
 class UEnemyUIComponent;
 class UEnemyAttributeComponent;
 class UBoxComponent;
@@ -63,16 +60,17 @@ class PANWOLFWAR_API ABaseEnemy : public ACharacter, public ICombatInterface, pu
 {
 	GENERATED_BODY()
 
+#pragma region Functions
+
 public:
 	FOnEnemyDeath OnEnemyDeath;
 
 	ABaseEnemy();
 
-
-
 	UFUNCTION(BlueprintCallable)
 	virtual void SetEnemyAware(bool NewVisibility);
 
+	//~ Begin ICombatInterface Interface.
 	virtual UPawnCombatComponent* GetCombatComponent() const override;
 	virtual void SetInvulnerability(bool NewInvulnerability) override;
 	virtual FRotator GetDesiredDodgeRotation() override;
@@ -87,38 +85,35 @@ public:
 	virtual void FireProjectile() override;
 	virtual float GetHealthPercent() override;
 	virtual void AssassinationKilled() override;
+	//~ End ICombatInterface Interface
 
 	//HitInterface
 	virtual void GetHit(const FVector& ImpactPoint, AActor* Hitter) override;
 
-	//~ Begin IPawnUIInterface Interface.
-	virtual UPawnUIComponent* GetPawnUIComponent() const override;
-	virtual UEnemyUIComponent* GetEnemyUIComponent() const override;
-	//~ End IPawnUIInterface Interface
 
+	//Assassination
 	void SetAssassinationWidgetVisibility(bool bNewVisibility);
 	void SetCollisionBoxAssassination(ECollisionEnabled::Type NewCollision);
-	void AssassinationInitializeDie();
+	void InitializeEnemyDeath();
+
+	//~ Begin IPawnUIInterface Interface.
+	virtual UPawnUIComponent* GetPawnUIComponent() const override;
+	//~ End IPawnUIInterface Interface
 
 protected:
 	virtual void BeginPlay() override;
-
-	UFUNCTION(BlueprintCallable)
-	virtual void Die();
-
-
-
 	virtual float TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, class AController* EventInstigator, AActor* DamageCauser) override;
-	void PlayHitReactMontage(const FName& SectionName);
-	bool IsAlive();
-
-	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
-
-	UFUNCTION(BlueprintImplementableEvent)
-	void OnEnemyDie_Event();
 
 	UFUNCTION(BlueprintImplementableEvent)
 	void BP_FireProjectile();
+
+	//~ Begin EnemyDeath
+	void HandleEnemyDeath();
+	bool IsEnemyAlive();
+
+	UFUNCTION(BlueprintImplementableEvent)
+	void OnEnemyDie_Event();
+	//~ End EnemyDeath
 
 #if WITH_EDITOR
 	//~ Begin UObject Interface.
@@ -127,92 +122,68 @@ protected:
 #endif
 
 private:	
-
+	//~ Begin EnemyInitialization
 	void InitEnemyStats();
-
-	void FindNearestAI();
-	void ApplyHitReactionPhisicsVelocity(FName HitPart);
 	void EnableAssassination();
 	void EnableHandToHandCombat();
+	//~ End EnemyInitialization
+
+#pragma endregion
+
+#pragma region Variables
+
+public:
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "AI")
+	TArray<ATargetPoint*> PatrolPoints;
 
 protected:
+
 	bool bDied = false;
 	bool bSeen = false;
+	bool bIsUnderAttack = false;
+
+	EEnemyState EnemyState;
+	ACharacter* Player;
+	UAnimInstance* AnimInstance;
+
+#pragma region Initialization
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Stats", meta = (AllowPrivateAccess = "true"))
 	FEnemyInitStats EnemyInitStats;
 
-	/** Under Attack */
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Under Attack", meta = (AllowPrivateAccess = "true"))
-	float UnderAttack_Time = 6.f;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Combat | Assassination")
+	bool bEnableAssassination = false;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Under Attack", meta = (AllowPrivateAccess = "true"))
-	float GetHitFX_Time = 0.3f;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Combat | HandToHand")
+	bool bEnableHandToHandCombat = false;
 
-	bool bIsUnderAttack = false;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Combat | HandToHand", meta = (EditCondition = "bEnableHandToHandCombat"))
+	FName LeftHandCollisionBoxAttachBoneName;
 
-	FTimerHandle UnderAttack_TimerHandle;
-	FTimerHandle GetHitFX_TimerHandle;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Combat | HandToHand", meta = (EditCondition = "bEnableHandToHandCombat"))
+	FName RightHandCollisionBoxAttachBoneName;
 
+#pragma endregion
 
-	EEnemyState EnemyState;
-
-	ACharacter* Player;
-	UAnimInstance* AnimInstance;
-
-	FTimerHandle FindEnemies_TimerHandle;
+#pragma region Components
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAcces = "true"))
 	class UMotionWarpingComponent* MotionWarping;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "UI")
 	UEnemyUIComponent* EnemyUIComponent;
-	
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Movement, meta = (AllowPrivateAccess = "true"))
-	UCombatComponent* CombatComponent;
-
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Movement, meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Category = "Combat", meta = (AllowPrivateAccess = "true"))
 	UEnemyCombatComponent* EnemyCombatComponent;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Movement, meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Category = "Combat", meta = (AllowPrivateAccess = "true"))
 	UAssassinableComponent* AssassinableComponent;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "AI", meta = (AllowPrivateAccess = "true"))
-	UBehaviorTree* BehaviorTree;
-
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Combat)
-	AActor* CombatTarget;
-
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components", meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Combat", meta = (AllowPrivateAccess = "true"))
 	UWidgetComponent* EnemyHealthBarWidgetComponent;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components", meta = (AllowPrivateAccess = "true"))
-	UBaseEnemyWidget* BaseEnemyWidget;
-
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components", meta = (AllowPrivateAccess = "true"))
 	UEnemyAttributeComponent* EnemyAttributeComponent;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Sliding", meta = (AllowPrivateAccess = "true"))
-	class UAnimMontage* AttackMontage;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "AI", meta = (AllowPrivateAccess = "true"))
-	double WarpTargetDistance = 75.f;
-
-	UPROPERTY(EditDefaultsOnly, Category = Combat)
-	UAnimMontage* HitReactMontage;
-
-	UPROPERTY(EditDefaultsOnly, Category = Combat)
-	TArray<UAnimMontage*> HitReact_Montages;
-
-	UPROPERTY(EditDefaultsOnly, Category = Combat)
-	TArray<UAnimMontage*> Death_Montages;
-
-	UPROPERTY(EditAnywhere, Category = Combat)
-	USoundBase* Death_Sound;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Combat | Assassination")
-	bool bEnableAssassination = false;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Combat | Assassination", meta = (AllowPrivateAccess = "true"))
 	class UBoxComponent* AssassinationBoxComponent;
@@ -223,36 +194,46 @@ protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Combat | Assassination", meta = (AllowPrivateAccess = "true"))
 	USkeletalMeshComponent* Assassination_Preview_Mesh;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Combat | HandToHand")
-	bool bEnableHandToHandCombat = false;
-
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Combat | HandToHand")
 	UBoxComponent* LeftHandCollisionBox;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Combat | HandToHand", meta = (EditCondition = "bEnableHandToHandCombat"))
-	FName LeftHandCollisionBoxAttachBoneName;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Combat | HandToHand")
 	UBoxComponent* RightHandCollisionBox;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Combat | HandToHand", meta = (EditCondition = "bEnableHandToHandCombat"))
-	FName RightHandCollisionBoxAttachBoneName;
+#pragma endregion
+
+#pragma region Timer
+
+	FTimerHandle UnderAttack_TimerHandle;
+	FTimerHandle GetHitFX_TimerHandle;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Combat", meta = (AllowPrivateAccess = "true"))
+	float UnderAttack_Time = 6.f;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Combat", meta = (AllowPrivateAccess = "true"))
+	float GetHitFX_Time = 0.3f;
+
+#pragma endregion
+
+#pragma region Montages
+
+	UPROPERTY(EditDefaultsOnly, Category = Combat)
+	TArray<UAnimMontage*> HitReact_Montages;
+
+	UPROPERTY(EditDefaultsOnly, Category = Combat)
+	TArray<UAnimMontage*> Death_Montages;
 
 
+	UPROPERTY(EditAnywhere, Category = Combat)
+	USoundBase* Death_Sound;
+
+#pragma endregion
+
+#pragma endregion
+
+#pragma region ForceinlineFunctions
 
 public:
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "AI")
-	TArray<ATargetPoint*> PatrolPoints;
-
-public:
-	UFUNCTION(BlueprintCallable)
-	FORCEINLINE bool IsDead() const { return bDied; }
-
-	UFUNCTION(BlueprintCallable)
-	FORCEINLINE void SetCombatTarget(AActor* Target) { CombatTarget = Target; }
-
-	UFUNCTION(BlueprintCallable)
-	FORCEINLINE AActor* GetCombatTarget() const { return CombatTarget; }
 
 	FORCEINLINE bool IsEnemyAware() const { return bSeen; }
 
@@ -268,4 +249,11 @@ public:
 	FORCEINLINE UAssassinableComponent* GetAssassinableComponent()  const { return AssassinableComponent; }
 	FORCEINLINE FTransform GetAssassinationTransform() const { return Assassination_Preview_Mesh->GetComponentTransform(); }
 	FORCEINLINE ACharacter* GetPlayer() const { return Player; }
+
+	//~ Begin IPawnUIInterface Interface.
+	FORCEINLINE virtual UEnemyUIComponent* GetEnemyUIComponent() const override { return EnemyUIComponent; }
+	//~ End IPawnUIInterface Interface
+
+#pragma endregion
+
 };

@@ -1,30 +1,24 @@
 #include "Enemy/BaseEnemy.h"
-
 #include "Components/WidgetComponent.h"
 #include "MotionWarpingComponent.h"
-
-#include "PanWolfWar/DebugHelper.h"
-
 #include "Kismet/KismetSystemLibrary.h"
 #include "Kismet/KismetMathLibrary.h"
 #include <PanWolfWar/PanWolfWarCharacter.h>
 #include "Kismet/GameplayStatics.h"
-#include "Components/CombatComponent.h"
 #include "Components/Combat/EnemyCombatComponent.h"
 #include "Components/CapsuleComponent.h"
-
 #include "UserWidgets/BaseEnemyWidget.h"
 #include "Components/UI/EnemyUIComponent.h"
 #include "Widgets/PanWarWidgetBase.h"
-
 #include "Components/EnemyAttributeComponent.h"
-
 #include "Perception/AISense_Damage.h"
-
 #include "Components/BoxComponent.h"
 #include "PanWarFunctionLibrary.h"
-
 #include "Enemy/AssassinableComponent.h"
+
+#include "PanWolfWar/DebugHelper.h"
+
+#pragma region EngineFunctions
 
 ABaseEnemy::ABaseEnemy()
 {
@@ -33,7 +27,6 @@ ABaseEnemy::ABaseEnemy()
 	AutoPossessAI = EAutoPossessAI::PlacedInWorldOrSpawned;
 
 	MotionWarping = CreateDefaultSubobject<UMotionWarpingComponent>(TEXT("Motion Warping"));
-	CombatComponent = CreateDefaultSubobject<UCombatComponent>(TEXT("CombatComponent"));
 	EnemyCombatComponent = CreateDefaultSubobject<UEnemyCombatComponent>(TEXT("EnemyCombatComponent"));
 	EnemyUIComponent = CreateDefaultSubobject<UEnemyUIComponent>("EnemyUIComponent");
 	EnemyAttributeComponent = CreateDefaultSubobject<UEnemyAttributeComponent>("EnemyAttributeComponent");
@@ -101,6 +94,57 @@ void ABaseEnemy::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEv
 	
 }
 
+void ABaseEnemy::BeginPlay()
+{
+	Super::BeginPlay(); 
+
+	Player = UGameplayStatics::GetPlayerCharacter(this, 0);
+	AnimInstance = GetMesh()->GetAnimInstance();
+
+
+	InitEnemyStats();
+
+
+	if (UPanWarWidgetBase* HealthWidget = Cast<UPanWarWidgetBase>(EnemyHealthBarWidgetComponent->GetUserWidgetObject()))
+	{
+		HealthWidget->InitEnemyCreatedWidget(this);
+		EnemyUIComponent->OnCurrentHealthChanged.Broadcast(EnemyAttributeComponent->GetHealthPercent());
+	}
+
+	if (bEnableHandToHandCombat && EnemyCombatComponent)
+	{
+		EnemyCombatComponent->EnableHandToHandCombat(LeftHandCollisionBox, RightHandCollisionBox);
+	}
+
+	EnemyState = EEnemyState::EES_Default;
+
+	if (bEnableAssassination && AssassinableComponent)
+	{
+		AssassinationBoxComponent->OnComponentBeginOverlap.AddDynamic(AssassinableComponent, &UAssassinableComponent::BoxCollisionEnter);
+		AssassinationBoxComponent->OnComponentEndOverlap.AddDynamic(AssassinableComponent, &UAssassinableComponent::BoxCollisionExit);
+	}
+
+}
+
+#pragma endregion
+
+#pragma region initialization
+
+void ABaseEnemy::InitEnemyStats()
+{
+	int32 CurrentGameDifficulty = UPanWarFunctionLibrary::GetCurrentGameDifficulty(this);
+
+	float MaxHealth = EnemyInitStats.MaxHealth.GetValueAtLevel(CurrentGameDifficulty);
+	float StoneSpawnChance = EnemyInitStats.StoneSpawnChance.GetValueAtLevel(CurrentGameDifficulty);
+	EnemyAttributeComponent->InitializeAttributeStats(MaxHealth, StoneSpawnChance);
+
+	float AttackPower = EnemyInitStats.AttackPower.GetValueAtLevel(CurrentGameDifficulty);
+	float DefensePower = EnemyInitStats.DefensePower.GetValueAtLevel(CurrentGameDifficulty);
+	float BaseDamage = EnemyInitStats.BaseDamage.GetValueAtLevel(CurrentGameDifficulty);
+	EnemyCombatComponent->InitializeCombatStats(BaseDamage, AttackPower, DefensePower);
+
+}
+
 void ABaseEnemy::EnableAssassination()
 {
 	if (bEnableAssassination)
@@ -136,75 +180,18 @@ void ABaseEnemy::EnableHandToHandCombat()
 	}
 }
 
-void ABaseEnemy::BeginPlay()
+
+#pragma endregion
+
+#pragma region CombatInterface
+
+UPawnCombatComponent* ABaseEnemy::GetCombatComponent() const
 {
-	Super::BeginPlay(); 
-
-	Player = UGameplayStatics::GetPlayerCharacter(this, 0);
-	AnimInstance = GetMesh()->GetAnimInstance();
-
-
-	InitEnemyStats();
-
-
-	if (UPanWarWidgetBase* HealthWidget = Cast<UPanWarWidgetBase>(EnemyHealthBarWidgetComponent->GetUserWidgetObject()))
-	{
-		HealthWidget->InitEnemyCreatedWidget(this);
-		EnemyUIComponent->OnCurrentHealthChanged.Broadcast(EnemyAttributeComponent->GetHealthPercent());
-	}
-
-	if (bEnableHandToHandCombat && EnemyCombatComponent)
-	{
-		EnemyCombatComponent->EnableHandToHandCombat(LeftHandCollisionBox, RightHandCollisionBox);
-	}
-
-	EnemyState = EEnemyState::EES_Default;
-
-	if (bEnableAssassination && AssassinableComponent)
-	{
-		AssassinationBoxComponent->OnComponentBeginOverlap.AddDynamic(AssassinableComponent, &UAssassinableComponent::BoxCollisionEnter);
-		AssassinationBoxComponent->OnComponentEndOverlap.AddDynamic(AssassinableComponent, &UAssassinableComponent::BoxCollisionExit);
-	}
-
-}
-
-void ABaseEnemy::InitEnemyStats()
-{
-	int32 CurrentGameDifficulty = UPanWarFunctionLibrary::GetCurrentGameDifficulty(this);
-
-	float MaxHealth =EnemyInitStats.MaxHealth.GetValueAtLevel(CurrentGameDifficulty);
-	float StoneSpawnChance = EnemyInitStats.StoneSpawnChance.GetValueAtLevel(CurrentGameDifficulty);
-	EnemyAttributeComponent->InitializeAttributeStats(MaxHealth, StoneSpawnChance);
-
-	float AttackPower = EnemyInitStats.AttackPower.GetValueAtLevel(CurrentGameDifficulty);
-	float DefensePower = EnemyInitStats.DefensePower.GetValueAtLevel(CurrentGameDifficulty);
-	float BaseDamage = EnemyInitStats.BaseDamage.GetValueAtLevel(CurrentGameDifficulty);
-	EnemyCombatComponent->InitializeCombatStats(BaseDamage, AttackPower, DefensePower);
-
-}
-
-UPawnUIComponent* ABaseEnemy::GetPawnUIComponent() const
-{
-	return EnemyUIComponent;
-}
-
-UEnemyUIComponent* ABaseEnemy::GetEnemyUIComponent() const
-{
-	return EnemyUIComponent;
+	return EnemyCombatComponent;
 }
 
 void ABaseEnemy::SetInvulnerability(bool NewInvulnerability)
 {
-}
-
-bool ABaseEnemy::IsUnderAttack()
-{
-	return bIsUnderAttack;
-}
-
-void ABaseEnemy::SetUnderAttack()
-{
-	return ;
 }
 
 FRotator ABaseEnemy::GetDesiredDodgeRotation()
@@ -212,46 +199,9 @@ FRotator ABaseEnemy::GetDesiredDodgeRotation()
 	return FRotator();
 }
 
-void ABaseEnemy::SetEnemyAware(bool NewVisibility)
-{
-	/*Debug::Print(TEXT("ChangeVisibility"));*/
-	bSeen = NewVisibility;
-	//PlayerVisibleWidget->SetVisibility(NewVisibility);
-
-	//if (bSeen && !bDied)
-	//{
-	//	/*FindNearestAI();
-	//	GetWorld()->GetTimerManager().SetTimer(FindEnemies_TimerHandle, [this]() {this->FindNearestAI(); }, 3.f, true);*/
-
-	//	EnemyHealthBarWidgetComponent->SetVisibility(true);
-	//}
-	//else
-	//{
-	//	/*GetWorld()->GetTimerManager().ClearTimer(FindEnemies_TimerHandle);*/
-
-	//	EnemyHealthBarWidgetComponent->SetVisibility(false);
-	//}
-		
-}
-
-
-
-void ABaseEnemy::Die()
-{
-	//BaseAIController->Die();
-	bDied = true;
-	GetWorld()->GetTimerManager().ClearTimer(FindEnemies_TimerHandle);
-}
-
-void ABaseEnemy::EndPlay(const EEndPlayReason::Type EndPlayReason)
-{
-	Super::EndPlay(EndPlayReason);
-	GetWorld()->GetTimerManager().ClearTimer(FindEnemies_TimerHandle);
-}
-
 bool ABaseEnemy::IsCombatActorAlive()
 {
-	return bDied;
+	return IsEnemyAlive();
 }
 
 float ABaseEnemy::PerformAttack()
@@ -263,178 +213,19 @@ float ABaseEnemy::PerformAttack()
 	return 1.f;
 }
 
-void ABaseEnemy::FindNearestAI()
+bool ABaseEnemy::IsUnderAttack()
 {
-	if (bDied || !bSeen) return;
-
-	const FVector Start = GetActorLocation();
-	const FVector End = Start + GetActorForwardVector();
-	TArray<FHitResult> Hit ;
-	TArray<TEnumAsByte<EObjectTypeQuery>> Objects;
-	Objects.Add(EObjectTypeQuery::ObjectTypeQuery3);
-	
-	TArray<AActor*> ActorsToIgnore;
-	ActorsToIgnore.Add(Player);
-
-	bool bBlocked = UKismetSystemLibrary::SphereTraceMultiForObjects(this, Start, End,1500.f, Objects, false, ActorsToIgnore, EDrawDebugTrace::None, Hit, true);
-
-	if (!bBlocked || Hit.Num() <= 0) return;
-
-	for (size_t i = 0; i < Hit.Num() ; i++)
-	{
-		FHitResult EnemyHit = Hit[i];
-		if (EnemyHit.bBlockingHit)
-		{
-			//Debug::Print(TEXT("Enemy: ") + EnemyHit.GetActor()->GetName());
-			ABaseEnemy* Enemy = Cast<ABaseEnemy>(EnemyHit.GetActor());
-			if (!Enemy) continue;
-			if (Enemy->bSeen) continue;
-			/*Enemy->BaseAIController->FindNewEnemy(Player);*/
-		}
-			
-	}
-
-
+	return bIsUnderAttack;
 }
 
-void ABaseEnemy::GetHit(const FVector& ImpactPoint, AActor* Hitter)
+void ABaseEnemy::SetUnderAttack()
 {
-	//if (IsAlive() && Hitter)
-	//{
-	//	//DirectionalHitReact(Hitter->GetActorLocation()); 
-	//	FName Section = IHitInterface::DirectionalHitReact(GetOwner(), Hitter->GetActorLocation());
-	//	//Debug::Print(TEXT("Hit From : ") + Section.ToString());
-	//	PlayHitReactMontage(Section);
-	//	
-	//}
-	//else
-	//{
-	//	FName Section = IHitInterface::DirectionalHitReact(GetOwner(), Hitter->GetActorLocation());
-	//	GetMesh()->SetSimulatePhysics(true);
-	//	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-	//	ApplyHitReactionPhisicsVelocity(Section);
-	//}
-	//	
-	//CombatComponent->PlayHitSound(ImpactPoint);
-	//CombatComponent->SpawnHitParticles(ImpactPoint);
-
-	if (!IsAlive() || !Hitter) return;
-
-	/*HitReact_Montages*/
-	if (HitReact_Montages.Num() != 0)
-	{
-		const FRotator NewFaceRotation = UKismetMathLibrary::FindLookAtRotation(GetActorLocation(), Hitter->GetActorLocation());
-		SetActorRotation(NewFaceRotation);
-
-		const int32 RandIndex = UKismetMathLibrary::RandomIntegerInRange(0, HitReact_Montages.Num() - 1);
-		UAnimMontage* HitReact_Montage = HitReact_Montages[RandIndex];
-
-		if (AnimInstance && HitReact_Montage)
-		{
-			AnimInstance->Montage_Play(HitReact_Montage);
-
-		}
-	}
-
-	GetMesh()->SetScalarParameterValueOnMaterials(FName("HitFxSwitch"), 1.f);
-
-	bIsUnderAttack = true;
-	GetWorld()->GetTimerManager().SetTimer(UnderAttack_TimerHandle, [this]() {this->bIsUnderAttack = false; }, UnderAttack_Time, false);
-
-	GetWorld()->GetTimerManager().SetTimer(GetHitFX_TimerHandle, [this]() {this->GetMesh()->SetScalarParameterValueOnMaterials(FName("HitFxSwitch"), 0.f); }, GetHitFX_Time, false);
-	
-	//EnemyCombatComponent->PlayHitSound(ImpactPoint);
-	/*EnemyCombatComponent->SpawnHitParticles(ImpactPoint);*/
-
+	return;
 }
 
-void ABaseEnemy::PlayHitReactMontage(const FName& SectionName)
+float ABaseEnemy::GetDefensePower()
 {
-	//UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
-	if (AnimInstance && HitReactMontage)
-	{
-		AnimInstance->Montage_Play(HitReactMontage);
-		AnimInstance->Montage_JumpToSection(SectionName, HitReactMontage);
-	}
-}
-
-bool ABaseEnemy::IsAlive()
-{
-	//return Attributes && Attributes->IsAlive();
-	return !bDied;
-}
-
-float ABaseEnemy::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
-{
-	/*if (Attributes)
-	{
-		Attributes->ReceiveDamage(DamageAmount);
-	}*/
-
-	
-	/*Health = FMath::Clamp(Health - DamageAmount, 0.f, 100.f);
-	BaseEnemyWidget->SetHealthBarPercent(Health/100.f);
-	
-	if (Health <= 0)
-	{
-
-		
-		GetMesh()->SetSimulatePhysics(true);
-		GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-		Die();
-		FTimerHandle Die_TimerHandle;
-		GetWorld()->GetTimerManager().SetTimer(Die_TimerHandle, [this]() {this->Destroy(); }, 5.f, false);
-
-		EnemyWidgetComponent->SetVisibility(false);
-	}
-	else
-		BaseAIController->ReportDamageEvent(this, DamageCauser, DamageAmount, GetActorLocation());
-
-		
-	return DamageAmount;*/
-
-	//Health = FMath::Clamp(Health - DamageAmount, 0.f, 100.f);
-	float ActualDamage = Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
-
-	EnemyAttributeComponent->ReceiveDamage(DamageAmount);
-	EnemyUIComponent->OnCurrentHealthChanged.Broadcast(EnemyAttributeComponent->GetHealthPercent());
-
-	if (!EnemyAttributeComponent->IsAlive() && !bDied)
-	{
-		bDied = true;
-		Tags.Add(FName("Dead"));
-		OnEnemyDeath.Broadcast();
-
-		if (Death_Montages.Num() != 0)
-		{
-			const int32 RandIndex = UKismetMathLibrary::RandomIntegerInRange(0, Death_Montages.Num() - 1);
-			UAnimMontage* Death_Montage = Death_Montages[RandIndex];
-
-			if (AnimInstance && Death_Montage)
-			{
-				AnimInstance->Montage_Play(Death_Montage);
-			}
-		}
-		if(Death_Sound)
-			UGameplayStatics::PlaySoundAtLocation(this, Death_Sound, GetActorLocation());
-
-
-		GetWorld()->GetTimerManager().ClearTimer(UnderAttack_TimerHandle);
-
-		/*GetMesh()->SetSimulatePhysics(true);
-		GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-
-		FTimerHandle Die_TimerHandle;
-		GetWorld()->GetTimerManager().SetTimer(Die_TimerHandle, [this]() {this->Destroy(); }, 5.f, false);*/
-	}
-
-	else if (DamageAmount > 0.0f)
-	{
-		// Notifica manuale dell'evento di danno al sistema di percezione AI
-		UAISense_Damage::ReportDamageEvent(this, this, DamageCauser, DamageAmount, GetActorLocation(), GetActorLocation());
-	}
-
-	return DamageAmount;
+	return EnemyCombatComponent->GetDefensePower();
 }
 
 void ABaseEnemy::OnDeathEnter()
@@ -445,27 +236,6 @@ void ABaseEnemy::OnDeathEnter()
 	EnemyUIComponent->RemoveEnemyDrawnWidgetsIfAny();
 
 	OnEnemyDie_Event();
-}
-
-void ABaseEnemy::ApplyHitReactionPhisicsVelocity(FName HitPart)
-{
-	FVector NewVel;
-
-	if (HitPart == FName("FromFront"))
-		NewVel = GetActorForwardVector() * (-4000.f);
-	else if (HitPart == FName(" FromBack"))
-		NewVel = GetActorForwardVector() * (4000.f);
-	else if (HitPart == FName("FromRight"))
-		NewVel = GetActorRightVector() * (-4000.f);
-	else if (HitPart == FName(" FromLeft"))
-		NewVel = GetActorRightVector() * (4000.f);
-
-	GetMesh()->SetPhysicsLinearVelocity(NewVel, false, FName("pelvis"));
-}
-
-float ABaseEnemy::GetDefensePower()
-{
-	return EnemyCombatComponent->GetDefensePower();
 }
 
 bool ABaseEnemy::IsBlocking()
@@ -490,10 +260,104 @@ float ABaseEnemy::GetHealthPercent()
 	return -1.f;
 }
 
-UPawnCombatComponent* ABaseEnemy::GetCombatComponent() const
+void ABaseEnemy::AssassinationKilled()
 {
-	return EnemyCombatComponent;
+	AssassinableComponent->Killed();
 }
+
+#pragma endregion
+
+#pragma region HitDamage&Death
+
+//HitInterface
+void ABaseEnemy::GetHit(const FVector& ImpactPoint, AActor* Hitter)
+{
+	if (!IsEnemyAlive() || !Hitter) return;
+
+	if (HitReact_Montages.Num() != 0)
+	{
+		const FRotator NewFaceRotation = UKismetMathLibrary::FindLookAtRotation(GetActorLocation(), Hitter->GetActorLocation());
+		SetActorRotation(NewFaceRotation);
+
+		const int32 RandIndex = UKismetMathLibrary::RandomIntegerInRange(0, HitReact_Montages.Num() - 1);
+		UAnimMontage* HitReact_Montage = HitReact_Montages[RandIndex];
+
+		if (AnimInstance && HitReact_Montage)
+		{
+			AnimInstance->Montage_Play(HitReact_Montage);
+
+		}
+	}
+
+	GetMesh()->SetScalarParameterValueOnMaterials(FName("HitFxSwitch"), 1.f);
+
+	bIsUnderAttack = true;
+	GetWorld()->GetTimerManager().SetTimer(UnderAttack_TimerHandle, [this]() {this->bIsUnderAttack = false; }, UnderAttack_Time, false);
+	GetWorld()->GetTimerManager().SetTimer(GetHitFX_TimerHandle, [this]() {this->GetMesh()->SetScalarParameterValueOnMaterials(FName("HitFxSwitch"), 0.f); }, GetHitFX_Time, false);
+
+	//EnemyCombatComponent->PlayHitSound(ImpactPoint);
+	/*EnemyCombatComponent->SpawnHitParticles(ImpactPoint);*/
+
+}
+
+bool ABaseEnemy::IsEnemyAlive()
+{
+	return EnemyAttributeComponent->IsAlive() && !bDied && !ActorHasTag(FName("Dead"));
+}
+
+float ABaseEnemy::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
+{
+	float ActualDamage = Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
+
+	EnemyAttributeComponent->ReceiveDamage(DamageAmount);
+	EnemyUIComponent->OnCurrentHealthChanged.Broadcast(EnemyAttributeComponent->GetHealthPercent());
+
+	if (!EnemyAttributeComponent->IsAlive() && !bDied)
+	{
+		HandleEnemyDeath();
+
+	}
+
+	else if (DamageAmount > 0.0f && IsEnemyAlive())
+	{
+		// Notifica manuale dell'evento di danno al sistema di percezione AI
+		UAISense_Damage::ReportDamageEvent(this, this, DamageCauser, DamageAmount, GetActorLocation(), GetActorLocation());
+	}
+
+	return DamageAmount;
+}
+
+void ABaseEnemy::InitializeEnemyDeath()
+{
+	bDied = true;
+	Tags.Add(FName("Dead"));
+	OnEnemyDeath.Broadcast();
+}
+
+void ABaseEnemy::HandleEnemyDeath()
+{
+	InitializeEnemyDeath();
+
+	if (Death_Montages.Num() != 0)
+	{
+		const int32 RandIndex = UKismetMathLibrary::RandomIntegerInRange(0, Death_Montages.Num() - 1);
+		UAnimMontage* Death_Montage = Death_Montages[RandIndex];
+
+		if (AnimInstance && Death_Montage)
+		{
+			AnimInstance->Montage_Play(Death_Montage);
+		}
+	}
+	if (Death_Sound)
+		UGameplayStatics::PlaySoundAtLocation(this, Death_Sound, GetActorLocation());
+
+
+	GetWorld()->GetTimerManager().ClearTimer(UnderAttack_TimerHandle);
+}
+
+#pragma endregion
+
+#pragma region Assassination
 
 void ABaseEnemy::SetAssassinationWidgetVisibility(bool bNewVisibility)
 {
@@ -505,14 +369,31 @@ void ABaseEnemy::SetCollisionBoxAssassination(ECollisionEnabled::Type NewCollisi
 	AssassinationBoxComponent->SetCollisionEnabled(NewCollision);
 }
 
-void ABaseEnemy::AssassinationInitializeDie()
+
+#pragma endregion
+
+void ABaseEnemy::SetEnemyAware(bool NewVisibility)
 {
-	bDied = true;
-	Tags.Add(FName("Dead"));
-	//SetCollisionBoxAssassination(ECollisionEnabled::NoCollision);
+	/*Debug::Print(TEXT("ChangeVisibility"));*/
+	bSeen = NewVisibility;
+	//PlayerVisibleWidget->SetVisibility(NewVisibility);
+
+	//if (bSeen && !bDied)
+	//{
+
+	//	EnemyHealthBarWidgetComponent->SetVisibility(true);
+	//}
+	//else
+	//{
+	//	EnemyHealthBarWidgetComponent->SetVisibility(false);
+	//}
+		
 }
 
-void ABaseEnemy::AssassinationKilled()
+
+//~ Begin IPawnUIInterface Interface.
+UPawnUIComponent* ABaseEnemy::GetPawnUIComponent() const
 {
-	AssassinableComponent->Killed();
+	return EnemyUIComponent;
 }
+//~ End IPawnUIInterface Interface

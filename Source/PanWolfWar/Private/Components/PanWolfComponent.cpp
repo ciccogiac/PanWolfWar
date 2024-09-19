@@ -105,6 +105,10 @@ void UPanWolfComponent::SuccesfulBlock(AActor* Attacker)
 
 		const FVector Force = (CharacterOwner->GetActorForwardVector() * -1.f) * BlockRepulsionForce;
 		CharacterOwner->GetCharacterMovement()->AddForce(Force);
+
+		//Da Provare
+		//NewVel = GetActorForwardVector() * (-4000.f);
+		//GetMesh()->SetPhysicsLinearVelocity(NewVel, false, FName("pelvis"));
 	}
 
 

@@ -718,7 +718,7 @@ void UPandolfoComponent::DetectAirAssassinableEnemy()
 		if (LineHit.bBlockingHit) return;
 
 		ABaseEnemy* TemporaryOverlapped = Cast<ABaseEnemy>(PredictResult.HitResult.GetActor());
-		if (!TemporaryOverlapped || !TemporaryOverlapped->ActorHasTag("Assassinable") || TemporaryOverlapped->IsDead() || TemporaryOverlapped->IsEnemyAware()) return;
+		if (!TemporaryOverlapped || !TemporaryOverlapped->ActorHasTag("Assassinable") || !TemporaryOverlapped->IsCombatActorAlive() || TemporaryOverlapped->IsEnemyAware()) return;
 
 		if (AIR_AssassinableOverlapped)
 		{

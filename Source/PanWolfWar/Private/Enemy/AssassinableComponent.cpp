@@ -27,11 +27,9 @@ void UAssassinableComponent::BeginPlay()
 
 void UAssassinableComponent::BoxCollisionEnter(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
-	/*if (bDied) return;
-	if (bSeen) return;*/
-
-	if(CharacterOwner->ActorHasTag(FName("Dead"))) return;
-	if (EnemyOwner->IsEnemyAware()) return;
+	
+	/*if(CharacterOwner->ActorHasTag(FName("Dead"))) return;*/
+	if (!EnemyOwner || !EnemyOwner->IsCombatActorAlive() || EnemyOwner->IsEnemyAware()) return;
 
 	if (OtherActor->Implements<UCharacterInterface>())
 	{
@@ -51,7 +49,8 @@ void UAssassinableComponent::BoxCollisionEnter(UPrimitiveComponent* OverlappedCo
 
 void UAssassinableComponent::BoxCollisionExit(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
 {
-	if (CharacterOwner->ActorHasTag(FName("Dead"))) return;
+	/*if (CharacterOwner->ActorHasTag(FName("Dead"))) return;*/
+	if (!EnemyOwner || !EnemyOwner->IsCombatActorAlive()) return;
 
 	if (OtherActor->Implements<UCharacterInterface>())
 	{
@@ -60,7 +59,7 @@ void UAssassinableComponent::BoxCollisionExit(UPrimitiveComponent* OverlappedCom
 
 		UPandolfoComponent* PandolfoComponent = CharacterInterface->GetPandolfoComponent();
 		UPandolFlowerComponent* PandolFlowerComponent = CharacterInterface->GetPandolFlowerComponent();
-		//if (!PandolfoComponent || !PandolfoComponent->IsActive()) return;
+
 		if (!PandolfoComponent || (!PandolfoComponent->IsActive() && !PandolFlowerComponent->IsActive())) return;
 
 		PandolfoComponent->SetAssassinableEnemy(nullptr);
@@ -93,9 +92,9 @@ void UAssassinableComponent::Assassinated(int32 AssassinationIndex, UPandolfoCom
 
 	UAnimInstance* OwningPlayerAnimInstance = CharacterOwner->GetMesh()->GetAnimInstance();
 	if (!OwningPlayerAnimInstance) return;
-	//if (OwningPlayerAnimInstance->IsAnyMontagePlaying()) return;
 
-	EnemyOwner->AssassinationInitializeDie();
+	EnemyOwner->InitializeEnemyDeath();
+	CharacterOwner->GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 
 	if (AirAssassination)
 		AirAssassinated();
