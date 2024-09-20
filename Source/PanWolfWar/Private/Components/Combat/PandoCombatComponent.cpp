@@ -12,13 +12,48 @@ void UPandoCombatComponent::BeginPlay()
 	
 }
 
-void UPandoCombatComponent::SetCombatEnabled(bool CombatEnabled, UAnimInstance* PlayerAnimInstance)
+void UPandoCombatComponent::SetCombatEnabled(UAnimInstance* PlayerAnimInstance, ETransformationCombatType TransformationCombatType)
 {
-	if (!CombatEnabled) return;
-
 	OwningPlayerAnimInstance = PlayerAnimInstance;
 	if (!OwningPlayerAnimInstance) return;
 	OwningPlayerAnimInstance->OnMontageEnded.AddDynamic(this, &UPandoCombatComponent::OnAttackMontageEnded);
+
+	CurrentTransformationCombatType = TransformationCombatType;
+
+	switch (CurrentTransformationCombatType)
+	{
+	case ETransformationCombatType::ETCT_Pandolfo:
+		InitializeCombatStats(PANDO_BaseAttackDamage, PANDO_AttackPower, PANDO_DefensePower);
+		break;
+	case ETransformationCombatType::ETCT_PandolFlower:
+		InitializeCombatStats(FLOWER_BaseAttackDamage, FLOWER_AttackPower, FLOWER_DefensePower);
+		break;
+	case ETransformationCombatType::ETCT_PanWolf:
+		InitializeCombatStats(WOLF_BaseAttackDamage, WOLF_AttackPower, WOLF_DefensePower);
+		break;
+	default:
+		break;
+	}
+}
+
+float UPandoCombatComponent::GetDefensePower()
+{
+	switch (CurrentTransformationCombatType)
+	{
+	case ETransformationCombatType::ETCT_Pandolfo:
+		return PANDO_DefensePower;
+		break;
+	case ETransformationCombatType::ETCT_PandolFlower:
+		return FLOWER_DefensePower;
+		break;
+	case ETransformationCombatType::ETCT_PanWolf:
+		return WOLF_DefensePower;
+		break;
+	default:
+		break;
+	}
+
+	return 1.0f;
 }
 
 
@@ -43,29 +78,102 @@ void UPandoCombatComponent::PerformAttack(EAttackType AttackType)
 
 }
 
+
+#pragma region LightAttack
+
 void UPandoCombatComponent::LightAttack()
 {
+	switch (CurrentTransformationCombatType)
+	{
+	case ETransformationCombatType::ETCT_Pandolfo:
+		PandoLightAttack();
+		break;
+	case ETransformationCombatType::ETCT_PandolFlower:
+		FlowerLightAttack();
+		break;
+	case ETransformationCombatType::ETCT_PanWolf:
+		WolfLightAttack();
+		break;
+	default:
+		break;
+	}
+}
+
+void UPandoCombatComponent::WolfLightAttack()
+{
 	GetWorld()->GetTimerManager().ClearTimer(ComboLightCountReset_TimerHandle);
-	UAnimMontage* AttackMontage = *LightAttackMontages.Find(CurrentLightAttackComboCount);
+	UAnimMontage* AttackMontage = *WOLF_LightAttackMontages.Find(CurrentLightAttackComboCount);
 	if (!AttackMontage) return;
 
 	OwningPlayerAnimInstance->Montage_Play(AttackMontage);
 	LastAttackType = EAttackType::EAT_LightAttack;
 	UsedLightComboCount = CurrentLightAttackComboCount;
 
-	if (CurrentLightAttackComboCount == LightAttackMontages.Num()) { ResetLightAttackComboCount(); return; }
+	if (CurrentLightAttackComboCount == WOLF_LightAttackMontages.Num()) { ResetLightAttackComboCount(); return; }
 
-	if (CurrentLightAttackComboCount == (LightAttackMontages.Num() - 1)) { bJumpToFinisher = true; }
+	if (CurrentLightAttackComboCount == (WOLF_LightAttackMontages.Num() - 1)) { bJumpToFinisher = true; }
 	else ResetHeavyAttackComboCount();
 
 	CurrentLightAttackComboCount++;
 }
 
+void UPandoCombatComponent::PandoLightAttack()
+{
+	GetWorld()->GetTimerManager().ClearTimer(ComboLightCountReset_TimerHandle);
+	UAnimMontage* AttackMontage = *PANDO_LightAttackMontages.Find(CurrentLightAttackComboCount);
+	if (!AttackMontage) return;
+
+	OwningPlayerAnimInstance->Montage_Play(AttackMontage);
+	LastAttackType = EAttackType::EAT_LightAttack;
+	UsedLightComboCount = CurrentLightAttackComboCount;
+
+	if (CurrentLightAttackComboCount == PANDO_LightAttackMontages.Num()) { ResetLightAttackComboCount(); return; }
+
+
+	CurrentLightAttackComboCount++;
+}
+
+void UPandoCombatComponent::FlowerLightAttack()
+{
+	GetWorld()->GetTimerManager().ClearTimer(ComboLightCountReset_TimerHandle);
+	UAnimMontage* AttackMontage = *FLOWER_LightAttackMontages.Find(CurrentLightAttackComboCount);
+	if (!AttackMontage) return;
+
+	OwningPlayerAnimInstance->Montage_Play(AttackMontage);
+	LastAttackType = EAttackType::EAT_LightAttack;
+	UsedLightComboCount = CurrentLightAttackComboCount;
+
+	if (CurrentLightAttackComboCount == FLOWER_LightAttackMontages.Num()) { ResetLightAttackComboCount(); return; }
+
+
+	CurrentLightAttackComboCount++;
+}
+
+#pragma endregion
+
+#pragma region HeavyAttack
+
 void UPandoCombatComponent::HeavyAttack()
 {
+	switch (CurrentTransformationCombatType)
+	{
+	case ETransformationCombatType::ETCT_Pandolfo:
+		break;
+	case ETransformationCombatType::ETCT_PandolFlower:
+		break;
+	case ETransformationCombatType::ETCT_PanWolf:
+		WolfHeavyAttack();
+		break;
+	default:
+		break;
+	}
+}
+
+void UPandoCombatComponent::WolfHeavyAttack()
+{
 	GetWorld()->GetTimerManager().ClearTimer(ComboHeavyCountReset_TimerHandle);
-	if (bJumpToFinisher) { CurrentHeavyAttackComboCount = HeavyAttackMontages.Num(); }
-	UAnimMontage* AttackMontage = *HeavyAttackMontages.Find(CurrentHeavyAttackComboCount);
+	if (bJumpToFinisher) { CurrentHeavyAttackComboCount = WOLF_HeavyAttackMontages.Num(); }
+	UAnimMontage* AttackMontage = *WOLF_HeavyAttackMontages.Find(CurrentHeavyAttackComboCount);
 	if (!AttackMontage) return;
 
 	OwningPlayerAnimInstance->Montage_Play(AttackMontage);
@@ -74,7 +182,7 @@ void UPandoCombatComponent::HeavyAttack()
 
 	ResetLightAttackComboCount();
 
-	if (CurrentHeavyAttackComboCount == HeavyAttackMontages.Num()) { ResetHeavyAttackComboCount(); return; }
+	if (CurrentHeavyAttackComboCount == WOLF_HeavyAttackMontages.Num()) { ResetHeavyAttackComboCount(); return; }
 
 
 	CurrentHeavyAttackComboCount++;
@@ -83,8 +191,10 @@ void UPandoCombatComponent::HeavyAttack()
 void UPandoCombatComponent::Counterattack()
 {
 	if (!OwningPlayerAnimInstance) return;
-	OwningPlayerAnimInstance->Montage_Play(CounterattackMontage);
+	OwningPlayerAnimInstance->Montage_Play(WOLF_CounterattackMontage);
 }
+
+#pragma endregion
 
 void UPandoCombatComponent::ResetLightAttackComboCount()
 {
@@ -100,18 +210,49 @@ void UPandoCombatComponent::ResetHeavyAttackComboCount()
 
 void UPandoCombatComponent::OnAttackMontageEnded(UAnimMontage* Montage, bool bInterrupted)
 {
+	bool IsLigtAttack = false;
+	bool IsHeavyAttack = false;
 
-	if (LightAttackMontages.FindKey(Montage))
+	switch (CurrentTransformationCombatType)
+	{
+	case ETransformationCombatType::ETCT_Pandolfo:
+		if (PANDO_LightAttackMontages.FindKey(Montage)) IsLigtAttack = true;
+		break;
+	case ETransformationCombatType::ETCT_PandolFlower:
+		if (FLOWER_LightAttackMontages.FindKey(Montage)) IsLigtAttack = true;
+		break;
+	case ETransformationCombatType::ETCT_PanWolf:
+		if (WOLF_LightAttackMontages.FindKey(Montage)) IsLigtAttack = true;
+		else if (WOLF_HeavyAttackMontages.FindKey(Montage))  IsHeavyAttack = true;
+		break;
+	default:
+		break;
+	}
+
+	if (IsLigtAttack)
+	{
+		if (bInterrupted) return;
+		GetWorld()->GetTimerManager().SetTimer(ComboLightCountReset_TimerHandle, [this]() {this->ResetLightAttackComboCount(); }, 0.025f, false);
+	}
+		
+	else if (IsHeavyAttack)
+	{
+		if (bInterrupted) return;
+		GetWorld()->GetTimerManager().SetTimer(ComboHeavyCountReset_TimerHandle, [this]() {this->ResetHeavyAttackComboCount(); }, 0.025f, false);
+	}
+
+
+	/*if (WOLF_LightAttackMontages.FindKey(Montage))
 	{
 		if (bInterrupted) return;
 		GetWorld()->GetTimerManager().SetTimer(ComboLightCountReset_TimerHandle, [this]() {this->ResetLightAttackComboCount(); }, 0.025f, false);
 	}
 
-	else if (HeavyAttackMontages.FindKey(Montage))
+	else if (WOLF_HeavyAttackMontages.FindKey(Montage))
 	{
 		if (bInterrupted) return;
 		GetWorld()->GetTimerManager().SetTimer(ComboHeavyCountReset_TimerHandle, [this]() {this->ResetHeavyAttackComboCount(); }, 0.025f, false);
-	}
+	}*/
 }
 
 float UPandoCombatComponent::CalculateFinalDamage(float BaseDamage, float TargetDefensePower)
@@ -169,4 +310,7 @@ void UPandoCombatComponent::ResetAttack()
 	CurrentLightAttackComboCount = 1;
 	CurrentHeavyAttackComboCount = 1;
 	bJumpToFinisher = false;
+
+	GetWorld()->GetTimerManager().ClearTimer(ComboLightCountReset_TimerHandle);
+	GetWorld()->GetTimerManager().ClearTimer(ComboHeavyCountReset_TimerHandle);
 }

@@ -29,6 +29,8 @@
 #include "Enemy/AssassinableComponent.h"
 #include "Enemy/BaseEnemy.h"
 
+#include "Components/Combat/PandoCombatComponent.h"
+
 UPandolfoComponent::UPandolfoComponent()
 {
 	PrimaryComponentTick.bCanEverTick = true;
@@ -70,6 +72,12 @@ void UPandolfoComponent::Activate(bool bReset)
 	PanWolfCharacter->SetTransformationCharacter(SkeletalMeshAsset, Anim);
 	PanWolfCharacter->SetMetaHumanVisibility(true);
 
+	OwningPlayerAnimInstance = CharacterOwner->GetMesh()->GetAnimInstance();
+	if (OwningPlayerAnimInstance)
+	{
+		CombatComponent->SetCombatEnabled(OwningPlayerAnimInstance, ETransformationCombatType::ETCT_Pandolfo);
+	}
+
 	if (PanWolfCharacter->IsHiding())
 		CharacterOwner->GetMesh()->SetScalarParameterValueOnMaterials(FName("Emissive Multiplier"), 10.f);
 
@@ -83,6 +91,8 @@ void UPandolfoComponent::Activate(bool bReset)
 	ClimbingComponent->SetAnimationBindings();
 
 	PanWolfCharacter->SetCollisionHandBoxExtent(CombatHandBoxExtent);
+
+
 
 	Knife->AttachToComponent(CharacterOwner->GetMesh(),FAttachmentTransformRules::SnapToTargetNotIncludingScale,FName("foot_Knife_Socket"));
 	Knife->SetVisibility(true);
@@ -110,7 +120,7 @@ void UPandolfoComponent::Deactivate()
 
 	PanWolfCharacter->RemoveMappingContext(PandolfoMappingContext);
 	ClimbingComponent->Deactivate();
-
+	CombatComponent->ResetAttack();
 
 	Knife->SetVisibility(false);
 
@@ -128,6 +138,7 @@ void UPandolfoComponent::BeginPlay()
 
 	Capsule = PanWolfCharacter->GetCapsuleComponent();
 	CameraBoom = PanWolfCharacter->GetCameraBoom();
+	CombatComponent = Cast<UPandoCombatComponent>(PanWolfCharacter->GetCombatComponent());
 
 	if (!CrouchCameraLenght_Curve) return;
 
@@ -216,18 +227,10 @@ void UPandolfoComponent::HandleLand()
 
 void UPandolfoComponent::Dodge()
 {
-	if (!PanWolfCharacter->CanPerformDodge()) return;
+	if (!PanWolfCharacter->CanPerformDodge() || PandolfoState != EPandolfoState::EPS_Pandolfo) return;
+	if (!PandolfoDodgeMontage || !OwningPlayerAnimInstance) return;
 
-	if (PandolfoState != EPandolfoState::EPS_Pandolfo) return;
 
-	if (!PandolfoDodgeMontage) return;
-	UAnimInstance* OwningPlayerAnimInstance = CharacterOwner->GetMesh()->GetAnimInstance();
-	if (!OwningPlayerAnimInstance) return;
-	if (OwningPlayerAnimInstance->IsAnyMontagePlaying()) return;
-	//if (CharacterOwner->GetCharacterMovement()->GetLastInputVector().Length() < 0.5f) return;
-
-	//CharacterOwner->DisableInput(CharacterOwner->GetLocalViewingPlayerController());
-	//Debug::Print(TEXT("Dodge"));
 	OwningPlayerAnimInstance->Montage_Play(PandolfoDodgeMontage);
 }
 
@@ -348,8 +351,10 @@ const FHitResult UPandolfoComponent::TraceObstacles(const FVector ActorLocation,
 	return OnObastacleHit;
 }
 
-void UPandolfoComponent::LoadPredictJump(const FVector ActorLocation, UAnimInstance* OwningPlayerAnimInstance)
+void UPandolfoComponent::LoadPredictJump(const FVector ActorLocation)
 {
+	if (!OwningPlayerAnimInstance) return;
+
 	const float NewYaw = UKismetMathLibrary::FindLookAtRotation(ActorLocation, LandPredictLocation).Yaw;
 	const FRotator NewRotation = FRotator(CharacterOwner->GetActorRotation().Pitch, NewYaw, CharacterOwner->GetActorRotation().Roll);
 	CharacterOwner->SetActorRotation(NewRotation);
@@ -364,7 +369,7 @@ void UPandolfoComponent::LoadPredictJump(const FVector ActorLocation, UAnimInsta
 
 bool UPandolfoComponent::PredictJump()
 {
-	UAnimInstance* OwningPlayerAnimInstance = CharacterOwner->GetMesh()->GetAnimInstance();
+	//UAnimInstance* OwningPlayerAnimInstance = CharacterOwner->GetMesh()->GetAnimInstance();
 	if (!OwningPlayerAnimInstance) return false;
 	if (OwningPlayerAnimInstance->IsAnyMontagePlaying()) return false;
 
@@ -389,7 +394,7 @@ bool UPandolfoComponent::PredictJump()
 	if (OnObastacleHit.bBlockingHit) return false;
 
 	LandPredictLocation = OnSpaceCapsuleHit.ImpactPoint + FVector(0.f, 0.f, 120.f);
-	LoadPredictJump(ActorLocation, OwningPlayerAnimInstance);
+	LoadPredictJump(ActorLocation);
 
 	return true;
 }
@@ -441,7 +446,7 @@ void UPandolfoComponent::Sliding()
 	if (PandolfoState != EPandolfoState::EPS_Pandolfo) return;
 
 	if (!SlidingMontage) return;
-	UAnimInstance* OwningPlayerAnimInstance = CharacterOwner->GetMesh()->GetAnimInstance();
+	//UAnimInstance* OwningPlayerAnimInstance = CharacterOwner->GetMesh()->GetAnimInstance();
 	if (!OwningPlayerAnimInstance) return;
 	if (OwningPlayerAnimInstance->IsAnyMontagePlaying()) return;
 	if (CharacterOwner->GetCharacterMovement()->GetLastInputVector().Length() < 0.5f) return;
@@ -550,18 +555,18 @@ void UPandolfoComponent::Assassination()
 	if (!AssassinableOverlapped && !AIR_AssassinableOverlapped) return;
 	if (AIR_AssassinableOverlapped) AssassinableOverlapped = AIR_AssassinableOverlapped;
 
-	UAnimInstance* OwningPlayerAnimInstance = CharacterOwner->GetMesh()->GetAnimInstance();
+	//UAnimInstance* OwningPlayerAnimInstance = CharacterOwner->GetMesh()->GetAnimInstance();
 	if (!OwningPlayerAnimInstance) return;
 	if (OwningPlayerAnimInstance->IsAnyMontagePlaying()) return;
 
 	if (!AIR_AssassinableOverlapped && AssassinableOverlapped)
 	{
 		
-		PlayStealthAssassination(OwningPlayerAnimInstance);
+		PlayStealthAssassination();
 	}
 	else
 	{
-		PlayAirAssassination(OwningPlayerAnimInstance);
+		PlayAirAssassination();
 		
 	}
 
@@ -569,7 +574,7 @@ void UPandolfoComponent::Assassination()
 	
 }
 
-void UPandolfoComponent::PlayAirAssassination(UAnimInstance* OwningPlayerAnimInstance)
+void UPandolfoComponent::PlayAirAssassination()
 {
 	if (!AssassinableOverlapped) return;
 	AIR_AssassinableOverlapped = nullptr;
@@ -596,7 +601,7 @@ void UPandolfoComponent::PlayAirAssassination(UAnimInstance* OwningPlayerAnimIns
 	OwningPlayerAnimInstance->Montage_Play(AirAssassinMontage);
 }
 
-void UPandolfoComponent::PlayStealthAssassination(UAnimInstance* OwningPlayerAnimInstance)
+void UPandolfoComponent::PlayStealthAssassination()
 {
 	if (!AssassinableOverlapped) return;
 
@@ -647,7 +652,7 @@ void UPandolfoComponent::CheckCanAirAssassin()
 {
 	if (PandolfoState != EPandolfoState::EPS_Pandolfo) return;
 	if (!CharacterOwner || !CharacterOwner->GetMesh()) return;
-	UAnimInstance* OwningPlayerAnimInstance = CharacterOwner->GetMesh()->GetAnimInstance();
+	//UAnimInstance* OwningPlayerAnimInstance = CharacterOwner->GetMesh()->GetAnimInstance();
 	if (!OwningPlayerAnimInstance) return;
 	if (OwningPlayerAnimInstance->IsAnyMontagePlaying()) return;
 
@@ -735,6 +740,14 @@ void UPandolfoComponent::DetectAirAssassinableEnemy()
 }
 
 #pragma endregion
+
+void UPandolfoComponent::LightAttack()
+{
+	if (!CombatComponent) return;
+	if (PandolfoState != EPandolfoState::EPS_Pandolfo) return;
+
+	CombatComponent->PerformAttack(EAttackType::EAT_LightAttack);
+}
 
 void UPandolfoComponent::EnterKiteMode(AKiteBoard* KiteBoard)
 {

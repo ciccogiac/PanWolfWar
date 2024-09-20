@@ -51,7 +51,7 @@ void UPanWolfComponent::Activate(bool bReset)
 
 	if (OwningPlayerAnimInstance)
 	{
-		CombatComponent->SetCombatEnabled(true, OwningPlayerAnimInstance);
+		CombatComponent->SetCombatEnabled(OwningPlayerAnimInstance, ETransformationCombatType::ETCT_PanWolf);
 		OwningPlayerAnimInstance->OnMontageEnded.AddDynamic(this, &UPanWolfComponent::OnMontageEnded);
 	}
 
@@ -64,8 +64,7 @@ void UPanWolfComponent::Deactivate()
 
 	CharacterOwner->GetCharacterMovement()->JumpZVelocity = 500.f;
 	CharacterOwner->GetCapsuleComponent()->SetCapsuleRadius(35.f);
-
-	CombatComponent->SetCombatEnabled(false,nullptr);
+	CombatComponent->ResetAttack();
 
 	PanWolfState = EPanWolfState::EPWS_PanWolf;
 
@@ -174,30 +173,6 @@ void UPanWolfComponent::Dodge()
 
 void UPanWolfComponent::LightAttack()
 {
-
-	/*if (CharacterOwner->GetMovementComponent()->IsFalling())
-	{
-		
-		CombatComponent->PerformAttack(EAttackType::EAT_HeavyAttack);
-		return;
-	}*/
-
-	//if (!CombatComponent->IsAttacking())
-	//{
-	//	//if (!PanWolfCharacter->GetTargetingComponent()->IsTargeting())
-	//	//	PanWolfCharacter->GetTargetingComponent()->TryLock();
-
-	//	const bool isTargeting = PanWolfCharacter->GetTargetingComponent()->IsActive() && PanWolfCharacter->GetTargetingComponent()->IsTargeting();
-	//	const AActor* ClosestEnemy = isTargeting ? PanWolfCharacter->GetTargetingComponent()->GetTargetActor() : CombatComponent->GetClosestEnemy();
-	//	//if (!ClosestEnemy) return;
-
-	//	const bool EnemyDirection = CombatComponent->GetEnemyDirection(ClosestEnemy);
-	//	CombatComponent->RotateToClosestEnemy(ClosestEnemy);
-	//	EAttackType AttackType = EnemyDirection ? EAttackType::EAT_LightAttack_Right : EAttackType::EAT_LightAttack_Left;
-	//	CombatComponent->PerformAttack(AttackType);
-	//}
-	//else
-	//	CombatComponent->PerformAttack(EAttackType::EAT_LightAttack_Right);
 
 	if (!CombatComponent) return;
 

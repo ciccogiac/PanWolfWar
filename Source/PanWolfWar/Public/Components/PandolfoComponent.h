@@ -17,6 +17,7 @@ class UKiteComponent;
 class AKiteBoard;
 class USneakCoverComponent;
 class ABaseEnemy;
+class UPandoCombatComponent;
 
 UENUM(BlueprintType)
 enum class EPandolfoState : uint8
@@ -48,13 +49,13 @@ public:
 	void Assassination();
 	void CheckCanAirAssassin();
 	void Dodge();
-
+	void LightAttack();
 
 	void ClearAllTimer();
 
-	void PlayAirAssassination(UAnimInstance* OwningPlayerAnimInstance);
+	void PlayAirAssassination();
 
-	void PlayStealthAssassination(UAnimInstance* OwningPlayerAnimInstance);
+	void PlayStealthAssassination();
 
 	void EnterKiteMode(AKiteBoard* KiteBoard);
 	UFUNCTION(BlueprintCallable)
@@ -113,13 +114,17 @@ private:
 	const FHitResult PredictProjectileTrace(const FVector ActorLocation, const FVector ForwardVector, AActor* OnGroundActor);
 	const FHitResult TraceLandConditions(const FVector ImpactPoint, const FVector ForwardVector);
 	const FHitResult TraceObstacles(const FVector ActorLocation, const FVector ImpactPoint);
-	void LoadPredictJump(const FVector ActorLocation, UAnimInstance* OwningPlayerAnimInstance);
+	void LoadPredictJump(const FVector ActorLocation);
 
 private:
+	UPROPERTY()
+	UAnimInstance* OwningPlayerAnimInstance;
+
 	ACharacter* CharacterOwner;
 	APanWolfWarCharacter* PanWolfCharacter;
 	UCapsuleComponent* Capsule;
 	USpringArmComponent* CameraBoom;
+	UPandoCombatComponent* CombatComponent;
 
 	ABaseEnemy* AssassinableOverlapped = nullptr;
 	ABaseEnemy* AIR_AssassinableOverlapped = nullptr;
@@ -245,6 +250,9 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	UInputAction* DodgeAction;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	UInputAction* LightAttackAction;
 
 public:
 	FORCEINLINE UClimbingComponent* GetClimbingComponent()  const { return ClimbingComponent; }

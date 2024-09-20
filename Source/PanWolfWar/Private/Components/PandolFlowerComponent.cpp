@@ -27,6 +27,8 @@
 #include "Components/PandolfoComponent.h"
 #include "Components/TransformationComponent.h"
 
+#include "Components/Combat/PandoCombatComponent.h"
+
 #pragma region EngineFunctions
 
 UPandolFlowerComponent::UPandolFlowerComponent()
@@ -50,6 +52,7 @@ void UPandolFlowerComponent::BeginPlay()
 		CameraBoom = PanWolfCharacter->GetCameraBoom();
 		PandolfoComponent = PanWolfCharacter->GetPandolfoComponent();
 		TransformationComponent = PanWolfCharacter->GetTransformationComponent();
+		CombatComponent = Cast<UPandoCombatComponent>(PanWolfCharacter->GetCombatComponent());
 	}
 
 }
@@ -151,16 +154,9 @@ void UPandolFlowerComponent::Jump()
 void UPandolFlowerComponent::Dodge()
 {
 	if (!PanWolfCharacter->CanPerformDodge()) return;
-
 	//if (PandolfoState != EPandolfoState::EPS_Pandolfo) return;
+	if (!PandolFlowerDodgeMontage || !OwningPlayerAnimInstance) return;
 
-	if (!PandolFlowerDodgeMontage) return;
-	if (!OwningPlayerAnimInstance) return;
-	if (OwningPlayerAnimInstance->IsAnyMontagePlaying()) return;
-	//if (CharacterOwner->GetCharacterMovement()->GetLastInputVector().Length() < 0.5f) return;
-
-	//CharacterOwner->DisableInput(CharacterOwner->GetLocalViewingPlayerController());
-	//Debug::Print(TEXT("Dodge"));
 	OwningPlayerAnimInstance->Montage_Play(PandolFlowerDodgeMontage);
 }
 
@@ -241,6 +237,11 @@ void UPandolFlowerComponent::Activate(bool bReset)
 
 	OwningPlayerAnimInstance = CharacterOwner->GetMesh()->GetAnimInstance();
 
+	if (OwningPlayerAnimInstance)
+	{
+		CombatComponent->SetCombatEnabled(OwningPlayerAnimInstance, ETransformationCombatType::ETCT_PandolFlower);
+	}
+
 	if (PanWolfCharacter->IsHiding())
 		CharacterOwner->GetMesh()->SetScalarParameterValueOnMaterials(FName("Emissive Multiplier"), 10.f);
 
@@ -264,6 +265,8 @@ void UPandolFlowerComponent::Deactivate()
 	PanWolfCharacter->RemoveMappingContext(PandolFlowerMappingContext);
 
 	PanWolfCharacter->GetNiagaraTransformation()->SetAsset(nullptr);
+
+	CombatComponent->ResetAttack();
 
 	if (FlowerCable)
 		FlowerCable->Destroy();
@@ -648,4 +651,11 @@ void UPandolFlowerComponent::CheckCanAirAssassin()
 	//Debug::Print(TEXT("CheckCanAirAssassin"));
 	if (PandolfoComponent)
 		PandolfoComponent->CheckCanAirAssassin();
+}
+
+void UPandolFlowerComponent::LightAttack()
+{
+
+	if (!CombatComponent) return;
+		CombatComponent->PerformAttack(EAttackType::EAT_LightAttack);
 }

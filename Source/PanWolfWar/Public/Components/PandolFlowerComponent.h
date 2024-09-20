@@ -17,6 +17,7 @@ class USpringArmComponent;
 class AFlowerHideObject;
 class UPandolfoComponent;
 class UTransformationComponent;
+class UPandoCombatComponent;
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class PANWOLFWAR_API UPandolFlowerComponent : public UActorComponent
@@ -39,6 +40,7 @@ public:
 	void UnHide();
 	void Assassination();
 	void Dodge();
+	void LightAttack();
 
 protected:
 	virtual void BeginPlay() override;
@@ -112,6 +114,9 @@ private:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	UInputAction* DodgeAction;
 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	UInputAction* LightAttackAction;
+
 	#pragma endregion
 
 
@@ -128,6 +133,7 @@ private:
 	USpringArmComponent* CameraBoom;
 	UPandolfoComponent* PandolfoComponent;
 	UTransformationComponent* TransformationComponent;
+	UPandoCombatComponent* CombatComponent;
 
 	FTimerHandle AirAssassination_TimerHandle;
 

@@ -298,6 +298,7 @@ void APanWolfWarCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInpu
 		EnhancedInputComponent->BindAction(PandolfoComponent->Pandolfo_SlidingAction, ETriggerEvent::Completed, PandolfoComponent, &UPandolfoComponent::Sliding);
 		EnhancedInputComponent->BindAction(PandolfoComponent->Pandolfo_GlideAction, ETriggerEvent::Triggered, PandolfoComponent, &UPandolfoComponent::TryGliding);
 		EnhancedInputComponent->BindAction(PandolfoComponent->Pandolfo_AssassinAction, ETriggerEvent::Completed, PandolfoComponent, &UPandolfoComponent::Assassination);
+		EnhancedInputComponent->BindAction(PandolfoComponent->LightAttackAction, ETriggerEvent::Started, PandolfoComponent, &UPandolfoComponent::LightAttack);
 
 		// Climbing
 		EnhancedInputComponent->BindAction(PandolfoComponent->GetClimbingComponent()->ToggleClimbAction, ETriggerEvent::Started, PandolfoComponent->GetClimbingComponent(), &UClimbingComponent::ToggleClimbing);
@@ -331,6 +332,7 @@ void APanWolfWarCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInpu
 		EnhancedInputComponent->BindAction(PandolFlowerComponent->PandolFlower_CrouchAction, ETriggerEvent::Started, PandolFlowerComponent, &UPandolFlowerComponent::Crouch);
 		EnhancedInputComponent->BindAction(PandolFlowerComponent->PandolFlower_HideAction, ETriggerEvent::Started, PandolFlowerComponent, &UPandolFlowerComponent::Hide);	
 		EnhancedInputComponent->BindAction(PandolFlowerComponent->PandolFlower_AssassinAction, ETriggerEvent::Started, PandolFlowerComponent, &UPandolFlowerComponent::Assassination);
+		EnhancedInputComponent->BindAction(PandolFlowerComponent->LightAttackAction, ETriggerEvent::Started, PandolFlowerComponent, &UPandolFlowerComponent::LightAttack);
 		#pragma endregion
 
 		#pragma region PanBird
@@ -678,26 +680,7 @@ void APanWolfWarCharacter::Die()
 
 float APanWolfWarCharacter::GetDefensePower()
 {
-	switch (TransformationComponent->GetCurrentTransformationState())
-	{
-	case ETransformationState::ETS_Pandolfo:
-		if (PandolfoComponent->IsActive()) { return Pandolfo_DefensePower; }
-		break;
-	case ETransformationState::ETS_PanWolf:
-		if (PanWolfComponent->IsActive()) { return PanWolf_DefensePower; }
-		break;
-	case ETransformationState::ETS_PanFlower:
-		if (PandolFlowerComponent->IsActive()) { return PandolFlower_DefensePower; }
-		break;
-	case ETransformationState::ETS_PanBird:
-		if (PanBirdComponent->IsActive()) { return PanBird_DefensePower; }
-		break;
-	default:
-		return 1.f;
-		break;
-	}
-
-	return 1.f;
+	return PandoCombatComponent->GetDefensePower();
 }
 
 void APanWolfWarCharacter::OnDeathEnter()
