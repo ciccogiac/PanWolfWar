@@ -29,6 +29,11 @@ protected:
 	UFUNCTION(BlueprintCallable)
 	void NotifyNearbyAllies(AActor* DetectedActor);
 
+private:
+
+	void IncrementAwareness(AActor* DetectedActor);
+	void DecrementAwareness();
+
 protected:
 
 	ABaseEnemy* OwnerBaseEnemy;
@@ -52,5 +57,18 @@ private:
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "AI | AlliesResearch", meta = (AllowPrivateAccess = "true"))
 	FVector AlliesResearch_BoxExtent = FVector(2000.f,2000.f,500.f);
+
+	FTimerHandle FoundTarget_TimerHandle;
+	FTimerHandle LostTarget_TimerHandle;
+
+	float Awareness = 0.f;
+	float AwarenessIncrementRate = 0.05f;
+	float AwarenessDecrementRate = 0.02f;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "AI | Sight", meta = (AllowPrivateAccess = "true"))
+	float FoundTarget_TimerLoop = 0.1f;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "AI | Sight", meta = (AllowPrivateAccess = "true"))
+	float LostTarget_TimerLoop = 0.3f;
 	
 };

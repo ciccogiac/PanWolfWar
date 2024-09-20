@@ -35,6 +35,9 @@ ABaseEnemy::ABaseEnemy()
 	EnemyHealthBarWidgetComponent = CreateDefaultSubobject<UWidgetComponent>(TEXT("EnemyHealthBarWidgetComponent"));
 	EnemyHealthBarWidgetComponent->SetupAttachment(GetMesh());
 
+	EnemyAwarenessBarWidgetComponent = CreateDefaultSubobject<UWidgetComponent>(TEXT("EnemyAwarenessBarWidgetComponent"));
+	EnemyAwarenessBarWidgetComponent->SetupAttachment(GetMesh()); 
+
 	LeftHandCollisionBox = CreateDefaultSubobject<UBoxComponent>("LeftHandCollisionBox");
 	LeftHandCollisionBox->SetupAttachment(GetMesh());
 	LeftHandCollisionBox->SetCollisionEnabled(ECollisionEnabled::NoCollision);
@@ -109,6 +112,12 @@ void ABaseEnemy::BeginPlay()
 	{
 		HealthWidget->InitEnemyCreatedWidget(this);
 		EnemyUIComponent->OnCurrentHealthChanged.Broadcast(EnemyAttributeComponent->GetHealthPercent());
+	}
+
+	if (UPanWarWidgetBase* AwarenessWidget = Cast<UPanWarWidgetBase>(EnemyAwarenessBarWidgetComponent->GetUserWidgetObject()))
+	{
+		AwarenessWidget->InitEnemyCreatedWidget(this);
+		EnemyUIComponent->OnCurrentAwarenessChanged.Broadcast(0.f);
 	}
 
 	if (bEnableHandToHandCombat && EnemyCombatComponent)
@@ -390,6 +399,10 @@ void ABaseEnemy::SetEnemyAware(bool NewVisibility)
 		
 }
 
+void ABaseEnemy::UpdateCurrentEnemyAwareness(float Percent)
+{
+	EnemyUIComponent->OnCurrentAwarenessChanged.Broadcast(Percent);
+}
 
 //~ Begin IPawnUIInterface Interface.
 UPawnUIComponent* ABaseEnemy::GetPawnUIComponent() const
