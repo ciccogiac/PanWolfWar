@@ -16,7 +16,6 @@ UAssassinableComponent::UAssassinableComponent()
 
 }
 
-
 void UAssassinableComponent::BeginPlay()
 {
 	Super::BeginPlay();

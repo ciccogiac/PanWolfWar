@@ -62,13 +62,20 @@ private:
 	FTimerHandle LostTarget_TimerHandle;
 
 	float Awareness = 0.f;
-	float AwarenessIncrementRate = 0.05f;
-	float AwarenessDecrementRate = 0.02f;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "AI | Sight", meta = (AllowPrivateAccess = "true"))
-	float FoundTarget_TimerLoop = 0.1f;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "AI | Awareness", meta = (AllowPrivateAccess = "true"))
+	float MaxAwarenessDistance = 1500.0f; 
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "AI | Sight", meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "AI | Awareness", meta = (AllowPrivateAccess = "true"))
+	float AwarenessIncrementRate = 0.1f;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "AI | Awareness", meta = (AllowPrivateAccess = "true"))
+	float AwarenessDecrementRate = 0.1f;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "AI | Awareness", meta = (AllowPrivateAccess = "true"))
+	float FoundTarget_TimerLoop = 0.05f;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "AI | Awareness", meta = (AllowPrivateAccess = "true"))
 	float LostTarget_TimerLoop = 0.3f;
 	
 };

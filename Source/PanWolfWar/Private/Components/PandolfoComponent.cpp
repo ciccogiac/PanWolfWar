@@ -550,8 +550,6 @@ void UPandolfoComponent::Assassination()
 	if (!AssassinableOverlapped && !AIR_AssassinableOverlapped) return;
 	if (AIR_AssassinableOverlapped) AssassinableOverlapped = AIR_AssassinableOverlapped;
 
-	Debug::Print(TEXT("Assassination"));
-
 	UAnimInstance* OwningPlayerAnimInstance = CharacterOwner->GetMesh()->GetAnimInstance();
 	if (!OwningPlayerAnimInstance) return;
 	if (OwningPlayerAnimInstance->IsAnyMontagePlaying()) return;

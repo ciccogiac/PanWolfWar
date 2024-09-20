@@ -65,6 +65,11 @@ void APanWarAIController_Advanced::OnPossessedPawnDeath()
 
 		if (OwnerBaseEnemy)
 		OwnerBaseEnemy->SetEnemyAware(false);
+
+		GetWorld()->GetTimerManager().ClearTimer(FoundTarget_TimerHandle);
+		GetWorld()->GetTimerManager().ClearTimer(LostTarget_TimerHandle);
+		Awareness = 0.f;
+		OwnerBaseEnemy->UpdateCurrentEnemyAwareness(0.f);
 	}
 }
 
@@ -81,6 +86,7 @@ void APanWarAIController_Advanced::OnEnemyPerceptionUpdated(AActor* Actor, FAISt
 
 			if (CharacterInterface->IsHiding())
 			{
+				GetWorld()->GetTimerManager().ClearTimer(FoundTarget_TimerHandle);
 				EnemyPerceptionComponent->ForgetAll();
 				return;
 			}
@@ -142,7 +148,15 @@ void APanWarAIController_Advanced::OnEnemyPerceptionUpdated(AActor* Actor, FAISt
 
 void APanWarAIController_Advanced::IncrementAwareness(AActor* DetectedActor)
 {
-	Awareness = FMath::Clamp(Awareness + AwarenessIncrementRate, 0.f, 1.f);
+	if (!DetectedActor || !OwnerBaseEnemy) return;
+
+	float Distance = FVector::Dist(OwnerBaseEnemy->GetActorLocation(), DetectedActor->GetActorLocation());
+	float DistanceFactor = FMath::Clamp(1.0f - (Distance / MaxAwarenessDistance), 0.0f, 1.0f);
+	Awareness += AwarenessIncrementRate * DistanceFactor ;
+	Awareness = FMath::Clamp(Awareness, 0.0f, 1.0f); // Limita il valore tra 0 e 1
+	
+
+	/*Awareness = FMath::Clamp(Awareness + AwarenessIncrementRate, 0.f, 1.f);*/
 	OwnerBaseEnemy->UpdateCurrentEnemyAwareness(Awareness);
 	if (Awareness >= 1)
 	{
@@ -153,7 +167,12 @@ void APanWarAIController_Advanced::IncrementAwareness(AActor* DetectedActor)
 
 void APanWarAIController_Advanced::DecrementAwareness()
 {
-	Awareness = FMath::Clamp(Awareness - AwarenessIncrementRate, 0.f, 1.f);
+	//float Distance = FVector::Dist(OwnerBaseEnemy->GetActorLocation(), DetectedActor->GetActorLocation());
+	//float DistanceFactor = FMath::Clamp(1.0f - (Distance / MaxAwarenessDistance), 0.0f, 1.0f);
+	//Awareness -= AwarenessDecrementRate * (1.0f - DistanceFactor) * GetWorld()->GetDeltaSeconds();
+	//Awareness = FMath::Clamp(Awareness, 0.0f, 1.0f); // Limita il valore tra 0 e 1
+
+	Awareness = FMath::Clamp(Awareness - AwarenessDecrementRate, 0.f, 1.f);
 	OwnerBaseEnemy->UpdateCurrentEnemyAwareness(Awareness);
 	if (Awareness <= 0)
 	{
@@ -166,6 +185,11 @@ void APanWarAIController_Advanced::SetNewTargetActor(AActor* Actor)
 	if (!Actor) return;
 	if (!CharacterInterface) { CharacterInterface = Cast<ICharacterInterface>(Actor); }
 	if (!CharacterInterface || !OwnerBaseEnemy) return;
+
+	GetWorld()->GetTimerManager().ClearTimer(FoundTarget_TimerHandle);
+	GetWorld()->GetTimerManager().ClearTimer(LostTarget_TimerHandle);
+	Awareness = 1.f;
+	OwnerBaseEnemy->UpdateCurrentEnemyAwareness(1.f);
 
 	SetBlackboardTargetActor(Actor);
 	CharacterInterface->AddEnemyAware(GetPawn());
