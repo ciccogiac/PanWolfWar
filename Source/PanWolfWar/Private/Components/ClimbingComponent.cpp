@@ -217,6 +217,7 @@ bool UClimbingComponent::TryClimbing()
 		if (FindClimbableObject(0.f,0.f,Radius_FirstTrace * i))
 		{
 			ClimbingState = EClimbingState::ECS_Climbing;
+			PandolfoComponent->PandolfoState = EPandolfoState::EPS_Climbing;
 			UAnimMontage* Montage = MovementComponent->IsFalling() ? JumpToHang : IdleToHang;
 			PlayClimbMontage(Montage);
 			return true;
@@ -1193,6 +1194,7 @@ void UClimbingComponent::ClimbDownDeActivate()
 
 #pragma endregion
 
+#pragma region Vaulting
 
 bool UClimbingComponent::TryVault()
 {
@@ -1288,7 +1290,7 @@ void UClimbingComponent::VaultMotionWarp(const FVector VaultStartPos, const FVec
 	PlayClimbMontage(VaultMontage);
 }
 
-
+#pragma endregion
 
 
 

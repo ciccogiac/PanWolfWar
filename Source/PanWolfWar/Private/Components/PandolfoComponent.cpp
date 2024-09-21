@@ -302,7 +302,6 @@ bool UPandolfoComponent::TryClimbOrMantle()
 }
 
 
-
 #pragma region PredictableJump
 
 const FHitResult UPandolfoComponent::TraceIsOnGround(const FVector RootLocation, const FVector ForwardVector)
@@ -647,10 +646,11 @@ void UPandolfoComponent::RiattachCamera()
 
 }
 
-void UPandolfoComponent::TakeKnife(bool Take)
+void UPandolfoComponent::TakeKnife(bool Take, bool IsReverseSocket)
 {
-	FName KnifeSocket = Take ?  FName("hand_Knife_Reverse_Socket") : FName("foot_Knife_Socket");
-	Knife->AttachToComponent(CharacterOwner->GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, KnifeSocket);
+	FName SocketName = IsReverseSocket ? FName("hand_Knife_Reverse_Socket") : FName("hand_Knife_Socket");
+	FName KnifeSocket = Take ? SocketName : FName("foot_Knife_Socket");
+	Knife->AttachToComponent(CharacterOwner->GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, KnifeSocket); 
 }
 
 void UPandolfoComponent::CheckCanAirAssassin()
@@ -750,6 +750,10 @@ void UPandolfoComponent::LightAttack()
 {
 	if (!CombatComponent) return;
 	if (PandolfoState != EPandolfoState::EPS_Pandolfo) return;
+
+	GetWorld()->GetTimerManager().ClearTimer(KnifeEquipped_TimerHandle);
+	TakeKnife(true);
+	GetWorld()->GetTimerManager().SetTimer(KnifeEquipped_TimerHandle, [this]() {this->TakeKnife(false); }, KnifeTime, false);
 
 	CombatComponent->PerformAttack(EAttackType::EAT_LightAttack);
 }

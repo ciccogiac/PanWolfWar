@@ -95,7 +95,7 @@ private:
 	bool PredictJump();
 
 	UFUNCTION(BlueprintCallable)
-	void TakeKnife(bool Take);
+	void TakeKnife(bool Take, bool IsReverseSocket = false);
 
 	UFUNCTION()
 	void StartPredictJump(FName NotifyName, const FBranchingPointNotifyPayload& BranchingPointPayload);
@@ -137,6 +137,11 @@ private:
 
 	FTimerHandle Glide_TimerHandle;
 	bool bIsGlideTimerActive = false;
+
+	bool IsKnifeEquipped = false;
+	FTimerHandle KnifeEquipped_TimerHandle;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Knife", meta = (AllowPrivateAccess = "true"))
+	float KnifeTime = 3.f;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Climb Params", meta = (AllowPrivateAccess = "true"))
 	TArray<TEnumAsByte<EObjectTypeQuery> > HidingObjectTypes;
