@@ -954,6 +954,7 @@ void UClimbingComponent::PlayClimbMontage(UAnimMontage* MontageToPlay)
 		MovementComponent->MaxFlySpeed = 0.f;
 		MovementComponent->SetMovementMode(EMovementMode::MOVE_Flying, 0);
 		MovementComponent->StopMovementImmediately();
+		PandolfoComponent->PandolfoState = EPandolfoState::EPS_Mantle;
 		OwningPlayerAnimInstance->Montage_Play(MontageToPlay);
 		//PanWolfCharacter->GetCameraBoom()->bDoCollisionTest = false;
 
@@ -1045,6 +1046,8 @@ void UClimbingComponent::OnClimbMontageEnded(UAnimMontage* Montage, bool bInterr
 		{
 			PandolfoComponent->GetSneakCoverComponent()->EnterCover();
 		}
+
+		PandolfoComponent->PandolfoState = EPandolfoState::EPS_Pandolfo;
 	}
 
 	else if (IsClimbing())

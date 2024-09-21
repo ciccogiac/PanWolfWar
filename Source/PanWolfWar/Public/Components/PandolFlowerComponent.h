@@ -23,7 +23,10 @@ UENUM(BlueprintType)
 enum class EPandolFlowerState : uint8
 {
 	EPFS_PandolFlower UMETA(DisplayName = "PandolFlower"),
-	EPFS_Dodging UMETA(DisplayName = "Dodging")
+	EPFS_Dodging UMETA(DisplayName = "Dodging"),
+	EPFS_FlowerCover UMETA(DisplayName = "FlowerCover"),
+	EPFS_Hooking UMETA(DisplayName = "Hooking"),
+	EPFS_Swinging UMETA(DisplayName = "Swinging")
 };
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
@@ -149,8 +152,6 @@ private:
 	FTimerHandle AirAssassination_TimerHandle;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Cover State ", meta = (AllowPrivateAccess = "true"))
-	bool IsCovering = false;
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Cover State ", meta = (AllowPrivateAccess = "true"))
 	float CoverDirection = 0.f;
 	float LastCoverDirection = 0.f;
 	AFlowerHideObject* FlowerHideObject = nullptr;
@@ -182,11 +183,11 @@ private:
 
 	#pragma region GrapplingCore
 
-	bool bInGrapplingAnimation = false;
+	/*bool bInGrapplingAnimation = false;*/
 	bool bMovingWithGrapple = false;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Grappling Params| Debug", meta = (AllowPrivateAccess = "true"))
-	bool bSwinging = false;
+	//UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Grappling Params| Debug", meta = (AllowPrivateAccess = "true"))
+	//bool bSwinging = false;
 
 	FVector GrapplingDestination;
 	float RopeBaseLenght;
@@ -276,6 +277,8 @@ private:
 #pragma region FORCEINLINE_Functions
 
 public:
+	UFUNCTION(BlueprintCallable)
+	FORCEINLINE EPandolFlowerState GetPandolFlowerState() const { return PandolFlowerState; }
 	FORCEINLINE float GetDetectionRadius() const { return DetectionRadius; }
 	FORCEINLINE float GetGrappleThrowDistance() const { return GrappleThrowDistance; }
 
