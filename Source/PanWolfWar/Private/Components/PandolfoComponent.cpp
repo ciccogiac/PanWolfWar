@@ -76,6 +76,7 @@ void UPandolfoComponent::Activate(bool bReset)
 	if (OwningPlayerAnimInstance)
 	{
 		CombatComponent->SetCombatEnabled(OwningPlayerAnimInstance, ETransformationCombatType::ETCT_Pandolfo);
+		OwningPlayerAnimInstance->OnMontageEnded.AddDynamic(this, &UPandolfoComponent::OnMontageEnded);
 	}
 
 	if (PanWolfCharacter->IsHiding())
@@ -126,9 +127,11 @@ void UPandolfoComponent::Deactivate()
 
 	GetWorld()->GetTimerManager().ClearTimer(AirAssassination_TimerHandle);
 
-	PandolfoState = EPandolfoState::EPS_Pandolfo;
 
 	PanWolfCharacter->SetMetaHumanVisibility(false);
+
+
+	PandolfoState = EPandolfoState::EPS_Pandolfo;
 
 }
 
@@ -230,7 +233,9 @@ void UPandolfoComponent::Dodge()
 	if (!PanWolfCharacter->CanPerformDodge() || PandolfoState != EPandolfoState::EPS_Pandolfo) return;
 	if (!PandolfoDodgeMontage || !OwningPlayerAnimInstance) return;
 
+	PandolfoState = EPandolfoState::EPS_Dodging;
 
+	PanWolfCharacter->StartDodge();
 	OwningPlayerAnimInstance->Montage_Play(PandolfoDodgeMontage);
 }
 
@@ -767,4 +772,13 @@ void UPandolfoComponent::ClearAllTimer()
 {
 	GetWorld()->GetTimerManager().ClearTimer(AirAssassination_TimerHandle);
 	GetWorld()->GetTimerManager().ClearTimer(Glide_TimerHandle);
+}
+
+void UPandolfoComponent::OnMontageEnded(UAnimMontage* Montage, bool bInterrupted)
+{
+	if (Montage == PandolfoDodgeMontage)
+	{
+		PanWolfCharacter->EndDodge();
+		PandolfoState = EPandolfoState::EPS_Pandolfo;
+	}
 }

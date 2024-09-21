@@ -83,6 +83,9 @@ private:
 	float TargetLockRotationInterpSpeed = 5.f;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Target Lock")
+	float TargetLockRotationActorInterpSpeed = 4.f;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Target Lock")
 	float TargetLockMaxWalkSpeed = 150.f;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Target Lock")

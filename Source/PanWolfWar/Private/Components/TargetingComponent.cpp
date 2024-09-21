@@ -75,7 +75,10 @@ void UTargetingComponent::TickComponent(float DeltaTime, ELevelTick TickType, FA
 		const FRotator TargetRot = FMath::RInterpTo(CurrentControlRot, LookAtRot, DeltaTime, TargetLockRotationInterpSpeed);
 
 		CharacterOwner->GetLocalViewingPlayerController()->SetControlRotation(FRotator(TargetRot.Pitch, TargetRot.Yaw, 0.f));
-		CharacterOwner->SetActorRotation(FRotator(0.f, TargetRot.Yaw, 0.f));
+		/*CharacterOwner->SetActorRotation(FRotator(0.f, TargetRot.Yaw, 0.f));*/
+
+		const FRotator TargetRot2 = FMath::RInterpTo(CharacterOwner->GetActorRotation(), LookAtRot, DeltaTime, TargetLockRotationActorInterpSpeed);
+		CharacterOwner->SetActorRotation(FRotator(0.f, TargetRot2.Yaw, 0.f));
 	}
 }
 

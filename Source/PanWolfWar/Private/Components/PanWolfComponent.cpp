@@ -66,9 +66,9 @@ void UPanWolfComponent::Deactivate()
 	CharacterOwner->GetCapsuleComponent()->SetCapsuleRadius(35.f);
 	CombatComponent->ResetAttack();
 
-	PanWolfState = EPanWolfState::EPWS_PanWolf;
-
 	PanWolfCharacter->RemoveMappingContext(PanWolfMappingContext);
+
+	PanWolfState = EPanWolfState::EPWS_PanWolf;
 }
 
 void UPanWolfComponent::Block()
@@ -151,21 +151,13 @@ void UPanWolfComponent::Jump()
 void UPanWolfComponent::Dodge()
 {
 	if (!PanWolfCharacter->CanPerformDodge() || (PanWolfState != EPanWolfState::EPWS_PanWolf)) return;
-
-	//if (PandolfoState != EPandolfoState::EPS_Pandolfo) return;
-
 	if (!PanWolfDodgeMontage || !OwningPlayerAnimInstance) return;
 
-	//if (OwningPlayerAnimInstance->IsAnyMontagePlaying()) return;
-	//if (CharacterOwner->GetCharacterMovement()->GetLastInputVector().Length() < 0.5f) return;
-
-	//CharacterOwner->DisableInput(CharacterOwner->GetLocalViewingPlayerController());
-	//Debug::Print(TEXT("Dodge"));
 	PanWolfState = EPanWolfState::EPWS_Dodging;
 
-	const FVector CachedRollingDirection = CharacterOwner->GetCharacterMovement()->GetLastInputVector().GetSafeNormal();
+	/*const FVector CachedRollingDirection = CharacterOwner->GetCharacterMovement()->GetLastInputVector().GetSafeNormal();
 	const FRotator TargetRotation = UKismetMathLibrary::MakeRotFromX(CachedRollingDirection);
-	PanWolfCharacter->SetMotionWarpTarget(FName("RollingDirection"), FVector::ZeroVector, TargetRotation);
+	PanWolfCharacter->SetMotionWarpTarget(FName("RollingDirection"), FVector::ZeroVector, TargetRotation);*/
 
 	PanWolfCharacter->StartDodge();
 	OwningPlayerAnimInstance->Montage_Play(PanWolfDodgeMontage);

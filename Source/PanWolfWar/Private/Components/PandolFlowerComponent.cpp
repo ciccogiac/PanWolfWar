@@ -153,10 +153,12 @@ void UPandolFlowerComponent::Jump()
 
 void UPandolFlowerComponent::Dodge()
 {
-	if (!PanWolfCharacter->CanPerformDodge()) return;
-	//if (PandolfoState != EPandolfoState::EPS_Pandolfo) return;
+	if (!PanWolfCharacter->CanPerformDodge() || (PandolFlowerState != EPandolFlowerState::EPFS_PandolFlower)) return;
 	if (!PandolFlowerDodgeMontage || !OwningPlayerAnimInstance) return;
 
+	PandolFlowerState = EPandolFlowerState::EPFS_Dodging;
+
+	PanWolfCharacter->StartDodge();
 	OwningPlayerAnimInstance->Montage_Play(PandolFlowerDodgeMontage);
 }
 
@@ -229,6 +231,8 @@ void UPandolFlowerComponent::Activate(bool bReset)
 
 	PanWolfCharacter->AddMappingContext(PandolFlowerMappingContext, 1);
 
+	PandolFlowerState = EPandolFlowerState::EPFS_PandolFlower;
+
 	PanWolfCharacter->bUseControllerRotationPitch = false;
 	PanWolfCharacter->bUseControllerRotationYaw = false;
 
@@ -240,6 +244,7 @@ void UPandolFlowerComponent::Activate(bool bReset)
 	if (OwningPlayerAnimInstance)
 	{
 		CombatComponent->SetCombatEnabled(OwningPlayerAnimInstance, ETransformationCombatType::ETCT_PandolFlower);
+		OwningPlayerAnimInstance->OnMontageEnded.AddDynamic(this, &UPandolFlowerComponent::OnMontageEnded);
 	}
 
 	if (PanWolfCharacter->IsHiding())
@@ -264,6 +269,8 @@ void UPandolFlowerComponent::Deactivate()
 
 	PanWolfCharacter->RemoveMappingContext(PandolFlowerMappingContext);
 
+
+
 	PanWolfCharacter->GetNiagaraTransformation()->SetAsset(nullptr);
 
 	CombatComponent->ResetAttack();
@@ -286,6 +293,8 @@ void UPandolFlowerComponent::Deactivate()
 		UnHide();
 
 	GetWorld()->GetTimerManager().ClearTimer(AirAssassination_TimerHandle);
+
+	PandolFlowerState = EPandolFlowerState::EPFS_PandolFlower;
 }
 
 #pragma endregion
@@ -546,6 +555,15 @@ void UPandolFlowerComponent::PlayMontage(UAnimMontage* MontageToPlay)
 	//if (OwningPlayerAnimInstance->IsAnyMontagePlaying()) { return;}
 
 	OwningPlayerAnimInstance->Montage_Play(MontageToPlay);
+}
+
+void UPandolFlowerComponent::OnMontageEnded(UAnimMontage* Montage, bool bInterrupted)
+{
+	if (Montage == PandolFlowerDodgeMontage)
+	{
+		PanWolfCharacter->EndDodge();
+		PandolFlowerState = EPandolFlowerState::EPFS_PandolFlower;
+	}
 }
 
 

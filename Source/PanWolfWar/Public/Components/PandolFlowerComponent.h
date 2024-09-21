@@ -19,6 +19,13 @@ class UPandolfoComponent;
 class UTransformationComponent;
 class UPandoCombatComponent;
 
+UENUM(BlueprintType)
+enum class EPandolFlowerState : uint8
+{
+	EPFS_PandolFlower UMETA(DisplayName = "PandolFlower"),
+	EPFS_Dodging UMETA(DisplayName = "Dodging")
+};
+
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class PANWOLFWAR_API UPandolFlowerComponent : public UActorComponent
 {
@@ -47,6 +54,8 @@ protected:
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
 private:
+	UFUNCTION()
+	void OnMontageEnded(UAnimMontage* Montage, bool bInterrupted);
 
 	void CheckForGrapplePoint();
 	void ActivateGrapplePoint(AActor* DetectedActor);
@@ -134,6 +143,8 @@ private:
 	UPandolfoComponent* PandolfoComponent;
 	UTransformationComponent* TransformationComponent;
 	UPandoCombatComponent* CombatComponent;
+
+	EPandolFlowerState PandolFlowerState = EPandolFlowerState::EPFS_PandolFlower;
 
 	FTimerHandle AirAssassination_TimerHandle;
 

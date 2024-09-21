@@ -57,7 +57,6 @@ public:
 
 	bool CanPerformDodge();
 	virtual FRotator GetDesiredDodgeRotation() override;
-	UFUNCTION(BlueprintCallable)
 	void StartDodge();
 	UFUNCTION(BlueprintCallable)
 	void EndDodge();

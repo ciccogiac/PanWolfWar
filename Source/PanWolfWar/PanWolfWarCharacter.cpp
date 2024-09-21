@@ -297,7 +297,7 @@ void APanWolfWarCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInpu
 		EnhancedInputComponent->BindAction(PandolfoComponent->DodgeAction, ETriggerEvent::Started, PandolfoComponent, &UPandolfoComponent::Dodge);
 		EnhancedInputComponent->BindAction(PandolfoComponent->Pandolfo_SlidingAction, ETriggerEvent::Completed, PandolfoComponent, &UPandolfoComponent::Sliding);
 		EnhancedInputComponent->BindAction(PandolfoComponent->Pandolfo_GlideAction, ETriggerEvent::Triggered, PandolfoComponent, &UPandolfoComponent::TryGliding);
-		EnhancedInputComponent->BindAction(PandolfoComponent->Pandolfo_AssassinAction, ETriggerEvent::Completed, PandolfoComponent, &UPandolfoComponent::Assassination);
+		EnhancedInputComponent->BindAction(PandolfoComponent->Pandolfo_AssassinAction, ETriggerEvent::Started, PandolfoComponent, &UPandolfoComponent::Assassination);
 		EnhancedInputComponent->BindAction(PandolfoComponent->LightAttackAction, ETriggerEvent::Started, PandolfoComponent, &UPandolfoComponent::LightAttack);
 
 		// Climbing
@@ -442,6 +442,7 @@ void APanWolfWarCharacter::StartDodge()
 
 void APanWolfWarCharacter::EndDodge()
 {
+	SetInvulnerability(false);
 	PandoCombatComponent->ResetAttack();
 	if (TargetingComponent->IsTargeting())
 		TargetingComponent->SetIsDodging(false);
@@ -639,7 +640,7 @@ float APanWolfWarCharacter::PerformAttack()
 
 float APanWolfWarCharacter::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
 {
-	if (!Attributes) return 0.f;
+	if (!Attributes || bIsInvulnerable) return 0.f;
 
 	//const float Damage = DamageAmount / GetDamageDivisor();
 	Attributes->ReceiveDamage(DamageAmount);

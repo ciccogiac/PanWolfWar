@@ -26,7 +26,8 @@ enum class EPandolfoState : uint8
 	EPS_Climbing UMETA(DisplayName = "Climbing"),
 	EPS_Covering UMETA(DisplayName = "Covering"),
 	EPS_Gliding UMETA(DisplayName = "Gliding"),
-	EPS_Kiting UMETA(DisplayName = "Kiting")
+	EPS_Kiting UMETA(DisplayName = "Kiting"),
+	EPS_Dodging UMETA(DisplayName = "Dodging")
 };
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
@@ -73,6 +74,8 @@ protected:
 	virtual void OnComponentDestroyed(bool bDestroyingHierarchy) override;
 
 private:
+	UFUNCTION()
+	void OnMontageEnded(UAnimMontage* Montage, bool bInterrupted);
 
 	void CheckCanHide();
 	void CheckCanHideStandUP();
