@@ -40,6 +40,7 @@ public:
 	void Dodge();
 
 	void Block();
+	void InstantBlock();
 	void UnBlock();
 	void SuccesfulBlock(AActor* Attacker);
 
@@ -54,6 +55,9 @@ private:
 	void AddShield();
 	void RemoveShield();
 
+	void LeftBlock();
+	void RightBlock();
+
 	void ResetPerfectBlock();
 
 private:
@@ -62,7 +66,7 @@ private:
 	UPandoCombatComponent* CombatComponent;
 	UAnimInstance* OwningPlayerAnimInstance;
 
-	EPanWolfState PanWolfState = EPanWolfState::EPWS_PanWolf;
+
 
 	UPROPERTY(Category = Character, EditDefaultsOnly, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<USkeletalMesh> SkeletalMeshAsset;
@@ -82,6 +86,12 @@ private:
 
 	UPROPERTY(EditDefaultsOnly, Category = Combat)
 	UAnimMontage* PanWolf_BlockMontage;
+
+	UPROPERTY(EditDefaultsOnly, Category = Combat)
+	UAnimMontage* PanWolf_RightBlockMontage;
+
+	UPROPERTY(EditDefaultsOnly, Category = Combat)
+	UAnimMontage* PanWolf_LeftBlockMontage;
 
 	UPROPERTY(EditDefaultsOnly, Category = Combat)
 	USoundBase* ShieldBlock_Sound;
@@ -117,8 +127,14 @@ private:
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Combat", meta = (AllowPrivateAccess = "true"))
 	FVector CombatHandBoxExtent;
+
+	bool bIsBlocking = false;
+	bool bIsBlockingReact = false;
 		
 public:
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "PanWolf State ")
+	EPanWolfState PanWolfState = EPanWolfState::EPWS_PanWolf;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	UInputAction* JumpAction;
@@ -138,4 +154,5 @@ public:
 public:
 	FORCEINLINE UAnimMontage* GetPanWolfHitReactMontage() const { return PanWolf_HitReactMontage; }
 	FORCEINLINE bool IsBlocking() const { return PanWolfState == EPanWolfState::EPWS_Blocking; }
+	FORCEINLINE bool IsBlockingCharged() const { return bIsBlocking; }
 };

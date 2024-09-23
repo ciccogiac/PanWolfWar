@@ -15,6 +15,8 @@
 #include <NiagaraFunctionLibrary.h>
 #include "NiagaraComponent.h"
 
+#pragma region EngineFunctions
+
 UPanWolfComponent::UPanWolfComponent()
 {
 	PrimaryComponentTick.bCanEverTick = true;
@@ -24,6 +26,18 @@ UPanWolfComponent::UPanWolfComponent()
 
 	CharacterOwner = Cast<ACharacter>(GetOwner());
 	PanWolfCharacter = Cast<APanWolfWarCharacter>(CharacterOwner);
+}
+
+void UPanWolfComponent::BeginPlay()
+{
+	Super::BeginPlay();
+
+	CombatComponent = Cast<UPandoCombatComponent>(PanWolfCharacter->GetCombatComponent());
+}
+
+void UPanWolfComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
+{
+	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 }
 
 void UPanWolfComponent::Activate(bool bReset)
@@ -43,7 +57,7 @@ void UPanWolfComponent::Activate(bool bReset)
 	CharacterOwner->GetCapsuleComponent()->SetCapsuleRadius(85.f);
 	CharacterOwner->GetMesh()->AddLocalOffset(FVector(15.f, -20.f, -10.f));
 
-	
+
 	PanWolfCharacter->GetCameraBoom()->TargetArmLength = 400.f;
 	CharacterOwner->GetCharacterMovement()->bWantsToCrouch = false;
 
@@ -56,6 +70,9 @@ void UPanWolfComponent::Activate(bool bReset)
 	}
 
 	PanWolfCharacter->SetCollisionHandBoxExtent(CombatHandBoxExtent);
+
+	bIsBlocking = false;
+	bIsBlockingReact = false;
 }
 
 void UPanWolfComponent::Deactivate()
@@ -71,39 +88,175 @@ void UPanWolfComponent::Deactivate()
 	PanWolfState = EPanWolfState::EPWS_PanWolf;
 }
 
-void UPanWolfComponent::Block()
+#pragma endregion
+
+#pragma region Actions
+
+void UPanWolfComponent::Jump()
+{
+	//if (IsPlayingMontage_ExcludingBlendOut()) return;
+	if (OwningPlayerAnimInstance->IsAnyMontagePlaying()) return;
+
+	CharacterOwner->Jump();
+}
+
+void UPanWolfComponent::Dodge()
 {
 
-	if (PanWolfState != EPanWolfState::EPWS_PanWolf || !OwningPlayerAnimInstance) return;
+	if (!PanWolfCharacter->CanPerformDodge() || (PanWolfState == EPanWolfState::EPWS_Dodging)) return;
+	if (!PanWolfDodgeMontage || !OwningPlayerAnimInstance) return;
+
+	PanWolfState = EPanWolfState::EPWS_Dodging;
+
+	/*const FVector CachedRollingDirection = CharacterOwner->GetCharacterMovement()->GetLastInputVector().GetSafeNormal();
+	const FRotator TargetRotation = UKismetMathLibrary::MakeRotFromX(CachedRollingDirection);
+	PanWolfCharacter->SetMotionWarpTarget(FName("RollingDirection"), FVector::ZeroVector, TargetRotation);*/
+
+	PanWolfCharacter->StartDodge();
+	OwningPlayerAnimInstance->Montage_Play(PanWolfDodgeMontage);
+}
+
+void UPanWolfComponent::LightAttack()
+{
+
+	if (!CombatComponent) return;
+
+	if (bIsPerfectBlock)
+		CombatComponent->Counterattack();
+	else
+	{
+		if (PanWolfState == EPanWolfState::EPWS_Blocking)
+			OwningPlayerAnimInstance->Montage_Stop(0.25, PanWolf_BlockMontage);
+
+		if (PanWolfState == EPanWolfState::EPWS_PanWolf && bIsBlocking) 
+		{
+			CombatComponent->ResetAttack();
+			return;
+		}
+
+			/*UnBlock();*/
+
+		CombatComponent->PerformAttack(EAttackType::EAT_LightAttack);
+	}
+		
+
+}
+
+void UPanWolfComponent::HeavyAttack()
+{
+	if (!CombatComponent) return;
+	if (bIsPerfectBlock)
+		CombatComponent->Counterattack();
+	else
+	{
+		if (PanWolfState == EPanWolfState::EPWS_Blocking)
+			OwningPlayerAnimInstance->Montage_Stop(0.25, PanWolf_BlockMontage);
+			/*UnBlock();*/
+
+		if (PanWolfState == EPanWolfState::EPWS_PanWolf && bIsBlocking)
+		{
+			CombatComponent->ResetAttack();
+			return;
+		}
+
+		CombatComponent->PerformAttack(EAttackType::EAT_HeavyAttack);
+	}
+
+}
+
+
+#pragma endregion
+
+#pragma region Block
+
+void UPanWolfComponent::Block()
+{
+	Debug::Print(TEXT("Block"));
+	/*if (PanWolfState != EPanWolfState::EPWS_PanWolf || !OwningPlayerAnimInstance) return;*/
+	if (PanWolfState == EPanWolfState::EPWS_Blocking || !OwningPlayerAnimInstance) return;
 
 	BlockActivatedTime = UGameplayStatics::GetTimeSeconds(this);
+	bIsBlocking = true;
+
+	if (PanWolfState == EPanWolfState::EPWS_Dodging) return;
 
 	PanWolfState = EPanWolfState::EPWS_Blocking;
-	OwningPlayerAnimInstance->Montage_Play(PanWolf_BlockMontage);
 
-	AddShield();
+	OwningPlayerAnimInstance->Montage_Play(PanWolf_BlockMontage);
+	OwningPlayerAnimInstance->Montage_JumpToSection(FName("Idle"), PanWolf_BlockMontage);
+
+	/*AddShield();*/
+}
+
+void UPanWolfComponent::InstantBlock()
+{
+	BlockActivatedTime = UGameplayStatics::GetTimeSeconds(this);
+	bIsBlocking = true;
+
+	PanWolfState = EPanWolfState::EPWS_Blocking;
+
+	OwningPlayerAnimInstance->Montage_Play(PanWolf_BlockMontage);
+	OwningPlayerAnimInstance->Montage_JumpToSection(FName("Idle"), PanWolf_BlockMontage);
+}
+
+void UPanWolfComponent::LeftBlock()
+{
+	Debug::Print(TEXT("LeftBlock"));
+	//OwningPlayerAnimInstance->Montage_Play(PanWolf_LeftBlockMontage);
+	OwningPlayerAnimInstance->Montage_JumpToSection(FName("Left"), PanWolf_BlockMontage);
+	bIsBlockingReact = true;
+}
+
+void UPanWolfComponent::RightBlock()
+{
+	Debug::Print(TEXT("RightBlock"));
+	//OwningPlayerAnimInstance->Montage_Play(PanWolf_RightBlockMontage);
+	OwningPlayerAnimInstance->Montage_JumpToSection(FName("Right"), PanWolf_BlockMontage);
+	bIsBlockingReact = true;
 }
 
 void UPanWolfComponent::UnBlock()
 {
-
+	bIsBlocking = false;
+	bIsBlockingReact = false;
 	OwningPlayerAnimInstance->Montage_Stop(0.25, PanWolf_BlockMontage);
-	RemoveShield();
+	/*RemoveShield();*/
 }
 
 void UPanWolfComponent::SuccesfulBlock(AActor* Attacker)
 {
+	bIsPerfectBlock = (UGameplayStatics::GetTimeSeconds(this) - BlockActivatedTime) < PerfectBlockTime ? true : false;
 
-
-	bIsPerfectBlock = (UGameplayStatics::GetTimeSeconds(this) - BlockActivatedTime ) < PerfectBlockTime ? true : false;
-
-	if(Attacker)
+	if (Attacker)
 	{
-		const FRotator BlockRotation = UKismetMathLibrary::FindLookAtRotation(CharacterOwner->GetActorLocation(),Attacker->GetActorLocation());
+
+		FVector ForwardVectorOwner = CharacterOwner->GetActorForwardVector();
+		FVector ForwardVectorAttacker = Attacker->GetActorForwardVector();
+
+
+		float DotProduct = FVector::DotProduct(ForwardVectorOwner, ForwardVectorAttacker);
+		float AngleInRadians = FMath::Acos(DotProduct);
+		float AngleInDegrees = FMath::RadiansToDegrees(AngleInRadians);
+
+		/*UE_LOG(LogTemp, Warning, TEXT("L'angolo tra i due attori è: %f gradi"), AngleInDegrees);*/
+
+		FVector CrossProduct = FVector::CrossProduct(ForwardVectorOwner, ForwardVectorAttacker);
+		if (CrossProduct.Z < 0 && AngleInDegrees < 135.f)
+		{
+			UE_LOG(LogTemp, Warning, TEXT("Attacker è a destra di CharacterOwner"));
+			RightBlock();
+		}
+		else
+		{
+			UE_LOG(LogTemp, Warning, TEXT("Attacker è a sinistra di CharacterOwner"));
+			LeftBlock();
+		}
+
+		const FRotator BlockRotation = UKismetMathLibrary::FindLookAtRotation(CharacterOwner->GetActorLocation(), Attacker->GetActorLocation());
 		CharacterOwner->SetActorRotation(BlockRotation);
 
-		const FVector Force = (CharacterOwner->GetActorForwardVector() * -1.f) * BlockRepulsionForce;
-		CharacterOwner->GetCharacterMovement()->AddForce(Force);
+		//const FVector Force = (CharacterOwner->GetActorForwardVector() * -1.f) * BlockRepulsionForce;
+		//CharacterOwner->GetCharacterMovement()->AddForce(Force);
 
 		//Da Provare
 		//NewVel = GetActorForwardVector() * (-4000.f);
@@ -126,8 +279,8 @@ void UPanWolfComponent::SuccesfulBlock(AActor* Attacker)
 		//JumpToFinisher?
 
 		UNiagaraFunctionLibrary::SpawnSystemAttached(PerfectBlockShieldNiagara, CharacterOwner->GetMesh(), FName("ShieldSocket"), CharacterOwner->GetActorForwardVector() * 30.f, UKismetMathLibrary::MakeRotFromX(CharacterOwner->GetActorForwardVector()), EAttachLocation::KeepRelativeOffset, true);
-	
-		UGameplayStatics::SetGlobalTimeDilation(this,0.2f);
+
+		UGameplayStatics::SetGlobalTimeDilation(this, 0.2f);
 		/*GetWorld()->GetTimerManager().SetTimer(PerfectBlock_TimerHandle, [this]() {UGameplayStatics::SetGlobalTimeDilation(this, 1.f); }, PerfectBlockTimer, false);*/
 		GetWorld()->GetTimerManager().SetTimer(PerfectBlock_TimerHandle, [this]() {this->ResetPerfectBlock(); }, PerfectBlockTimer, false);
 	}
@@ -138,85 +291,6 @@ void UPanWolfComponent::ResetPerfectBlock()
 {
 	bIsPerfectBlock = false;
 	UGameplayStatics::SetGlobalTimeDilation(this, 1.f);
-}
-
-void UPanWolfComponent::Jump()
-{
-	//if (IsPlayingMontage_ExcludingBlendOut()) return;
-	if (OwningPlayerAnimInstance->IsAnyMontagePlaying()) return;
-
-	CharacterOwner->Jump();
-}
-
-void UPanWolfComponent::Dodge()
-{
-	if (!PanWolfCharacter->CanPerformDodge() || (PanWolfState != EPanWolfState::EPWS_PanWolf)) return;
-	if (!PanWolfDodgeMontage || !OwningPlayerAnimInstance) return;
-
-	PanWolfState = EPanWolfState::EPWS_Dodging;
-
-	/*const FVector CachedRollingDirection = CharacterOwner->GetCharacterMovement()->GetLastInputVector().GetSafeNormal();
-	const FRotator TargetRotation = UKismetMathLibrary::MakeRotFromX(CachedRollingDirection);
-	PanWolfCharacter->SetMotionWarpTarget(FName("RollingDirection"), FVector::ZeroVector, TargetRotation);*/
-
-	PanWolfCharacter->StartDodge();
-	OwningPlayerAnimInstance->Montage_Play(PanWolfDodgeMontage);
-}
-
-void UPanWolfComponent::LightAttack()
-{
-
-	if (!CombatComponent) return;
-
-	if (bIsPerfectBlock)
-		CombatComponent->Counterattack();
-	else
-		CombatComponent->PerformAttack(EAttackType::EAT_LightAttack);
-
-}
-
-void UPanWolfComponent::HeavyAttack()
-{
-	if (!CombatComponent) return;
-	if (bIsPerfectBlock)
-		CombatComponent->Counterattack();
-	else
-		CombatComponent->PerformAttack(EAttackType::EAT_HeavyAttack);
-}
-
-void UPanWolfComponent::BeginPlay()
-{
-	Super::BeginPlay();	
-
-	CombatComponent = Cast<UPandoCombatComponent>(PanWolfCharacter->GetCombatComponent());
-}
-
-void UPanWolfComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
-{
-	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
-}
-
-void UPanWolfComponent::OnMontageEnded(UAnimMontage* Montage, bool bInterrupted)
-{
-	if (Montage == PanWolfDodgeMontage)
-	{
-		PanWolfCharacter->EndDodge();
-		PanWolfState = EPanWolfState::EPWS_PanWolf;
-	}
-
-	else if (Montage == PanWolf_HitReactMontage)
-	{
-		CharacterOwner->GetMesh()->SetScalarParameterValueOnMaterials(FName("HitFxSwitch"), 0.f);
-	}
-
-	else if (Montage == PanWolf_BlockMontage)
-	{
-		PanWolfState = EPanWolfState::EPWS_PanWolf;
-		RemoveShield();
-
-		if(UGameplayStatics::GetGlobalTimeDilation(this) != 1.f)
-			UGameplayStatics::SetGlobalTimeDilation(this, 1.f);
-	}
 }
 
 void UPanWolfComponent::AddShield()
@@ -234,4 +308,62 @@ void UPanWolfComponent::RemoveShield()
 {
 	if (Shield_NiagaraComp)
 		Shield_NiagaraComp->DestroyComponent();
+}
+
+#pragma endregion
+
+void UPanWolfComponent::OnMontageEnded(UAnimMontage* Montage, bool bInterrupted)
+{
+	if (Montage == PanWolfDodgeMontage)
+	{
+		PanWolfCharacter->EndDodge();
+
+		if(PanWolfState!= EPanWolfState::EPWS_Blocking)
+			PanWolfState = EPanWolfState::EPWS_PanWolf;
+
+		/*if (bIsBlocking)
+			Block();*/
+		
+	}
+
+	else if (Montage == PanWolf_HitReactMontage)
+	{
+		CharacterOwner->GetMesh()->SetScalarParameterValueOnMaterials(FName("HitFxSwitch"), 0.f);
+
+		if (bIsBlocking)
+			Block();
+	}
+
+	else if (Montage == PanWolf_BlockMontage)
+	{
+		if (PanWolfState == EPanWolfState::EPWS_Dodging) return;
+
+		if (bIsBlockingReact)
+		{
+			bIsBlockingReact = false;
+			/*if (OwningPlayerAnimInstance->Montage_IsPlaying(PanWolf_HitReactMontage))*/
+			if (bInterrupted ||OwningPlayerAnimInstance->Montage_IsPlaying(PanWolf_HitReactMontage))
+			{
+				PanWolfState = EPanWolfState::EPWS_PanWolf;
+				return;
+			}
+			OwningPlayerAnimInstance->Montage_Play(PanWolf_BlockMontage);
+			OwningPlayerAnimInstance->Montage_JumpToSection(FName("Idle"), PanWolf_BlockMontage);
+
+			return;
+		}
+
+		PanWolfState = EPanWolfState::EPWS_PanWolf;
+		/*RemoveShield();
+
+		if (UGameplayStatics::GetGlobalTimeDilation(this) != 1.f)
+			UGameplayStatics::SetGlobalTimeDilation(this, 1.f);*/
+	}
+
+	else if (bIsBlocking)
+	{
+		Debug::Print(TEXT("Return to block"));
+		Block();
+	}
+
 }

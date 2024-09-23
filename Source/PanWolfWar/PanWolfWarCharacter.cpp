@@ -447,6 +447,8 @@ void APanWolfWarCharacter::EndDodge()
 	if (TargetingComponent->IsTargeting())
 		TargetingComponent->SetIsDodging(false);
 		//TargetingComponent->Activate();
+	if (PanWolfComponent->IsActive() && PanWolfComponent->IsBlockingCharged())
+		PanWolfComponent->InstantBlock();
 }
 
 #pragma endregion
