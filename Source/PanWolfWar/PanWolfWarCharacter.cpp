@@ -708,6 +708,17 @@ bool APanWolfWarCharacter::IsBlocking()
 	return false;
 }
 
+bool APanWolfWarCharacter::IsValidBlock(AActor* InAttacker, AActor* InDefender)
+{
+
+	if (TransformationComponent->GetCurrentTransformationState() == ETransformationState::ETS_PanWolf && PanWolfComponent->IsActive())
+	{
+		return PanWolfComponent->IsWolfValidBlock(InAttacker);
+	}
+
+	return false;
+}
+
 bool APanWolfWarCharacter::IsBlockingCharged()
 {
 	if (TransformationComponent->GetCurrentTransformationState() == ETransformationState::ETS_PanWolf && PanWolfComponent->IsActive())

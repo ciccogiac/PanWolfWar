@@ -30,6 +30,8 @@ public:
 
 	void DisableLock();
 
+	void ChangeTargetActor(AActor* NewTargetToLock);
+
 protected:
 	virtual void BeginPlay() override;
 
@@ -61,6 +63,7 @@ private:
 	bool isDodging = false;
 
 	FVector2D SwitchDirection = FVector2D::ZeroVector;
+	bool IsSwitchDirectionBlocked = false;
 
 private:
 
@@ -120,5 +123,7 @@ public:
 	FORCEINLINE  bool IsTargeting()  { return bIsTargeting; }
 	FORCEINLINE AActor* GetCurrentLockedActor() const { return CurrentLockedActor; }
 	FORCEINLINE  void SetIsDodging(bool Value) { isDodging = Value; }
+	UFUNCTION(BlueprintCallable)
+	FORCEINLINE  void SetSwitchDirectionBlocked(bool Value) { IsSwitchDirectionBlocked = Value; }
 	
 };

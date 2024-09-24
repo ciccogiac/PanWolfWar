@@ -254,6 +254,14 @@ bool ABaseEnemy::IsBlocking()
 	return false;
 }
 
+bool ABaseEnemy::IsValidBlock(AActor* InAttacker, AActor* InDefender)
+{
+	if (IsBlocking())
+		return UPanWarFunctionLibrary::IsValidBlock(InAttacker, InDefender);
+
+	return false;
+}
+
 void ABaseEnemy::SuccesfulBlock(AActor* Attacker)
 {
 }

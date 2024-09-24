@@ -16,6 +16,7 @@
 #include "NiagaraComponent.h"
 
 #include "PanWarFunctionLibrary.h"
+#include "Components/TargetingComponent.h"
 
 #pragma region EngineFunctions
 
@@ -35,6 +36,7 @@ void UPanWolfComponent::BeginPlay()
 	Super::BeginPlay();
 
 	CombatComponent = Cast<UPandoCombatComponent>(PanWolfCharacter->GetCombatComponent());
+	TargetingComponent = PanWolfCharacter->GetTargetingComponent();
 }
 
 void UPanWolfComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
@@ -143,6 +145,8 @@ void UPanWolfComponent::LightAttack()
 
 	if (bIsPerfectBlock)
 	{
+		GetWorld()->GetTimerManager().ClearTimer(PerfectBlock_TimerHandle);
+		ResetPerfectBlock();
 		OwningPlayerAnimInstance->Montage_Stop(0.25, PanWolf_BlockMontage);
 		PanWolfState = EPanWolfState::EPWS_PanWolf;
 		CombatComponent->Counterattack();
@@ -197,6 +201,8 @@ void UPanWolfComponent::HeavyAttack()
 
 	if (bIsPerfectBlock)
 	{
+		GetWorld()->GetTimerManager().ClearTimer(PerfectBlock_TimerHandle);
+		ResetPerfectBlock();
 		OwningPlayerAnimInstance->Montage_Stop(0.25, PanWolf_BlockMontage);
 		PanWolfState = EPanWolfState::EPWS_PanWolf;
 		CombatComponent->Counterattack();
@@ -251,11 +257,10 @@ void UPanWolfComponent::Block()
 {
 	bIsBlocking = true;
 	bIsBlockingReact = false;
-
-	if (PanWolfState != EPanWolfState::EPWS_PanWolf || !OwningPlayerAnimInstance) return;
-
 	BlockActivatedTime = UGameplayStatics::GetTimeSeconds(this);
 
+	if (PanWolfState != EPanWolfState::EPWS_PanWolf || !OwningPlayerAnimInstance) return;
+	if (bHitted) return;
 
 	PanWolfState = EPanWolfState::EPWS_Blocking;
 	CombatComponent->ResetAttack();
@@ -280,7 +285,7 @@ void UPanWolfComponent::UnBlock()
 
 void UPanWolfComponent::InstantBlock()
 {
-	BlockActivatedTime = UGameplayStatics::GetTimeSeconds(this);
+	/*BlockActivatedTime = UGameplayStatics::GetTimeSeconds(this);*/
 	bIsBlockingReact = false;
 	PanWolfState = EPanWolfState::EPWS_Blocking;
 
@@ -304,7 +309,26 @@ void UPanWolfComponent::RightBlock()
 	bIsBlockingReact = true;
 }
 
+bool UPanWolfComponent::IsWolfValidBlock(AActor* InAttacker)
+{
+	check(InAttacker);
 
+	FVector ForwardVectorOwner = CharacterOwner->GetActorForwardVector();
+	FVector ForwardVectorAttacker = InAttacker->GetActorForwardVector();
+
+
+	float DotProduct = FVector::DotProduct(ForwardVectorOwner, ForwardVectorAttacker);
+	FVector CrossProduct = FVector::CrossProduct(ForwardVectorOwner, ForwardVectorAttacker);
+
+
+	if (CrossProduct.Z > 0 && DotProduct > 0)
+	{
+		/*UE_LOG(LogTemp, Warning, TEXT("Attacker è a sinistra di CharacterOwner"));*/
+		return false;
+	}
+
+	return true;
+}
 
 void UPanWolfComponent::ReturnToBlockFromAttack()
 {
@@ -341,8 +365,8 @@ void UPanWolfComponent::SuccesfulBlock(AActor* Attacker)
 			LeftBlock();
 		}
 
-		const FRotator BlockRotation = UKismetMathLibrary::FindLookAtRotation(CharacterOwner->GetActorLocation(), Attacker->GetActorLocation());
-		CharacterOwner->SetActorRotation(BlockRotation);
+		/*const FRotator BlockRotation = UKismetMathLibrary::FindLookAtRotation(CharacterOwner->GetActorLocation(), Attacker->GetActorLocation());
+		CharacterOwner->SetActorRotation(BlockRotation);*/
 
 		//const FVector Force = (CharacterOwner->GetActorForwardVector() * -1.f) * BlockRepulsionForce;
 		//CharacterOwner->GetCharacterMovement()->AddForce(Force);
@@ -365,6 +389,18 @@ void UPanWolfComponent::SuccesfulBlock(AActor* Attacker)
 	if (bIsPerfectBlock)
 	{
 		Debug::Print(TEXT("PerfectBlock"));
+
+		//const FRotator BlockRotation = UKismetMathLibrary::FindLookAtRotation(CharacterOwner->GetActorLocation(), Attacker->GetActorLocation());
+		//CharacterOwner->SetActorRotation(BlockRotation);
+
+		PanWolfCharacter->SetInvulnerability(true);
+		if (TargetingComponent && TargetingComponent->IsTargeting())
+		{
+			TargetingComponent->SetSwitchDirectionBlocked(true);
+			TargetingComponent->ChangeTargetActor(Attacker);
+		}
+		
+
 		//JumpToFinisher?
 
 		UNiagaraFunctionLibrary::SpawnSystemAttached(PerfectBlockShieldNiagara, CharacterOwner->GetMesh(), FName("ShieldSocket"), CharacterOwner->GetActorForwardVector() * 30.f, UKismetMathLibrary::MakeRotFromX(CharacterOwner->GetActorForwardVector()), EAttachLocation::KeepRelativeOffset, true);
@@ -380,6 +416,10 @@ void UPanWolfComponent::ResetPerfectBlock()
 {
 	bIsPerfectBlock = false;
 	UGameplayStatics::SetGlobalTimeDilation(this, 1.f);
+
+	PanWolfCharacter->SetInvulnerability(false);
+	if (TargetingComponent)
+		TargetingComponent->SetSwitchDirectionBlocked(false);
 }
 
 void UPanWolfComponent::AddShield()

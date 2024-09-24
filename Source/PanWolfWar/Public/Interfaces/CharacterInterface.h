@@ -11,6 +11,7 @@ class UAttributeComponent;
 class UPandolfoComponent;
 class UPandolFlowerComponent;
 class UPanWolfComponent;
+class UTargetingComponent;
 
 // This class does not need to be modified.
 UINTERFACE(MinimalAPI, BlueprintType, meta = (CannotImplementInterfaceInBlueprint))
@@ -33,6 +34,9 @@ public:
 	 virtual UPandolFlowerComponent* GetPandolFlowerComponent() const = 0;
 	 UFUNCTION(BlueprintCallable)
 	 virtual UPanWolfComponent* GetPanWolfComponent() const = 0;
+	 UFUNCTION(BlueprintCallable)
+	 virtual UTargetingComponent* GetTargetingComponent() const = 0;
+
 
 	 UFUNCTION(BlueprintCallable)
 	 virtual bool IsHiding() const = 0;

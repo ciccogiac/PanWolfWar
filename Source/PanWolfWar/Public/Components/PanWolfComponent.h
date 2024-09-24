@@ -13,6 +13,7 @@ class UAnimMontage;
 class UPandoCombatComponent;
 class UNiagaraSystem;
 class UNiagaraComponent;
+class UTargetingComponent;
 
 UENUM(BlueprintType)
 enum class EPanWolfState : uint8
@@ -43,6 +44,7 @@ public:
 	void InstantBlock();
 	void UnBlock();
 	void SuccesfulBlock(AActor* Attacker);
+	bool IsWolfValidBlock(AActor* InAttacker);
 
 	UFUNCTION(BlueprintCallable)
 	void ReturnToBlockFromAttack();
@@ -70,6 +72,7 @@ private:
 	ACharacter* CharacterOwner;
 	UPandoCombatComponent* CombatComponent;
 	UAnimInstance* OwningPlayerAnimInstance;
+	UTargetingComponent* TargetingComponent;
 
 	bool bHitted = false;
 

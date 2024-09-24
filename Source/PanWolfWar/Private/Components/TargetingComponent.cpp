@@ -104,7 +104,6 @@ void UTargetingComponent::ToggleLock()
 		DisableLock();
 }
 
-
 void UTargetingComponent::EnableLock()
 {
 
@@ -141,6 +140,8 @@ void UTargetingComponent::SwitchTargetTriggered(const FInputActionValue& InputAc
 
 void UTargetingComponent::SwitchTargetCompleted(const FInputActionValue& InputActionValue)
 {
+	if (IsSwitchDirectionBlocked) return;
+
 	GetAvailableActorsToLock();
 
 	TArray<AActor*> ActorsOnLeft;
@@ -159,6 +160,14 @@ void UTargetingComponent::SwitchTargetCompleted(const FInputActionValue& InputAc
 	}
 
 	if (NewTargetToLock)
+	{
+		CurrentLockedActor = NewTargetToLock;
+	}
+}
+
+void UTargetingComponent::ChangeTargetActor(AActor* NewTargetToLock)
+{
+	if (NewTargetToLock && NewTargetToLock!= CurrentLockedActor)
 	{
 		CurrentLockedActor = NewTargetToLock;
 	}

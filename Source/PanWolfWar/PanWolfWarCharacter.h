@@ -74,6 +74,7 @@ public:
 	virtual bool IsBlockingCharged() override;
 	virtual void SuccesfulBlock(AActor* Attacker) override;
 	virtual float GetHealthPercent() override;
+	virtual bool IsValidBlock(AActor* InAttacker, AActor* InDefender) override;
 
 	void SetCollisionHandBoxExtent(FVector Extent);
 
@@ -280,7 +281,7 @@ public:
 	
 	FORCEINLINE virtual UAttributeComponent* GetAttributeComponent()  const override { return Attributes; }
 	FORCEINLINE UInteractComponent* GetInteractComponent() const { return InteractComponent; }
-	FORCEINLINE UTargetingComponent* GetTargetingComponent() const { return TargetingComponent; }
+	FORCEINLINE virtual UTargetingComponent* GetTargetingComponent() const override { return TargetingComponent; }
 
 	FORCEINLINE virtual UTransformationComponent* GetTransformationComponent()  const override { return TransformationComponent; } ;
 	FORCEINLINE virtual UPandolfoComponent* GetPandolfoComponent() const override { return PandolfoComponent; }

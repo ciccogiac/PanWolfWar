@@ -85,6 +85,7 @@ public:
 	virtual void FireProjectile() override;
 	virtual float GetHealthPercent() override;
 	virtual void AssassinationKilled() override;
+	virtual bool IsValidBlock(AActor* InAttacker, AActor* InDefender) override;
 	//~ End ICombatInterface Interface
 
 	//HitInterface

@@ -105,7 +105,8 @@ void UPawnCombatComponent::BoxCollisionTrace(EToggleDamageType ToggleDamageType)
 
 		if (bIsPlayerBlocking && !bIsMyAttackUnblockable)
 		{
-			bIsValidBlock = UPanWarFunctionLibrary::IsValidBlock(CharacterOwner, Hit.GetActor());
+			/*bIsValidBlock = UPanWarFunctionLibrary::IsValidBlock(CharacterOwner, Hit.GetActor());*/
+			bIsValidBlock = CombatInterface->IsValidBlock(CharacterOwner, Hit.GetActor());
 		}
 
 		if (bIsValidBlock && CombatInterface)

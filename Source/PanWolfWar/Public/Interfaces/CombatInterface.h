@@ -51,4 +51,6 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	virtual void AssassinationKilled();
+
+	virtual bool IsValidBlock(AActor* InAttacker, AActor* InDefender) = 0;
 };
