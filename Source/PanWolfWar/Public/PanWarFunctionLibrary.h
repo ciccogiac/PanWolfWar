@@ -26,7 +26,11 @@ public:
 	static bool IsValidBlock(AActor* InAttacker, AActor* InDefender);
 
 	UFUNCTION(BlueprintPure, Category = "PanWar|FunctionLibrary")
-	static bool IsPlayingMontage_ExcludingBlendOut(UAnimInstance* OwningPlayerAnimInstance);
+	static bool IsPlayingAnyMontage_ExcludingBlendOut(UAnimInstance* OwningPlayerAnimInstance);
+
+	UFUNCTION(BlueprintPure, Category = "PanWar|FunctionLibrary")
+	static bool IsPlayingMontage_ExcludingBlendOut(UAnimInstance* OwningPlayerAnimInstance, UAnimMontage* AnimMontage);
+
 
 	UFUNCTION(BlueprintCallable, Category = "PanWar|FunctionLibrary")
 	static int32 GetCurrentGameDifficulty(AActor* CallerReference);

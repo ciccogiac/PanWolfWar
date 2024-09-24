@@ -10,6 +10,7 @@ class UTransformationComponent;
 class UAttributeComponent;
 class UPandolfoComponent;
 class UPandolFlowerComponent;
+class UPanWolfComponent;
 
 // This class does not need to be modified.
 UINTERFACE(MinimalAPI, BlueprintType, meta = (CannotImplementInterfaceInBlueprint))
@@ -30,6 +31,8 @@ public:
 	 virtual UTransformationComponent* GetTransformationComponent()  const = 0;
 	 virtual UPandolfoComponent* GetPandolfoComponent() const = 0;
 	 virtual UPandolFlowerComponent* GetPandolFlowerComponent() const = 0;
+	 UFUNCTION(BlueprintCallable)
+	 virtual UPanWolfComponent* GetPanWolfComponent() const = 0;
 
 	 UFUNCTION(BlueprintCallable)
 	 virtual bool IsHiding() const = 0;

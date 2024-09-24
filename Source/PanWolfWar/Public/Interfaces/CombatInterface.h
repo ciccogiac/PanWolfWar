@@ -41,6 +41,8 @@ public:
 	UFUNCTION(BlueprintCallable)
 	virtual bool IsBlocking() = 0;
 	UFUNCTION(BlueprintCallable)
+	virtual bool IsBlockingCharged() ;
+	UFUNCTION(BlueprintCallable)
 	virtual void SuccesfulBlock(AActor* Attacker) = 0;
 	UFUNCTION(BlueprintCallable)
 	virtual void FireProjectile() ;

@@ -31,12 +31,37 @@ bool UPanWarFunctionLibrary::IsValidBlock(AActor* InAttacker, AActor* InDefender
 	return DotResult < -0.1f;
 }
 
-bool UPanWarFunctionLibrary::IsPlayingMontage_ExcludingBlendOut(UAnimInstance* OwningPlayerAnimInstance)
+bool UPanWarFunctionLibrary::IsPlayingAnyMontage_ExcludingBlendOut(UAnimInstance* OwningPlayerAnimInstance)
 {
     if (!OwningPlayerAnimInstance) return false;
 
     // Ottieni il montaggio corrente
     UAnimMontage* CurrentMontage = OwningPlayerAnimInstance->GetCurrentActiveMontage();
+
+    if (CurrentMontage && OwningPlayerAnimInstance->Montage_IsPlaying(CurrentMontage))
+    {
+        float CurrentMontagePosition = OwningPlayerAnimInstance->Montage_GetPosition(CurrentMontage);
+        float MontageBlendOutTime = CurrentMontage->BlendOut.GetBlendTime();
+        float MontageDuration = CurrentMontage->GetPlayLength();
+
+        if ((CurrentMontagePosition >= MontageDuration - MontageBlendOutTime))
+        {
+            return false;
+        }
+        else
+            return true;
+    }
+    else
+        return false;
+}
+
+bool UPanWarFunctionLibrary::IsPlayingMontage_ExcludingBlendOut(UAnimInstance* OwningPlayerAnimInstance, UAnimMontage* AnimMontage)
+{
+    if (!OwningPlayerAnimInstance) return false;
+
+    // Ottieni il montaggio corrente
+    UAnimMontage* CurrentMontage = OwningPlayerAnimInstance->GetCurrentActiveMontage();
+    if (CurrentMontage != AnimMontage) return false;
 
     if (CurrentMontage && OwningPlayerAnimInstance->Montage_IsPlaying(CurrentMontage))
     {

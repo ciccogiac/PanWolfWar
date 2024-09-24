@@ -15,6 +15,8 @@
 #include <NiagaraFunctionLibrary.h>
 #include "NiagaraComponent.h"
 
+#include "PanWarFunctionLibrary.h"
+
 #pragma region EngineFunctions
 
 UPanWolfComponent::UPanWolfComponent()
@@ -105,6 +107,24 @@ void UPanWolfComponent::Dodge()
 
 	if (!PanWolfCharacter->CanPerformDodge() || (PanWolfState == EPanWolfState::EPWS_Dodging)) return;
 	if (!PanWolfDodgeMontage || !OwningPlayerAnimInstance) return;
+	if (bHitted) return;
+
+	//Check if is returning to block position
+	if (OwningPlayerAnimInstance->Montage_IsPlaying(PanWolf_BlockMontage))
+	{
+		float CurrentMontagePosition = OwningPlayerAnimInstance->Montage_GetPosition(PanWolf_BlockMontage);
+		float MontageBlendInTime = PanWolf_BlockMontage->BlendIn.GetBlendTime();
+		float MontageBlendOutTime = PanWolf_BlockMontage->BlendOut.GetBlendTime();
+		float MontageDuration = PanWolf_BlockMontage->GetSectionLength(0);
+		float BlendInOffset = 0.1f;
+
+		if ((CurrentMontagePosition <= MontageBlendInTime ))
+		{
+			return ;
+		}
+
+	}
+
 
 	PanWolfState = EPanWolfState::EPWS_Dodging;
 
@@ -119,24 +139,53 @@ void UPanWolfComponent::Dodge()
 void UPanWolfComponent::LightAttack()
 {
 
-	if (!CombatComponent) return;
+	if (!CombatComponent) return; if (bHitted) return;
 
 	if (bIsPerfectBlock)
+	{
+		OwningPlayerAnimInstance->Montage_Stop(0.25, PanWolf_BlockMontage);
+		PanWolfState = EPanWolfState::EPWS_PanWolf;
 		CombatComponent->Counterattack();
+		CombatComponent->ResetAttack();
+		return;
+	}
+
 	else
 	{
-		if (PanWolfState == EPanWolfState::EPWS_Blocking)
+		if (PanWolfState != EPanWolfState::EPWS_Blocking && !bIsBlocking)
+		{
+			CombatComponent->PerformAttack(EAttackType::EAT_LightAttack);
+			return;
+		}
+
+		else if (PanWolfState == EPanWolfState::EPWS_Blocking && bIsBlocking)
+		{
+			if (CombatComponent->IsAttacking()) return;
+
+
+
+			if (OwningPlayerAnimInstance->Montage_IsPlaying(PanWolf_BlockMontage))
+			{
+				float CurrentMontagePosition = OwningPlayerAnimInstance->Montage_GetPosition(PanWolf_BlockMontage);
+				float MontageBlendInTime = PanWolf_BlockMontage->BlendIn.GetBlendTime();
+
+				if ((CurrentMontagePosition <= MontageBlendInTime )) return;
+
+			}
 			OwningPlayerAnimInstance->Montage_Stop(0.25, PanWolf_BlockMontage);
 
-		if (PanWolfState == EPanWolfState::EPWS_PanWolf && bIsBlocking) 
+
+			PanWolfState = EPanWolfState::EPWS_PanWolf;
+			CombatComponent->PerformAttack(EAttackType::EAT_LightAttack);
+		}
+
+
+		else if (PanWolfState == EPanWolfState::EPWS_PanWolf && bIsBlocking)
 		{
 			CombatComponent->ResetAttack();
 			return;
 		}
 
-			/*UnBlock();*/
-
-		CombatComponent->PerformAttack(EAttackType::EAT_LightAttack);
 	}
 		
 
@@ -144,22 +193,51 @@ void UPanWolfComponent::LightAttack()
 
 void UPanWolfComponent::HeavyAttack()
 {
-	if (!CombatComponent) return;
+	if (!CombatComponent) return; if (bHitted) return;
+
 	if (bIsPerfectBlock)
+	{
+		OwningPlayerAnimInstance->Montage_Stop(0.25, PanWolf_BlockMontage);
+		PanWolfState = EPanWolfState::EPWS_PanWolf;
 		CombatComponent->Counterattack();
+		CombatComponent->ResetAttack();
+	}
 	else
 	{
-		if (PanWolfState == EPanWolfState::EPWS_Blocking)
-			OwningPlayerAnimInstance->Montage_Stop(0.25, PanWolf_BlockMontage);
-			/*UnBlock();*/
 
-		if (PanWolfState == EPanWolfState::EPWS_PanWolf && bIsBlocking)
+		if (PanWolfState != EPanWolfState::EPWS_Blocking && !bIsBlocking)
+		{
+			CombatComponent->PerformAttack(EAttackType::EAT_HeavyAttack);
+			return;
+		}
+
+		else if (PanWolfState == EPanWolfState::EPWS_Blocking && bIsBlocking)
+		{
+			if (CombatComponent->IsAttacking()) return;
+
+
+
+			if (OwningPlayerAnimInstance->Montage_IsPlaying(PanWolf_BlockMontage))
+			{
+				float CurrentMontagePosition = OwningPlayerAnimInstance->Montage_GetPosition(PanWolf_BlockMontage);
+				float MontageBlendInTime = PanWolf_BlockMontage->BlendIn.GetBlendTime();
+
+				if ((CurrentMontagePosition <= MontageBlendInTime)) return;
+
+			}
+			OwningPlayerAnimInstance->Montage_Stop(0.25, PanWolf_BlockMontage);
+
+
+			PanWolfState = EPanWolfState::EPWS_PanWolf;
+			CombatComponent->PerformAttack(EAttackType::EAT_HeavyAttack);
+		}
+
+
+		else if (PanWolfState == EPanWolfState::EPWS_PanWolf && bIsBlocking)
 		{
 			CombatComponent->ResetAttack();
 			return;
 		}
-
-		CombatComponent->PerformAttack(EAttackType::EAT_HeavyAttack);
 	}
 
 }
@@ -171,16 +249,16 @@ void UPanWolfComponent::HeavyAttack()
 
 void UPanWolfComponent::Block()
 {
-	Debug::Print(TEXT("Block"));
-	/*if (PanWolfState != EPanWolfState::EPWS_PanWolf || !OwningPlayerAnimInstance) return;*/
-	if (PanWolfState == EPanWolfState::EPWS_Blocking || !OwningPlayerAnimInstance) return;
+	bIsBlocking = true;
+	bIsBlockingReact = false;
+
+	if (PanWolfState != EPanWolfState::EPWS_PanWolf || !OwningPlayerAnimInstance) return;
 
 	BlockActivatedTime = UGameplayStatics::GetTimeSeconds(this);
-	bIsBlocking = true;
 
-	if (PanWolfState == EPanWolfState::EPWS_Dodging) return;
 
 	PanWolfState = EPanWolfState::EPWS_Blocking;
+	CombatComponent->ResetAttack();
 
 	OwningPlayerAnimInstance->Montage_Play(PanWolf_BlockMontage);
 	OwningPlayerAnimInstance->Montage_JumpToSection(FName("Idle"), PanWolf_BlockMontage);
@@ -188,11 +266,22 @@ void UPanWolfComponent::Block()
 	/*AddShield();*/
 }
 
+void UPanWolfComponent::UnBlock()
+{
+	bIsBlocking = false;
+	bIsBlockingReact = false;
+	OwningPlayerAnimInstance->Montage_Stop(0.25, PanWolf_BlockMontage);
+
+	if (PanWolfState == EPanWolfState::EPWS_Blocking)
+		PanWolfState = EPanWolfState::EPWS_PanWolf;
+
+	/*RemoveShield();*/
+}
+
 void UPanWolfComponent::InstantBlock()
 {
 	BlockActivatedTime = UGameplayStatics::GetTimeSeconds(this);
-	bIsBlocking = true;
-
+	bIsBlockingReact = false;
 	PanWolfState = EPanWolfState::EPWS_Blocking;
 
 	OwningPlayerAnimInstance->Montage_Play(PanWolf_BlockMontage);
@@ -215,12 +304,12 @@ void UPanWolfComponent::RightBlock()
 	bIsBlockingReact = true;
 }
 
-void UPanWolfComponent::UnBlock()
+
+
+void UPanWolfComponent::ReturnToBlockFromAttack()
 {
-	bIsBlocking = false;
-	bIsBlockingReact = false;
-	OwningPlayerAnimInstance->Montage_Stop(0.25, PanWolf_BlockMontage);
-	/*RemoveShield();*/
+	InstantBlock();
+	CombatComponent->ResetAttack();
 }
 
 void UPanWolfComponent::SuccesfulBlock(AActor* Attacker)
@@ -282,7 +371,7 @@ void UPanWolfComponent::SuccesfulBlock(AActor* Attacker)
 
 		UGameplayStatics::SetGlobalTimeDilation(this, 0.2f);
 		/*GetWorld()->GetTimerManager().SetTimer(PerfectBlock_TimerHandle, [this]() {UGameplayStatics::SetGlobalTimeDilation(this, 1.f); }, PerfectBlockTimer, false);*/
-		GetWorld()->GetTimerManager().SetTimer(PerfectBlock_TimerHandle, [this]() {this->ResetPerfectBlock(); }, PerfectBlockTimer, false);
+		GetWorld()->GetTimerManager().SetTimer(PerfectBlock_TimerHandle, [this]() {this->ResetPerfectBlock(); }, PerfectBlockTimer, false); 
 	}
 
 }
@@ -312,17 +401,22 @@ void UPanWolfComponent::RemoveShield()
 
 #pragma endregion
 
+UAnimMontage* UPanWolfComponent::GetPanWolfHitReactMontage()
+{
+	bHitted = true;
+	return PanWolf_HitReactMontage;
+}
+
 void UPanWolfComponent::OnMontageEnded(UAnimMontage* Montage, bool bInterrupted)
 {
 	if (Montage == PanWolfDodgeMontage)
 	{
 		PanWolfCharacter->EndDodge();
 
-		if(PanWolfState!= EPanWolfState::EPWS_Blocking)
+		if (PanWolfState != EPanWolfState::EPWS_Blocking)
+		{
 			PanWolfState = EPanWolfState::EPWS_PanWolf;
-
-		/*if (bIsBlocking)
-			Block();*/
+		}
 		
 	}
 
@@ -330,21 +424,27 @@ void UPanWolfComponent::OnMontageEnded(UAnimMontage* Montage, bool bInterrupted)
 	{
 		CharacterOwner->GetMesh()->SetScalarParameterValueOnMaterials(FName("HitFxSwitch"), 0.f);
 
-		if (bIsBlocking)
-			Block();
+		/*if (bIsBlocking && PanWolfState == EPanWolfState::EPWS_Blocking)*/
+		if (bIsBlocking )
+			InstantBlock();
+		else
+			PanWolfState = EPanWolfState::EPWS_PanWolf;
+
+		CombatComponent->ResetAttack();
+		bHitted = false;
 	}
 
 	else if (Montage == PanWolf_BlockMontage)
 	{
-		if (PanWolfState == EPanWolfState::EPWS_Dodging) return;
+		/**Blocking React*/
 
-		if (bIsBlockingReact)
+		if (PanWolfState == EPanWolfState::EPWS_Blocking && bIsBlockingReact)
 		{
 			bIsBlockingReact = false;
-			/*if (OwningPlayerAnimInstance->Montage_IsPlaying(PanWolf_HitReactMontage))*/
-			if (bInterrupted ||OwningPlayerAnimInstance->Montage_IsPlaying(PanWolf_HitReactMontage))
+
+			if (bHitted)
 			{
-				PanWolfState = EPanWolfState::EPWS_PanWolf;
+				/*PanWolfState = EPanWolfState::EPWS_PanWolf;*/
 				return;
 			}
 			OwningPlayerAnimInstance->Montage_Play(PanWolf_BlockMontage);
@@ -353,17 +453,29 @@ void UPanWolfComponent::OnMontageEnded(UAnimMontage* Montage, bool bInterrupted)
 			return;
 		}
 
-		PanWolfState = EPanWolfState::EPWS_PanWolf;
+	/*	if (PanWolfState != EPanWolfState::EPWS_Blocking || bIsPerfectBlock || CombatComponent->IsAttacking()) return;
+
+		if (PanWolfState == EPanWolfState::EPWS_Blocking && bIsBlocking) return;
+
+		PanWolfState = EPanWolfState::EPWS_PanWolf;*/
 		/*RemoveShield();
 
 		if (UGameplayStatics::GetGlobalTimeDilation(this) != 1.f)
 			UGameplayStatics::SetGlobalTimeDilation(this, 1.f);*/
 	}
 
-	else if (bIsBlocking)
-	{
-		Debug::Print(TEXT("Return to block"));
-		Block();
-	}
+	//else if (bIsBlocking )
+	//{
+	//	//if (OwningPlayerAnimInstance->Montage_IsPlaying(PanWolf_HitReactMontage) || bHitted)
+	//	//{
+	//	//	/*Debug::Print(TEXT("HitReact Montage"));*/
+	//	//	return;
+	//	//}
+
+	//	/*Debug::Print(TEXT("Return to block"));*/
+	//	/*Block();*/
+	///*	PanWolfState = EPanWolfState::EPWS_Blocking;*/
+	//	/*InstantBlock();*/
+	//}
 
 }

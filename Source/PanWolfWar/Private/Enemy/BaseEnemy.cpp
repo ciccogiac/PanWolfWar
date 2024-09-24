@@ -71,6 +71,7 @@ ABaseEnemy::ABaseEnemy()
 	Tags.Add(FName("Enemy"));
 }
 
+#if WITH_EDITOR
 void ABaseEnemy::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent)
 {
 	Super::PostEditChangeProperty(PropertyChangedEvent);
@@ -96,6 +97,7 @@ void ABaseEnemy::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEv
 	}
 	
 }
+#endif
 
 void ABaseEnemy::BeginPlay()
 {

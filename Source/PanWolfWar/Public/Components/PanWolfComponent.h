@@ -44,6 +44,11 @@ public:
 	void UnBlock();
 	void SuccesfulBlock(AActor* Attacker);
 
+	UFUNCTION(BlueprintCallable)
+	void ReturnToBlockFromAttack();
+
+	UAnimMontage* GetPanWolfHitReactMontage();
+
 protected:
 	virtual void BeginPlay() override;
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
@@ -66,7 +71,7 @@ private:
 	UPandoCombatComponent* CombatComponent;
 	UAnimInstance* OwningPlayerAnimInstance;
 
-
+	bool bHitted = false;
 
 	UPROPERTY(Category = Character, EditDefaultsOnly, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<USkeletalMesh> SkeletalMeshAsset;
@@ -86,12 +91,6 @@ private:
 
 	UPROPERTY(EditDefaultsOnly, Category = Combat)
 	UAnimMontage* PanWolf_BlockMontage;
-
-	UPROPERTY(EditDefaultsOnly, Category = Combat)
-	UAnimMontage* PanWolf_RightBlockMontage;
-
-	UPROPERTY(EditDefaultsOnly, Category = Combat)
-	UAnimMontage* PanWolf_LeftBlockMontage;
 
 	UPROPERTY(EditDefaultsOnly, Category = Combat)
 	USoundBase* ShieldBlock_Sound;
@@ -117,7 +116,7 @@ private:
 	float PerfectBlockTime = 0.25f;
 
 	UPROPERTY(EditDefaultsOnly, Category = Combat)
-	float PerfectBlockTimer = 0.1f;
+	float PerfectBlockTimer = 0.15f;
 
 	float BlockActivatedTime = 0.f;
 	bool bIsPerfectBlock = false;
@@ -152,7 +151,6 @@ public:
 	UInputAction* BlockAction;
 
 public:
-	FORCEINLINE UAnimMontage* GetPanWolfHitReactMontage() const { return PanWolf_HitReactMontage; }
 	FORCEINLINE bool IsBlocking() const { return PanWolfState == EPanWolfState::EPWS_Blocking; }
 	FORCEINLINE bool IsBlockingCharged() const { return bIsBlocking; }
 };

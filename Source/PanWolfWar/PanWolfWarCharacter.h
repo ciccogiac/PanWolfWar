@@ -71,6 +71,7 @@ public:
 	virtual float GetDefensePower() override;
 	virtual void OnDeathEnter() override;
 	virtual bool IsBlocking() override;
+	virtual bool IsBlockingCharged() override;
 	virtual void SuccesfulBlock(AActor* Attacker) override;
 	virtual float GetHealthPercent() override;
 
@@ -283,7 +284,7 @@ public:
 
 	FORCEINLINE virtual UTransformationComponent* GetTransformationComponent()  const override { return TransformationComponent; } ;
 	FORCEINLINE virtual UPandolfoComponent* GetPandolfoComponent() const override { return PandolfoComponent; }
-	FORCEINLINE UPanWolfComponent* GetPanWolfComponent() const { return PanWolfComponent; }
+	FORCEINLINE virtual UPanWolfComponent* GetPanWolfComponent() const override { return PanWolfComponent; }
 	FORCEINLINE virtual UPandolFlowerComponent* GetPandolFlowerComponent() const override { return PandolFlowerComponent; }
 	FORCEINLINE UPanBirdComponent* GetPanBirdComponent() const { return PanBirdComponent; }
 

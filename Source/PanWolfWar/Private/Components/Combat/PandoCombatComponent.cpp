@@ -9,7 +9,7 @@
 void UPandoCombatComponent::BeginPlay()
 {
 	PlayerController = Cast<APlayerController>(CharacterOwner->GetController());
-	
+	AttackState = EAttackState::EAS_Nothing;
 }
 
 void UPandoCombatComponent::SetCombatEnabled(UAnimInstance* PlayerAnimInstance, ETransformationCombatType TransformationCombatType)
@@ -62,7 +62,7 @@ float UPandoCombatComponent::GetDefensePower()
 void UPandoCombatComponent::PerformAttack(EAttackType AttackType)
 {
 	if (!OwningPlayerAnimInstance) return;
-	if (UPanWarFunctionLibrary::IsPlayingMontage_ExcludingBlendOut(OwningPlayerAnimInstance)) return;
+	if (UPanWarFunctionLibrary::IsPlayingAnyMontage_ExcludingBlendOut(OwningPlayerAnimInstance)) return;
 
 	switch (AttackType)
 	{
@@ -105,6 +105,8 @@ void UPandoCombatComponent::WolfLightAttack()
 	UAnimMontage* AttackMontage = *WOLF_LightAttackMontages.Find(CurrentLightAttackComboCount);
 	if (!AttackMontage) return;
 
+	AttackState = EAttackState::EAS_Attacking;
+
 	OwningPlayerAnimInstance->Montage_Play(AttackMontage);
 	LastAttackType = EAttackType::EAT_LightAttack;
 	UsedLightComboCount = CurrentLightAttackComboCount;
@@ -123,6 +125,8 @@ void UPandoCombatComponent::PandoLightAttack()
 	UAnimMontage* AttackMontage = *PANDO_LightAttackMontages.Find(CurrentLightAttackComboCount);
 	if (!AttackMontage) return;
 
+	AttackState = EAttackState::EAS_Attacking;
+
 	OwningPlayerAnimInstance->Montage_Play(AttackMontage);
 	LastAttackType = EAttackType::EAT_LightAttack;
 	UsedLightComboCount = CurrentLightAttackComboCount;
@@ -138,6 +142,8 @@ void UPandoCombatComponent::FlowerLightAttack()
 	GetWorld()->GetTimerManager().ClearTimer(ComboLightCountReset_TimerHandle);
 	UAnimMontage* AttackMontage = *FLOWER_LightAttackMontages.Find(CurrentLightAttackComboCount);
 	if (!AttackMontage) return;
+
+	AttackState = EAttackState::EAS_Attacking;
 
 	OwningPlayerAnimInstance->Montage_Play(AttackMontage);
 	LastAttackType = EAttackType::EAT_LightAttack;
@@ -176,6 +182,8 @@ void UPandoCombatComponent::WolfHeavyAttack()
 	UAnimMontage* AttackMontage = *WOLF_HeavyAttackMontages.Find(CurrentHeavyAttackComboCount);
 	if (!AttackMontage) return;
 
+	AttackState = EAttackState::EAS_Attacking;
+
 	OwningPlayerAnimInstance->Montage_Play(AttackMontage);
 	LastAttackType = EAttackType::EAT_HeavyAttack;
 	UsedHeavyComboCount = CurrentHeavyAttackComboCount;
@@ -191,6 +199,10 @@ void UPandoCombatComponent::WolfHeavyAttack()
 void UPandoCombatComponent::Counterattack()
 {
 	if (!OwningPlayerAnimInstance) return;
+	if (UPanWarFunctionLibrary::IsPlayingAnyMontage_ExcludingBlendOut(OwningPlayerAnimInstance)) return;
+
+	AttackState = EAttackState::EAS_Attacking;
+
 	OwningPlayerAnimInstance->Montage_Play(WOLF_CounterattackMontage);
 }
 
@@ -231,15 +243,20 @@ void UPandoCombatComponent::OnAttackMontageEnded(UAnimMontage* Montage, bool bIn
 
 	if (IsLigtAttack)
 	{
+		AttackState = EAttackState::EAS_Nothing;
 		if (bInterrupted) return;
 		GetWorld()->GetTimerManager().SetTimer(ComboLightCountReset_TimerHandle, [this]() {this->ResetLightAttackComboCount(); }, 0.025f, false);
 	}
 		
 	else if (IsHeavyAttack)
 	{
+		AttackState = EAttackState::EAS_Nothing;
 		if (bInterrupted) return;
 		GetWorld()->GetTimerManager().SetTimer(ComboHeavyCountReset_TimerHandle, [this]() {this->ResetHeavyAttackComboCount(); }, 0.025f, false);
 	}
+
+	else if(Montage == WOLF_CounterattackMontage)
+		AttackState = EAttackState::EAS_Nothing;
 
 
 	/*if (WOLF_LightAttackMontages.FindKey(Montage))
