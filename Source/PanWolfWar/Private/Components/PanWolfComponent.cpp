@@ -285,6 +285,7 @@ void UPanWolfComponent::UnBlock()
 
 void UPanWolfComponent::InstantBlock()
 {
+	if (!OwningPlayerAnimInstance) return;
 	/*BlockActivatedTime = UGameplayStatics::GetTimeSeconds(this);*/
 	bIsBlockingReact = false;
 	PanWolfState = EPanWolfState::EPWS_Blocking;
@@ -409,6 +410,8 @@ void UPanWolfComponent::SuccesfulBlock(AActor* Attacker)
 		/*GetWorld()->GetTimerManager().SetTimer(PerfectBlock_TimerHandle, [this]() {UGameplayStatics::SetGlobalTimeDilation(this, 1.f); }, PerfectBlockTimer, false);*/
 		GetWorld()->GetTimerManager().SetTimer(PerfectBlock_TimerHandle, [this]() {this->ResetPerfectBlock(); }, PerfectBlockTimer, false); 
 	}
+
+
 
 }
 
