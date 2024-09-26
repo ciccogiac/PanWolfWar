@@ -492,7 +492,6 @@ void UPanWolfComponent::OnMontageEnded(UAnimMontage* Montage, bool bInterrupted)
 
 	else if (Montage == PanWolf_HitReactMontage)
 	{
-		CharacterOwner->GetMesh()->SetScalarParameterValueOnMaterials(FName("HitFxSwitch"), 0.f);
 
 		/*if (bIsBlocking && PanWolfState == EPanWolfState::EPWS_Blocking)*/
 		if (bIsBlocking )

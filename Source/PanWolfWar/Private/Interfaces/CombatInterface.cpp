@@ -12,3 +12,11 @@ void ICombatInterface::FireProjectile()
 void ICombatInterface::AssassinationKilled()
 {
 }
+
+void ICombatInterface::CancelAttack()
+{
+}
+
+void ICombatInterface::AttackWarning()
+{
+}

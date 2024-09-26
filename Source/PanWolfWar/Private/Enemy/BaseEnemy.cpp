@@ -38,6 +38,9 @@ ABaseEnemy::ABaseEnemy()
 	EnemyAwarenessBarWidgetComponent = CreateDefaultSubobject<UWidgetComponent>(TEXT("EnemyAwarenessBarWidgetComponent"));
 	EnemyAwarenessBarWidgetComponent->SetupAttachment(GetMesh()); 
 
+	EnemyAttackWarningWidgetComponent = CreateDefaultSubobject<UWidgetComponent>(TEXT("EnemyAttackWarningWidgetComponent"));
+	EnemyAttackWarningWidgetComponent->SetupAttachment(GetMesh());
+
 	LeftHandCollisionBox = CreateDefaultSubobject<UBoxComponent>("LeftHandCollisionBox");
 	LeftHandCollisionBox->SetupAttachment(GetMesh());
 	LeftHandCollisionBox->SetCollisionEnabled(ECollisionEnabled::NoCollision);
@@ -120,6 +123,12 @@ void ABaseEnemy::BeginPlay()
 	{
 		AwarenessWidget->InitEnemyCreatedWidget(this);
 		EnemyUIComponent->OnCurrentAwarenessChanged.Broadcast(0.f);
+	}
+	
+	if (UPanWarWidgetBase* AttackWarningWidget = Cast<UPanWarWidgetBase>(EnemyAttackWarningWidgetComponent->GetUserWidgetObject()))
+	{
+		AttackWarningWidget->InitEnemyCreatedWidget(this);
+		/*EnemyUIComponent->OnAttackingStateChanged.Broadcast(false);*/
 	}
 
 	if (bEnableHandToHandCombat && EnemyCombatComponent)
@@ -215,10 +224,22 @@ bool ABaseEnemy::IsCombatActorAlive()
 	return IsEnemyAlive();
 }
 
+void ABaseEnemy::AttackWarning()
+{
+	EnemyUIComponent->OnAttackingStateChanged.Broadcast(false);
+}
+
+void ABaseEnemy::CancelAttack()
+{
+	Debug::Print(TEXT("CancelAttack"));
+	EnemyUIComponent->OnAttackingCanceled.Broadcast();
+}
+
 float ABaseEnemy::PerformAttack()
 {
 
 	if (!EnemyCombatComponent) return 0.f;
+	EnemyUIComponent->OnAttackingStateChanged.Broadcast(true);
 	EnemyCombatComponent->PerformAttack();
 
 	return 1.f;
@@ -305,18 +326,34 @@ void ABaseEnemy::GetHit(const FVector& ImpactPoint, AActor* Hitter)
 		{
 			AnimInstance->Montage_Play(HitReact_Montage);
 
+			// Bind al delegate per la fine del montage
+			FOnMontageEnded MontageEndedDelegate;
+			MontageEndedDelegate.BindUObject(this, &ABaseEnemy::OnHitReactMontageEnded);
+			AnimInstance->Montage_SetEndDelegate(MontageEndedDelegate, HitReact_Montage);
 		}
+		
+	}
+
+	else
+	{
+		bIsUnderAttack = true;
+		GetWorld()->GetTimerManager().SetTimer(UnderAttack_TimerHandle, [this]() {this->bIsUnderAttack = false; }, UnderAttack_Time, false);
+		GetWorld()->GetTimerManager().SetTimer(GetHitFX_TimerHandle, [this]() {this->GetMesh()->SetScalarParameterValueOnMaterials(FName("HitFxSwitch"), 0.f); }, GetHitFX_Time, false);
 	}
 
 	GetMesh()->SetScalarParameterValueOnMaterials(FName("HitFxSwitch"), 1.f);
 
-	bIsUnderAttack = true;
-	GetWorld()->GetTimerManager().SetTimer(UnderAttack_TimerHandle, [this]() {this->bIsUnderAttack = false; }, UnderAttack_Time, false);
-	GetWorld()->GetTimerManager().SetTimer(GetHitFX_TimerHandle, [this]() {this->GetMesh()->SetScalarParameterValueOnMaterials(FName("HitFxSwitch"), 0.f); }, GetHitFX_Time, false);
-
 	//EnemyCombatComponent->PlayHitSound(ImpactPoint);
 	/*EnemyCombatComponent->SpawnHitParticles(ImpactPoint);*/
 
+}
+
+void ABaseEnemy::OnHitReactMontageEnded(UAnimMontage* Montage, bool bInterrupted)
+{
+	GetMesh()->SetScalarParameterValueOnMaterials(FName("HitFxSwitch"), 0.f);
+
+	bIsUnderAttack = true;
+	GetWorld()->GetTimerManager().SetTimer(UnderAttack_TimerHandle, [this]() {this->bIsUnderAttack = false; }, UnderAttack_Time, false);
 }
 
 bool ABaseEnemy::IsEnemyAlive()
@@ -330,6 +367,7 @@ float ABaseEnemy::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent
 
 	EnemyAttributeComponent->ReceiveDamage(DamageAmount);
 	EnemyUIComponent->OnCurrentHealthChanged.Broadcast(EnemyAttributeComponent->GetHealthPercent());
+	EnemyUIComponent->OnAttackingCanceled.Broadcast();
 
 	if (!EnemyAttributeComponent->IsAlive() && !bDied)
 	{

@@ -7,6 +7,9 @@
 class UPanWarWidgetBase;
 
 //DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnPercentChangedDelegate, float, NewPercent);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnActionUIDelegate);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnBoolValueChangedDelegate, bool, NewValue);
+
 
 UCLASS()
 class PANWOLFWAR_API UEnemyUIComponent : public UPawnUIComponent
@@ -16,6 +19,14 @@ class PANWOLFWAR_API UEnemyUIComponent : public UPawnUIComponent
 public:
 	UPROPERTY(BlueprintAssignable)
 	FOnPercentChangedDelegate OnCurrentAwarenessChanged;
+
+	UPROPERTY(BlueprintAssignable)
+	FOnBoolValueChangedDelegate OnAttackingStateChanged;
+
+	UPROPERTY(BlueprintAssignable)
+	FOnActionUIDelegate OnAttackingCanceled;
+
+	
 
 	UFUNCTION(BlueprintCallable)
 	void RegisterEnemyDrawnWidget(UPanWarWidgetBase* InWidgetToRegister);

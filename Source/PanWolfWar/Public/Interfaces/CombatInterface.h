@@ -31,6 +31,10 @@ public:
 	UFUNCTION(BlueprintCallable)
 	virtual float PerformAttack() = 0;
 	UFUNCTION(BlueprintCallable)
+	virtual void CancelAttack();
+	UFUNCTION(BlueprintCallable)
+	virtual void AttackWarning() ;
+	UFUNCTION(BlueprintCallable)
 	virtual bool IsUnderAttack() = 0;
 	UFUNCTION(BlueprintCallable)
 	virtual void SetUnderAttack() = 0;

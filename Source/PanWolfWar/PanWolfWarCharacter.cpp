@@ -635,6 +635,8 @@ void APanWolfWarCharacter::OnHitReactMontageEnded(UAnimMontage* Montage, bool bI
 		UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
 		if (!AnimInstance) return;
 		AnimInstance->SetRootMotionMode(ERootMotionMode::RootMotionFromMontagesOnly);
+
+		GetMesh()->SetScalarParameterValueOnMaterials(FName("HitFxSwitch"), 0.f);
 	}
 }
 

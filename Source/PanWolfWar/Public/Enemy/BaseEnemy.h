@@ -75,6 +75,8 @@ public:
 	virtual void SetInvulnerability(bool NewInvulnerability) override;
 	virtual FRotator GetDesiredDodgeRotation() override;
 	virtual bool IsCombatActorAlive() override;
+	virtual void AttackWarning() override;
+	virtual void CancelAttack() override;
 	virtual float PerformAttack() override;
 	virtual bool IsUnderAttack() override;
 	virtual void SetUnderAttack() override;
@@ -130,6 +132,9 @@ private:
 	void EnableAssassination();
 	void EnableHandToHandCombat();
 	//~ End EnemyInitialization
+
+	UFUNCTION()
+	void OnHitReactMontageEnded(UAnimMontage* Montage, bool bInterrupted);
 
 #pragma endregion
 
@@ -187,6 +192,9 @@ protected:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Combat", meta = (AllowPrivateAccess = "true"))
 	UWidgetComponent* EnemyAwarenessBarWidgetComponent;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Combat", meta = (AllowPrivateAccess = "true"))
+	UWidgetComponent* EnemyAttackWarningWidgetComponent;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components", meta = (AllowPrivateAccess = "true"))
 	UEnemyAttributeComponent* EnemyAttributeComponent;
