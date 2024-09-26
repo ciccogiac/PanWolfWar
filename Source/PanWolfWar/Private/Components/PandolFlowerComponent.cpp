@@ -272,6 +272,11 @@ void UPandolFlowerComponent::Deactivate()
 
 	PanWolfCharacter->RemoveMappingContext(PandolFlowerMappingContext);
 
+	if (PandolFlowerState == EPandolFlowerState::EPFS_Dodging)
+	{
+		Debug::Print(TEXT("OVA"));
+		PanWolfCharacter->EndDodge();
+	}
 
 
 	PanWolfCharacter->GetNiagaraTransformation()->SetAsset(nullptr);
@@ -296,6 +301,9 @@ void UPandolFlowerComponent::Deactivate()
 		UnHide();
 
 	GetWorld()->GetTimerManager().ClearTimer(AirAssassination_TimerHandle);
+
+	
+		
 
 	PandolFlowerState = EPandolFlowerState::EPFS_PandolFlower;
 }

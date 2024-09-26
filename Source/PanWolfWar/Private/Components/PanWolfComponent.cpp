@@ -89,6 +89,9 @@ void UPanWolfComponent::Deactivate()
 
 	PanWolfCharacter->RemoveMappingContext(PanWolfMappingContext);
 
+	if (PanWolfState == EPanWolfState::EPWS_Dodging)
+		PanWolfCharacter->EndDodge();
+
 	PanWolfState = EPanWolfState::EPWS_PanWolf;
 }
 
@@ -104,12 +107,16 @@ void UPanWolfComponent::Jump()
 	CharacterOwner->Jump();
 }
 
+
+
 void UPanWolfComponent::Dodge()
 {
 
 	if (!PanWolfCharacter->CanPerformDodge() || (PanWolfState == EPanWolfState::EPWS_Dodging)) return;
 	if (!PanWolfDodgeMontage || !OwningPlayerAnimInstance) return;
 	if (bHitted) return;
+
+	if (OwningPlayerAnimInstance->Montage_IsPlaying(PanWolfDodgeMontage)) return;
 
 	//Check if is returning to block position
 	if (OwningPlayerAnimInstance->Montage_IsPlaying(PanWolf_BlockMontage))
@@ -149,8 +156,9 @@ void UPanWolfComponent::LightAttack()
 		ResetPerfectBlock();
 		OwningPlayerAnimInstance->Montage_Stop(0.25, PanWolf_BlockMontage);
 		PanWolfState = EPanWolfState::EPWS_PanWolf;
-		CombatComponent->Counterattack();
 		CombatComponent->ResetAttack();
+		CombatComponent->Counterattack();
+
 		return;
 	}
 
@@ -184,11 +192,11 @@ void UPanWolfComponent::LightAttack()
 		}
 
 
-		else if (PanWolfState == EPanWolfState::EPWS_PanWolf && bIsBlocking)
+		/*else if (PanWolfState == EPanWolfState::EPWS_PanWolf && bIsBlocking)
 		{
 			CombatComponent->ResetAttack();
 			return;
-		}
+		}*/
 
 	}
 		
@@ -205,8 +213,9 @@ void UPanWolfComponent::HeavyAttack()
 		ResetPerfectBlock();
 		OwningPlayerAnimInstance->Montage_Stop(0.25, PanWolf_BlockMontage);
 		PanWolfState = EPanWolfState::EPWS_PanWolf;
-		CombatComponent->Counterattack();
 		CombatComponent->ResetAttack();
+		CombatComponent->Counterattack();
+
 	}
 	else
 	{
@@ -239,11 +248,11 @@ void UPanWolfComponent::HeavyAttack()
 		}
 
 
-		else if (PanWolfState == EPanWolfState::EPWS_PanWolf && bIsBlocking)
+		/*else if (PanWolfState == EPanWolfState::EPWS_PanWolf && bIsBlocking)
 		{
 			CombatComponent->ResetAttack();
 			return;
-		}
+		}*/
 	}
 
 }
@@ -255,6 +264,8 @@ void UPanWolfComponent::HeavyAttack()
 
 void UPanWolfComponent::Block()
 {
+	if (bIsBlocking) return;
+
 	bIsBlocking = true;
 	bIsBlockingReact = false;
 	BlockActivatedTime = UGameplayStatics::GetTimeSeconds(this);
@@ -273,21 +284,30 @@ void UPanWolfComponent::Block()
 
 void UPanWolfComponent::UnBlock()
 {
+	if (!bIsBlocking) return;
+
 	bIsBlocking = false;
 	bIsBlockingReact = false;
 	OwningPlayerAnimInstance->Montage_Stop(0.25, PanWolf_BlockMontage);
 
 	if (PanWolfState == EPanWolfState::EPWS_Blocking)
+	{
 		PanWolfState = EPanWolfState::EPWS_PanWolf;
+
+
+	/*	Debug::Print(TEXT("Problem"));*/
+	}
 
 	/*RemoveShield();*/
 }
 
 void UPanWolfComponent::InstantBlock()
 {
+	if (!bIsBlocking) return;
 	if (!OwningPlayerAnimInstance) return;
 	/*BlockActivatedTime = UGameplayStatics::GetTimeSeconds(this);*/
 	bIsBlockingReact = false;
+
 	PanWolfState = EPanWolfState::EPWS_Blocking;
 
 	OwningPlayerAnimInstance->Montage_Play(PanWolf_BlockMontage);
@@ -334,12 +354,19 @@ bool UPanWolfComponent::IsWolfValidBlock(AActor* InAttacker)
 void UPanWolfComponent::ReturnToBlockFromAttack()
 {
 	InstantBlock();
-	CombatComponent->ResetAttack();
+	if(bIsBlocking)
+		CombatComponent->ResetAttack();
 }
 
 void UPanWolfComponent::SuccesfulBlock(AActor* Attacker)
 {
-	bIsPerfectBlock = (UGameplayStatics::GetTimeSeconds(this) - BlockActivatedTime) < PerfectBlockTime ? true : false;
+	Debug::Print(TEXT("Attacker : ") + Attacker->GetName());
+	bIsPerfectBlock = 
+		(
+		Attacker &&
+		Attacker->Implements<UCombatInterface>() &&
+		UGameplayStatics::GetTimeSeconds(this) - BlockActivatedTime < PerfectBlockTime 
+		)	? true : false;
 
 	if (Attacker)
 	{
@@ -456,7 +483,7 @@ void UPanWolfComponent::OnMontageEnded(UAnimMontage* Montage, bool bInterrupted)
 	{
 		PanWolfCharacter->EndDodge();
 
-		if (PanWolfState != EPanWolfState::EPWS_Blocking)
+		if (PanWolfState != EPanWolfState::EPWS_Blocking )
 		{
 			PanWolfState = EPanWolfState::EPWS_PanWolf;
 		}
@@ -472,9 +499,11 @@ void UPanWolfComponent::OnMontageEnded(UAnimMontage* Montage, bool bInterrupted)
 			InstantBlock();
 		else
 			PanWolfState = EPanWolfState::EPWS_PanWolf;
-
-		CombatComponent->ResetAttack();
+	
 		bHitted = false;
+
+		if (!CombatComponent->IsAttacking())
+			CombatComponent->ResetAttack();
 	}
 
 	else if (Montage == PanWolf_BlockMontage)

@@ -346,7 +346,7 @@ void APanWolfWarCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInpu
 		EnhancedInputComponent->BindAction(PanWolfComponent->DodgeAction, ETriggerEvent::Started, PanWolfComponent, &UPanWolfComponent::Dodge);
 		EnhancedInputComponent->BindAction(PanWolfComponent->LightAttackAction, ETriggerEvent::Started, PanWolfComponent, &UPanWolfComponent::LightAttack);
 		EnhancedInputComponent->BindAction(PanWolfComponent->HeavyAttackAction, ETriggerEvent::Started, PanWolfComponent, &UPanWolfComponent::HeavyAttack);
-		EnhancedInputComponent->BindAction(PanWolfComponent->BlockAction, ETriggerEvent::Started, PanWolfComponent, &UPanWolfComponent::Block);
+		EnhancedInputComponent->BindAction(PanWolfComponent->BlockAction, ETriggerEvent::Triggered, PanWolfComponent, &UPanWolfComponent::Block);
 		EnhancedInputComponent->BindAction(PanWolfComponent->BlockAction, ETriggerEvent::Completed, PanWolfComponent, &UPanWolfComponent::UnBlock);
 		#pragma endregion
 
@@ -430,6 +430,9 @@ FRotator APanWolfWarCharacter::GetDesiredDodgeRotation()
 
 }
 
+float OriginalCapsuleRadius;
+float OriginalCapsuleHalfHeight;
+
 void APanWolfWarCharacter::StartDodge()
 {
 	if (TargetingComponent->IsTargeting())
@@ -438,17 +441,27 @@ void APanWolfWarCharacter::StartDodge()
 		TargetingComponent->SetIsDodging(true);
 		/*TargetingComponent->DisableLock();*/
 	}
+
+	OriginalCapsuleRadius = GetCapsuleComponent()->GetScaledCapsuleRadius();
+	float NewCapsuleRadius = OriginalCapsuleRadius * 0.4f;
+	GetCapsuleComponent()->SetCapsuleRadius(NewCapsuleRadius);
 }
 
 void APanWolfWarCharacter::EndDodge()
 {
+
 	SetInvulnerability(false);
-	PandoCombatComponent->ResetAttack();
+
+	if(!PandoCombatComponent->IsAttacking())
+		PandoCombatComponent->ResetAttack();
+
 	if (TargetingComponent->IsTargeting())
 		TargetingComponent->SetIsDodging(false);
 		//TargetingComponent->Activate();
 	if (PanWolfComponent->IsActive() && PanWolfComponent->IsBlockingCharged())
 		PanWolfComponent->InstantBlock();
+
+	GetCapsuleComponent()->SetCapsuleRadius(OriginalCapsuleRadius);
 }
 
 #pragma endregion
@@ -564,7 +577,7 @@ void APanWolfWarCharacter::GetHit(const FVector& ImpactPoint, AActor* Hitter)
 	FName Section = IHitInterface::DirectionalHitReact(Hitter , GetOwner() );
 	PlayHitReactMontage(Section);
 
-	PandoCombatComponent->ResetAttack();
+
 	PandoCombatComponent->PlayHitSound(ImpactPoint);
 	PandoCombatComponent->SpawnHitParticles(ImpactPoint);
 	
@@ -597,10 +610,32 @@ void APanWolfWarCharacter::PlayHitReactMontage(const FName& SectionName)
 
 	if (AnimInstance->Montage_IsPlaying(ReactMontage)) return;
 
+	AnimInstance->SetRootMotionMode(ERootMotionMode::IgnoreRootMotion);
+
+
 	AnimInstance->Montage_Play(ReactMontage);
 	AnimInstance->Montage_JumpToSection(SectionName, ReactMontage);
 
+	FOnMontageEnded MontageEndedDelegate;
+	MontageEndedDelegate.BindUObject(this, &APanWolfWarCharacter::OnHitReactMontageEnded);
+	AnimInstance->Montage_SetEndDelegate(MontageEndedDelegate, ReactMontage);
+
+
+	GetCharacterMovement()->StopMovementImmediately();
 	GetMesh()->SetScalarParameterValueOnMaterials(FName("HitFxSwitch"), 1.f);
+
+	PandoCombatComponent->ResetAttack();
+}
+
+void APanWolfWarCharacter::OnHitReactMontageEnded(UAnimMontage* Montage, bool bInterrupted)
+{
+	if (Montage)
+	{
+		Debug::Print(TEXT("HitReact Ended"));
+		UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+		if (!AnimInstance) return;
+		AnimInstance->SetRootMotionMode(ERootMotionMode::RootMotionFromMontagesOnly);
+	}
 }
 
 void APanWolfWarCharacter::GetHitReactMontage(UAnimMontage*& ReactMontage)

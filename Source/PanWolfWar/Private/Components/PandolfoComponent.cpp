@@ -130,6 +130,8 @@ void UPandolfoComponent::Deactivate()
 
 	PanWolfCharacter->SetMetaHumanVisibility(false);
 
+	if(PandolfoState == EPandolfoState::EPS_Dodging)
+		PanWolfCharacter->EndDodge();
 
 	PandolfoState = EPandolfoState::EPS_Pandolfo;
 

@@ -76,7 +76,8 @@ void AProjectileBase::OnProjectileHit(UPrimitiveComponent* HitComponent, AActor*
 
 	if (bIsValidBlock && CombatInterface)
 	{
-		CombatInterface->SuccesfulBlock(GetInstigator());
+		/*CombatInterface->SuccesfulBlock(GetInstigator());*/
+		CombatInterface->SuccesfulBlock(this);
 	}
 	else
 	{
@@ -100,6 +101,7 @@ void AProjectileBase::HandleApplyProjectileDamage(APawn* InHitPawn)
 	IHitInterface* HitInterface = Cast<IHitInterface>(InHitPawn);
 	if (HitInterface)
 	{
-		HitInterface->GetHit(GetActorLocation(), GetInstigator());
+		/*HitInterface->GetHit(GetActorLocation(), GetInstigator());*/
+		HitInterface->GetHit(GetActorLocation(), this);
 	}
 }

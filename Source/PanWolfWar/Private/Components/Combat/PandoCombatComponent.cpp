@@ -101,7 +101,7 @@ void UPandoCombatComponent::LightAttack()
 
 void UPandoCombatComponent::WolfLightAttack()
 {
-	GetWorld()->GetTimerManager().ClearTimer(ComboLightCountReset_TimerHandle);
+	/*GetWorld()->GetTimerManager().ClearTimer(ComboLightCountReset_TimerHandle);
 	UAnimMontage* AttackMontage = *WOLF_LightAttackMontages.Find(CurrentLightAttackComboCount);
 	if (!AttackMontage) return;
 
@@ -116,7 +116,26 @@ void UPandoCombatComponent::WolfLightAttack()
 	if (CurrentLightAttackComboCount == (WOLF_LightAttackMontages.Num() - 1)) { bJumpToFinisher = true; }
 	else ResetHeavyAttackComboCount();
 
+	CurrentLightAttackComboCount++;*/
+
+	GetWorld()->GetTimerManager().ClearTimer(ComboLightCountReset_TimerHandle);
+	UAnimMontage* AttackMontage = *WOLF_LightAttackMontages.Find(CurrentLightAttackComboCount);
+	if (!AttackMontage) return;
+
+	AttackState = EAttackState::EAS_Attacking;
+	UsedLightComboCount = CurrentLightAttackComboCount;
 	CurrentLightAttackComboCount++;
+
+	OwningPlayerAnimInstance->Montage_Play(AttackMontage);
+	LastAttackType = EAttackType::EAT_LightAttack;
+
+
+	if (UsedLightComboCount == WOLF_LightAttackMontages.Num()) { ResetLightAttackComboCount(); return; }
+
+	if (UsedLightComboCount == (WOLF_LightAttackMontages.Num() - 1)) { bJumpToFinisher = true; }
+	else ResetHeavyAttackComboCount();
+
+	
 }
 
 void UPandoCombatComponent::PandoLightAttack()
@@ -177,7 +196,7 @@ void UPandoCombatComponent::HeavyAttack()
 
 void UPandoCombatComponent::WolfHeavyAttack()
 {
-	GetWorld()->GetTimerManager().ClearTimer(ComboHeavyCountReset_TimerHandle);
+	/*GetWorld()->GetTimerManager().ClearTimer(ComboHeavyCountReset_TimerHandle);
 	if (bJumpToFinisher) { CurrentHeavyAttackComboCount = WOLF_HeavyAttackMontages.Num(); }
 	UAnimMontage* AttackMontage = *WOLF_HeavyAttackMontages.Find(CurrentHeavyAttackComboCount);
 	if (!AttackMontage) return;
@@ -193,7 +212,30 @@ void UPandoCombatComponent::WolfHeavyAttack()
 	if (CurrentHeavyAttackComboCount == WOLF_HeavyAttackMontages.Num()) { ResetHeavyAttackComboCount(); return; }
 
 
+	CurrentHeavyAttackComboCount++;*/
+
+	GetWorld()->GetTimerManager().ClearTimer(ComboHeavyCountReset_TimerHandle);
+	if (bJumpToFinisher) { CurrentHeavyAttackComboCount = WOLF_HeavyAttackMontages.Num(); }
+	UAnimMontage* AttackMontage = *WOLF_HeavyAttackMontages.Find(CurrentHeavyAttackComboCount);
+	if (!AttackMontage) return;
+
+	AttackState = EAttackState::EAS_Attacking;
+	UsedHeavyComboCount = CurrentHeavyAttackComboCount;
 	CurrentHeavyAttackComboCount++;
+
+	OwningPlayerAnimInstance->Montage_Play(AttackMontage);
+	LastAttackType = EAttackType::EAT_HeavyAttack;
+	
+
+	if (UsedHeavyComboCount < (WOLF_LightAttackMontages.Num()-1)) { CurrentLightAttackComboCount = 2; }
+	else ResetLightAttackComboCount(); 
+
+	//ResetLightAttackComboCount();
+
+	if (UsedHeavyComboCount == WOLF_HeavyAttackMontages.Num()) { ResetHeavyAttackComboCount(); return; }
+
+
+
 }
 
 void UPandoCombatComponent::Counterattack()
@@ -204,6 +246,8 @@ void UPandoCombatComponent::Counterattack()
 	AttackState = EAttackState::EAS_Attacking;
 
 	OwningPlayerAnimInstance->Montage_Play(WOLF_CounterattackMontage);
+
+	CurrentLightAttackComboCount = 2;
 }
 
 #pragma endregion
@@ -244,7 +288,7 @@ void UPandoCombatComponent::OnAttackMontageEnded(UAnimMontage* Montage, bool bIn
 	if (IsLigtAttack)
 	{
 		AttackState = EAttackState::EAS_Nothing;
-		if (bInterrupted) return;
+		if (bInterrupted) { return; }
 		GetWorld()->GetTimerManager().SetTimer(ComboLightCountReset_TimerHandle, [this]() {this->ResetLightAttackComboCount(); }, 0.025f, false);
 	}
 		
@@ -255,8 +299,12 @@ void UPandoCombatComponent::OnAttackMontageEnded(UAnimMontage* Montage, bool bIn
 		GetWorld()->GetTimerManager().SetTimer(ComboHeavyCountReset_TimerHandle, [this]() {this->ResetHeavyAttackComboCount(); }, 0.025f, false);
 	}
 
-	else if(Montage == WOLF_CounterattackMontage)
+	else if (Montage == WOLF_CounterattackMontage)
+	{
 		AttackState = EAttackState::EAS_Nothing;
+		GetWorld()->GetTimerManager().SetTimer(ComboLightCountReset_TimerHandle, [this]() {this->ResetLightAttackComboCount(); }, 0.025f, false);
+	}
+
 
 
 	/*if (WOLF_LightAttackMontages.FindKey(Montage))

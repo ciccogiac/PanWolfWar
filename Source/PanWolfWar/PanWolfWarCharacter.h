@@ -261,6 +261,8 @@ private:
 #pragma region PrivateFunctions
 private:
 
+	UFUNCTION()
+	void OnHitReactMontageEnded(UAnimMontage* Montage, bool bInterrupted);
 
 
 	//Interfaces
