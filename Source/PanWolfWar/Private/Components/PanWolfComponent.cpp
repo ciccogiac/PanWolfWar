@@ -191,13 +191,6 @@ void UPanWolfComponent::LightAttack()
 			CombatComponent->PerformAttack(EAttackType::EAT_LightAttack);
 		}
 
-
-		/*else if (PanWolfState == EPanWolfState::EPWS_PanWolf && bIsBlocking)
-		{
-			CombatComponent->ResetAttack();
-			return;
-		}*/
-
 	}
 		
 
@@ -247,12 +240,6 @@ void UPanWolfComponent::HeavyAttack()
 			CombatComponent->PerformAttack(EAttackType::EAT_HeavyAttack);
 		}
 
-
-		/*else if (PanWolfState == EPanWolfState::EPWS_PanWolf && bIsBlocking)
-		{
-			CombatComponent->ResetAttack();
-			return;
-		}*/
 	}
 
 }
@@ -316,16 +303,12 @@ void UPanWolfComponent::InstantBlock()
 
 void UPanWolfComponent::LeftBlock()
 {
-	Debug::Print(TEXT("LeftBlock"));
-	//OwningPlayerAnimInstance->Montage_Play(PanWolf_LeftBlockMontage);
 	OwningPlayerAnimInstance->Montage_JumpToSection(FName("Left"), PanWolf_BlockMontage);
 	bIsBlockingReact = true;
 }
 
 void UPanWolfComponent::RightBlock()
 {
-	Debug::Print(TEXT("RightBlock"));
-	//OwningPlayerAnimInstance->Montage_Play(PanWolf_RightBlockMontage);
 	OwningPlayerAnimInstance->Montage_JumpToSection(FName("Right"), PanWolf_BlockMontage);
 	bIsBlockingReact = true;
 }
@@ -360,7 +343,7 @@ void UPanWolfComponent::ReturnToBlockFromAttack()
 
 void UPanWolfComponent::SuccesfulBlock(AActor* Attacker)
 {
-	Debug::Print(TEXT("Attacker : ") + Attacker->GetName());
+	/*Debug::Print(TEXT("Attacker : ") + Attacker->GetName());*/
 	bIsPerfectBlock = 
 		(
 		Attacker &&
@@ -384,12 +367,12 @@ void UPanWolfComponent::SuccesfulBlock(AActor* Attacker)
 		FVector CrossProduct = FVector::CrossProduct(ForwardVectorOwner, ForwardVectorAttacker);
 		if (CrossProduct.Z < 0 && AngleInDegrees < 135.f)
 		{
-			UE_LOG(LogTemp, Warning, TEXT("Attacker è a destra di CharacterOwner"));
+			/*UE_LOG(LogTemp, Warning, TEXT("Attacker è a destra di CharacterOwner"));*/
 			RightBlock();
 		}
 		else
 		{
-			UE_LOG(LogTemp, Warning, TEXT("Attacker è a sinistra di CharacterOwner"));
+			/*UE_LOG(LogTemp, Warning, TEXT("Attacker è a sinistra di CharacterOwner"));*/
 			LeftBlock();
 		}
 
@@ -406,17 +389,17 @@ void UPanWolfComponent::SuccesfulBlock(AActor* Attacker)
 
 
 
-	if (ShieldBlock_Sound)
+	if (Block_Sound)
 	{
-		UGameplayStatics::PlaySoundAtLocation(this, ShieldBlock_Sound, CharacterOwner->GetActorLocation());
+		UGameplayStatics::PlaySoundAtLocation(this, Block_Sound, CharacterOwner->GetActorLocation());
 
 	}
 
-	UNiagaraFunctionLibrary::SpawnSystemAttached(BlockShieldNiagara, CharacterOwner->GetMesh(), FName("ShieldSocket"), FVector::ZeroVector, FRotator::ZeroRotator, EAttachLocation::KeepRelativeOffset, true);
+	UNiagaraFunctionLibrary::SpawnSystemAttached(BlockEffectNiagara, CharacterOwner->GetMesh(), FName("ShieldSocket"), FVector::ZeroVector, FRotator::ZeroRotator, EAttachLocation::KeepRelativeOffset, true);
 
 	if (bIsPerfectBlock)
 	{
-		Debug::Print(TEXT("PerfectBlock"));
+		/*Debug::Print(TEXT("PerfectBlock"));*/
 
 		//const FRotator BlockRotation = UKismetMathLibrary::FindLookAtRotation(CharacterOwner->GetActorLocation(), Attacker->GetActorLocation());
 		//CharacterOwner->SetActorRotation(BlockRotation);
@@ -431,11 +414,15 @@ void UPanWolfComponent::SuccesfulBlock(AActor* Attacker)
 
 		//JumpToFinisher?
 
-		UNiagaraFunctionLibrary::SpawnSystemAttached(PerfectBlockShieldNiagara, CharacterOwner->GetMesh(), FName("ShieldSocket"), CharacterOwner->GetActorForwardVector() * 30.f, UKismetMathLibrary::MakeRotFromX(CharacterOwner->GetActorForwardVector()), EAttachLocation::KeepRelativeOffset, true);
+		UNiagaraFunctionLibrary::SpawnSystemAttached(PerfectBlockEffectNiagara, CharacterOwner->GetMesh(), FName("ShieldSocket"), CharacterOwner->GetActorForwardVector() * 30.f, UKismetMathLibrary::MakeRotFromX(CharacterOwner->GetActorForwardVector()), EAttachLocation::KeepRelativeOffset, true);
 
 		UGameplayStatics::SetGlobalTimeDilation(this, 0.2f);
 		/*GetWorld()->GetTimerManager().SetTimer(PerfectBlock_TimerHandle, [this]() {UGameplayStatics::SetGlobalTimeDilation(this, 1.f); }, PerfectBlockTimer, false);*/
 		GetWorld()->GetTimerManager().SetTimer(PerfectBlock_TimerHandle, [this]() {this->ResetPerfectBlock(); }, PerfectBlockTimer, false); 
+
+		ICombatInterface* EnemyCombatInterface = Cast<ICombatInterface>(Attacker);
+		if (EnemyCombatInterface)
+			EnemyCombatInterface->ShortStunned();
 	}
 
 

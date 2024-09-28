@@ -16,7 +16,7 @@ class UEnemyUIComponent;
 class UEnemyAttributeComponent;
 class UBoxComponent;
 class UAssassinableComponent;
-
+class UNiagaraSystem;
 
 
 UENUM(BlueprintType)
@@ -24,6 +24,8 @@ enum class EEnemyState : uint8
 {
 	EES_Default UMETA(DisplayName = "Default"),
 	EES_Strafing UMETA(DisplayName = "Strafing"),
+	EES_Blocking UMETA(DisplayName = "Blocking"),
+	EES_Stunned UMETA(DisplayName = "Stunned")
 };
 
 USTRUCT(BlueprintType)
@@ -87,7 +89,11 @@ public:
 	virtual void FireProjectile() override;
 	virtual float GetHealthPercent() override;
 	virtual void AssassinationKilled() override;
+	virtual void Block() override;
 	virtual bool IsValidBlock(AActor* InAttacker, AActor* InDefender) override;
+	virtual void ShortStunned();
+	virtual void LongStunned();
+	virtual bool IsStunned() override;
 	//~ End ICombatInterface Interface
 
 	//HitInterface
@@ -104,6 +110,9 @@ public:
 	//~ End IPawnUIInterface Interface
 
 	void UpdateCurrentEnemyAwareness(float Percent);
+
+	UFUNCTION()
+	void OnPlayerAttack(AActor* Attacker);  // Funzione che si attiva quando il giocatore attacca
 
 protected:
 	virtual void BeginPlay() override;
@@ -135,6 +144,13 @@ private:
 
 	UFUNCTION()
 	void OnHitReactMontageEnded(UAnimMontage* Montage, bool bInterrupted);
+
+	UFUNCTION()
+	void OnShortStunnedMontageEnded(UAnimMontage* Montage, bool bInterrupted);
+
+	void UnBlock();
+	void UnStunned();
+	bool CanBlockPlayerAttack(AActor* Attacker);
 
 #pragma endregion
 
@@ -170,6 +186,9 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Combat | HandToHand", meta = (EditCondition = "bEnableHandToHandCombat"))
 	FName RightHandCollisionBoxAttachBoneName;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Combat | Assassination")
+	bool bEnableBlockAttack = false;
 
 #pragma endregion
 
@@ -242,6 +261,62 @@ protected:
 	USoundBase* Death_Sound;
 
 #pragma endregion
+
+#pragma region Block
+
+	UPROPERTY(EditDefaultsOnly, Category = Block)
+	float PerfectBlockTime = 0.25f;
+
+	UPROPERTY(EditDefaultsOnly, Category = Block)
+	float PerfectBlockTimer = 0.15f;
+
+	float BlockActivatedTime = 0.f;
+	bool bIsPerfectBlock = false;
+
+	FTimerHandle PerfectBlock_TimerHandle;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Block Montages", meta = (AllowPrivateAccess = "true"))
+	UAnimMontage* EnemyBlockMontage;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Block Montages", meta = (AllowPrivateAccess = "true"))
+	UAnimMontage* EnemyShortStunnedMontage;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Block Montages", meta = (AllowPrivateAccess = "true"))
+	UAnimMontage* EnemyStunnedMontage;
+
+	UPROPERTY(EditDefaultsOnly, Category = Block)
+	USoundBase* Block_Sound;
+
+	UPROPERTY(EditDefaultsOnly, Category = Block)
+	UNiagaraSystem* BlockEffectNiagara;
+
+	UPROPERTY(EditDefaultsOnly, Category = Block)
+	UNiagaraSystem* PerfectBlockEffectNiagara;
+
+	FTimerHandle UnBlock_TimerHandle;
+	float UnBlockTime = 1.5f;
+
+	FTimerHandle UnStunned_TimerHandle;
+	/*float UnStunnedShortTime = 3.f;*/
+	float UnStunnedLongTime = 10.f;
+
+	bool bIsLongStunned = false;
+
+
+	UPROPERTY(EditDefaultsOnly, Category = Block)
+	float MaxBlockDistance = 350.0f;
+
+	UPROPERTY(EditDefaultsOnly, Category = Block)
+	float MaxBlockAngle = 50.0f;
+
+	UPROPERTY(EditDefaultsOnly, Category = Block)
+	float SuccessChanceBlockMin = 0.5f;
+
+	UPROPERTY(EditDefaultsOnly, Category = Block)
+	float SuccessChanceBlockMax = 0.8f;
+
+#pragma endregion
+
 
 #pragma endregion
 

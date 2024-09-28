@@ -4,6 +4,8 @@
 #include "Components/Combat/PawnCombatComponent.h"
 #include "PandoCombatComponent.generated.h"
 
+
+
 UENUM(BlueprintType)
 enum class EAttackType : uint8
 {
@@ -26,6 +28,7 @@ enum class EAttackState : uint8
 	EAS_Attacking UMETA(DisplayName = "Attacking")
 };
 
+
 UCLASS()
 class PANWOLFWAR_API UPandoCombatComponent : public UPawnCombatComponent
 {
@@ -39,6 +42,7 @@ public:
 	virtual void ResetAttack() override;
 
 	void Counterattack();
+
 
 protected:
 	virtual void BeginPlay();

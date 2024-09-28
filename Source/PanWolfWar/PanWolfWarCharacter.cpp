@@ -164,9 +164,6 @@ APanWolfWarCharacter::APanWolfWarCharacter()
 	LeftHandCollisionBox->SetActive(false);
 	RightHandCollisionBox->SetActive(false);
 
-	LeftHandCollisionBox->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, FName("Hand_L_Combat"));
-	RightHandCollisionBox->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, FName("Hand_R_Combat"));
-
 }
 
 void APanWolfWarCharacter::SetMetaHumanVisibility(bool bVisible)
@@ -187,6 +184,8 @@ void APanWolfWarCharacter::BeginPlay()
 
 	if (PandoCombatComponent)
 	{
+		LeftHandCollisionBox->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, FName("Hand_L_Combat"));
+		RightHandCollisionBox->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, FName("Hand_R_Combat"));
 		PandoCombatComponent->EnableHandToHandCombat(LeftHandCollisionBox, RightHandCollisionBox);
 	}
 }
@@ -631,7 +630,7 @@ void APanWolfWarCharacter::OnHitReactMontageEnded(UAnimMontage* Montage, bool bI
 {
 	if (Montage)
 	{
-		Debug::Print(TEXT("HitReact Ended"));
+		/*Debug::Print(TEXT("HitReact Ended"));*/
 		UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
 		if (!AnimInstance) return;
 		AnimInstance->SetRootMotionMode(ERootMotionMode::RootMotionFromMontagesOnly);

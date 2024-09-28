@@ -64,6 +64,10 @@ void UPandoCombatComponent::PerformAttack(EAttackType AttackType)
 	if (!OwningPlayerAnimInstance) return;
 	if (UPanWarFunctionLibrary::IsPlayingAnyMontage_ExcludingBlendOut(OwningPlayerAnimInstance)) return;
 
+	// Emetti la notifica in broadcast
+	OnPerformAttack.Broadcast(CharacterOwner);
+	CachedStunnedAttack = false;
+
 	switch (AttackType)
 	{
 	case EAttackType::EAT_LightAttack:
@@ -244,7 +248,7 @@ void UPandoCombatComponent::Counterattack()
 	if (UPanWarFunctionLibrary::IsPlayingAnyMontage_ExcludingBlendOut(OwningPlayerAnimInstance)) return;
 
 	AttackState = EAttackState::EAS_Attacking;
-
+	CachedStunnedAttack = true;
 	OwningPlayerAnimInstance->Montage_Play(WOLF_CounterattackMontage);
 
 	CurrentLightAttackComboCount = 2;

@@ -96,13 +96,13 @@ private:
 	UAnimMontage* PanWolf_BlockMontage;
 
 	UPROPERTY(EditDefaultsOnly, Category = Combat)
-	USoundBase* ShieldBlock_Sound;
+	USoundBase* Block_Sound;
 
 	UPROPERTY(EditDefaultsOnly, Category = Combat)
-	UNiagaraSystem* BlockShieldNiagara;
+	UNiagaraSystem* BlockEffectNiagara;
 
 	UPROPERTY(EditDefaultsOnly, Category = Combat)
-	UNiagaraSystem* PerfectBlockShieldNiagara;
+	UNiagaraSystem* PerfectBlockEffectNiagara;
 
 	UPROPERTY(EditDefaultsOnly, Category = Combat)
 	USoundBase* AddShield_Sound;

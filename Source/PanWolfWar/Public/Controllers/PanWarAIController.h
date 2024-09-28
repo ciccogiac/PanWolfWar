@@ -8,6 +8,7 @@
 
 class UAIPerceptionComponent;
 class UAISenseConfig_Sight;
+class ABaseEnemy;
 
 /**
  * 
@@ -19,6 +20,8 @@ class PANWOLFWAR_API APanWarAIController : public AAIController
 	
 public:
 	APanWarAIController(const FObjectInitializer& ObjectInitializer);
+
+	virtual void OnPossess(APawn* InPawn) override;
 
 	//~ Begin IGenericTeamAgentInterface Interface.
 	virtual ETeamAttitude::Type GetTeamAttitudeTowards(const AActor& Other) const override;
@@ -32,6 +35,8 @@ protected:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	UAISenseConfig_Sight* AISenseConfig_Sight;
+
+	ABaseEnemy* OwnerBaseEnemy;
 
 	UFUNCTION()
 	virtual void OnEnemyPerceptionUpdated(AActor* Actor, FAIStimulus Stimulus);

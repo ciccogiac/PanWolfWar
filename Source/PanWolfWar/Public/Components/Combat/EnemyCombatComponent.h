@@ -38,6 +38,7 @@ public:
 	void PerformAttack();
 	virtual void ResetAttack() override;
 
+
 protected:
 	virtual void BeginPlay() override;
 

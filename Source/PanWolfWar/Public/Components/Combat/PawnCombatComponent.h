@@ -15,6 +15,10 @@ enum class EToggleDamageType : uint8
 	RightHand
 };
 
+// Delegate multicast che sarà emesso quando viene effettuato un attacco
+//DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnPerformAttack);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnPerformAttack, AActor*, Attacker);
+
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class PANWOLFWAR_API UPawnCombatComponent : public UActorComponent
 {
@@ -41,6 +45,11 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	virtual void ResetAttack();
+
+
+	// Delegate che notifica l'inizio di un attacco
+	//UPROPERTY(BlueprintAssignable, Category = "Combat")
+	FOnPerformAttack OnPerformAttack;
 
 protected:
 	virtual void BeginPlay() override;
@@ -78,6 +87,7 @@ protected:
 	float DefensePower = 1.f;
 	 
 	bool CachedUnblockableAttack = false;
+	bool CachedStunnedAttack = false;
 
 	
 

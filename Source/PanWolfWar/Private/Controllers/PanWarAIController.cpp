@@ -6,7 +6,7 @@
 #include "Perception/AIPerceptionComponent.h"
 #include "Perception/AISenseConfig_Sight.h"
 #include "BehaviorTree/BlackboardComponent.h"
-
+#include "Enemy/BaseEnemy.h"
 
 #include "PanWolfWar/DebugHelper.h"
 
@@ -30,6 +30,13 @@ APanWarAIController::APanWarAIController(const FObjectInitializer& ObjectInitial
 	SetGenericTeamId(FGenericTeamId(1));
 
 
+}
+
+void APanWarAIController::OnPossess(APawn* InPawn)
+{
+	Super::OnPossess(InPawn);
+
+	OwnerBaseEnemy = Cast<ABaseEnemy>(InPawn);
 }
 
 ETeamAttitude::Type APanWarAIController::GetTeamAttitudeTowards(const AActor& Other) const
@@ -80,6 +87,7 @@ void APanWarAIController::OnEnemyPerceptionUpdated(AActor* Actor, FAIStimulus St
 			if (Stimulus.WasSuccessfullySensed() && Actor)
 			{
 				BlackboardComponent->SetValueAsObject(FName("TargetActor"), Actor);
+				OwnerBaseEnemy->SetEnemyAware(true);
 			}
 		}
 	}

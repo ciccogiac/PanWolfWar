@@ -43,7 +43,6 @@ void APanWarAIController_Advanced::OnPossess(APawn* InPawn)
 {
 	Super::OnPossess(InPawn);
 
-	OwnerBaseEnemy = Cast<ABaseEnemy>(InPawn);
 	if (OwnerBaseEnemy)
 	{
 		OwnerBaseEnemy->OnEnemyDeath.AddDynamic(this, &ThisClass::OnPossessedPawnDeath);

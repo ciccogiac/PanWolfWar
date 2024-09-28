@@ -7,7 +7,6 @@
 
 class UAISenseConfig_Hearing;
 class UAISenseConfig_Damage;
-class ABaseEnemy;
 
 UCLASS()
 class PANWOLFWAR_API APanWarAIController_Advanced : public APanWarAIController
@@ -36,7 +35,6 @@ private:
 
 protected:
 
-	ABaseEnemy* OwnerBaseEnemy;
 	ICharacterInterface* CharacterInterface;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)

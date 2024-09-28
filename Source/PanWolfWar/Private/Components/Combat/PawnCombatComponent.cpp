@@ -102,6 +102,7 @@ void UPawnCombatComponent::BoxCollisionTrace(EToggleDamageType ToggleDamageType)
 			bIsPlayerBlocking = CombatInterface->IsBlocking();
 
 		const bool bIsMyAttackUnblockable = CachedUnblockableAttack;
+		const bool bIsMyAttackStunned = CachedStunnedAttack;
 
 		if (bIsPlayerBlocking && !bIsMyAttackUnblockable)
 		{
@@ -118,7 +119,11 @@ void UPawnCombatComponent::BoxCollisionTrace(EToggleDamageType ToggleDamageType)
 		{
 			/*ApplyDamageToActorHit(Hit.GetActor(), ActiveCollisionPart->Damage, CharacterOwner->GetInstigator()->GetController(), CharacterOwner, UDamageType::StaticClass());*/
 			ApplyDamageToActorHit(Hit.GetActor(), BaseAttackDamage, CharacterOwner->GetInstigator()->GetController(), CharacterOwner, UDamageType::StaticClass());
-			ExecuteHitActor(Hit);
+
+			if (bIsMyAttackStunned && CombatInterface && CombatInterface->IsStunned())
+				CombatInterface->LongStunned();
+			else
+				ExecuteHitActor(Hit);
 		}
 
 

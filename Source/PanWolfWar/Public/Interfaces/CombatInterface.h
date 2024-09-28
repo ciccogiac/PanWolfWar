@@ -43,6 +43,14 @@ public:
 	UFUNCTION(BlueprintCallable)
 	virtual void OnDeathEnter() = 0;
 	UFUNCTION(BlueprintCallable)
+	virtual void ShortStunned();
+	UFUNCTION(BlueprintCallable)
+	virtual void LongStunned();
+	UFUNCTION(BlueprintCallable)
+	virtual bool IsStunned();
+	UFUNCTION(BlueprintCallable)
+	virtual void Block() ;
+	UFUNCTION(BlueprintCallable)
 	virtual bool IsBlocking() = 0;
 	UFUNCTION(BlueprintCallable)
 	virtual bool IsBlockingCharged() ;

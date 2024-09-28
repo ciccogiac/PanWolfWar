@@ -15,6 +15,7 @@
 #include "Components/BoxComponent.h"
 #include "PanWarFunctionLibrary.h"
 #include "Enemy/AssassinableComponent.h"
+#include <NiagaraFunctionLibrary.h>
 
 #include "PanWolfWar/DebugHelper.h"
 
@@ -144,6 +145,21 @@ void ABaseEnemy::BeginPlay()
 		AssassinationBoxComponent->OnComponentEndOverlap.AddDynamic(AssassinableComponent, &UAssassinableComponent::BoxCollisionExit);
 	}
 
+	if (bEnableBlockAttack) 
+	{
+		// Recupera il personaggio principale e il componente di combattimento
+		AActor* PlayerCharacter = GetWorld()->GetFirstPlayerController()->GetPawn();
+		if (PlayerCharacter)
+		{
+			UPawnCombatComponent* CombatComponent = PlayerCharacter->FindComponentByClass<UPawnCombatComponent>();
+			if (CombatComponent)
+			{
+				// Associa la funzione OnPlayerAttack al delegate
+				CombatComponent->OnPerformAttack.AddDynamic(this, &ABaseEnemy::OnPlayerAttack);
+			}
+		}
+	}
+
 }
 
 #pragma endregion
@@ -231,7 +247,7 @@ void ABaseEnemy::AttackWarning()
 
 void ABaseEnemy::CancelAttack()
 {
-	Debug::Print(TEXT("CancelAttack"));
+	/*Debug::Print(TEXT("CancelAttack"));*/
 	EnemyUIComponent->OnAttackingCanceled.Broadcast();
 }
 
@@ -272,7 +288,7 @@ void ABaseEnemy::OnDeathEnter()
 
 bool ABaseEnemy::IsBlocking()
 {
-	return false;
+	return EnemyState == EEnemyState::EES_Blocking; 
 }
 
 bool ABaseEnemy::IsValidBlock(AActor* InAttacker, AActor* InDefender)
@@ -285,6 +301,45 @@ bool ABaseEnemy::IsValidBlock(AActor* InAttacker, AActor* InDefender)
 
 void ABaseEnemy::SuccesfulBlock(AActor* Attacker)
 {
+	Debug::Print(TEXT("SuccesfulBlock"));
+
+	bIsPerfectBlock =
+		(
+			Attacker &&
+			Attacker->Implements<UCombatInterface>() &&
+			UGameplayStatics::GetTimeSeconds(this) - BlockActivatedTime < PerfectBlockTime
+			) ? true : false;
+
+	const FRotator NewFaceRotation = UKismetMathLibrary::FindLookAtRotation(GetActorLocation(), Attacker->GetActorLocation());
+	SetActorRotation(NewFaceRotation);
+
+	if (Attacker && AnimInstance)
+	{
+		//PlayBlockAnimation
+		AnimInstance->Montage_JumpToSection(FName("React"), EnemyBlockMontage);
+	}
+
+
+
+	if (Block_Sound)
+	{
+		UGameplayStatics::PlaySoundAtLocation(this, Block_Sound, GetActorLocation());
+
+	}
+
+	UNiagaraFunctionLibrary::SpawnSystemAttached(BlockEffectNiagara, GetMesh(), FName("WeaponTrailSocket"), FVector::ZeroVector, FRotator::ZeroRotator, EAttachLocation::KeepRelativeOffset, true);
+
+	if (bIsPerfectBlock)
+	{
+		/*Debug::Print(TEXT("PerfectBlock"));*/
+
+		/*PanWolfCharacter->SetInvulnerability(true);*/
+
+		UNiagaraFunctionLibrary::SpawnSystemAttached(PerfectBlockEffectNiagara, GetMesh(), FName("WeaponTrailSocket"), GetActorForwardVector() * 30.f, UKismetMathLibrary::MakeRotFromX(GetActorForwardVector()), EAttachLocation::KeepRelativeOffset, true);
+
+		/*UGameplayStatics::SetGlobalTimeDilation(this, 0.2f);
+		GetWorld()->GetTimerManager().SetTimer(PerfectBlock_TimerHandle, [this]() {this->ResetPerfectBlock(); }, PerfectBlockTimer, false);*/
+	}
 }
 
 void ABaseEnemy::FireProjectile()
@@ -305,6 +360,77 @@ void ABaseEnemy::AssassinationKilled()
 	AssassinableComponent->Killed();
 }
 
+void ABaseEnemy::Block()
+{
+	/*const FRotator NewFaceRotation = UKismetMathLibrary::FindLookAtRotation(GetActorLocation(), Attacker->GetActorLocation());
+	SetActorRotation(NewFaceRotation);*/
+
+	if (!EnemyCombatComponent) return;
+	if (!AnimInstance || !EnemyBlockMontage) return;
+
+	GetWorld()->GetTimerManager().ClearTimer(UnBlock_TimerHandle);
+	CancelAttack();
+
+	BlockActivatedTime = UGameplayStatics::GetTimeSeconds(this);
+
+	EnemyState = EEnemyState::EES_Blocking;
+	EnemyCombatComponent->ResetAttack();
+
+	AnimInstance->Montage_Play(EnemyBlockMontage);
+	AnimInstance->Montage_JumpToSection(FName("Idle"), EnemyBlockMontage);	
+
+	GetWorld()->GetTimerManager().SetTimer(UnBlock_TimerHandle, [this]() {this->UnBlock(); }, UnBlockTime, false);
+}
+
+void ABaseEnemy::ShortStunned()
+{
+	if (!IsEnemyAlive()) return;
+	if (!AnimInstance || !EnemyStunnedMontage) return;
+
+	Debug::Print(TEXT("EnemyShortStunned"));
+
+	GetWorld()->GetTimerManager().ClearTimer(UnStunned_TimerHandle);
+	CancelAttack();
+
+	EnemyState = EEnemyState::EES_Stunned;
+	AnimInstance->Montage_Play(EnemyShortStunnedMontage);
+
+	// Bind al delegate per la fine del montage
+	FOnMontageEnded MontageEndedDelegate;
+	MontageEndedDelegate.BindUObject(this, &ABaseEnemy::OnShortStunnedMontageEnded);
+	AnimInstance->Montage_SetEndDelegate(MontageEndedDelegate, EnemyShortStunnedMontage);
+
+	/*AnimInstance->Montage_JumpToSection(FName("Enter"), EnemyStunnedMontage);*/
+
+	//GetWorld()->GetTimerManager().SetTimer(UnStunned_TimerHandle, [this]() {this->UnStunned(); }, UnStunnedShortTime, false);
+	/*GetWorld()->GetTimerManager().SetTimer(UnStunned_TimerHandle, [this]() {this->EnemyState = EEnemyState::EES_Default; }, UnStunnedShortTime, false);*/
+}
+
+void ABaseEnemy::LongStunned()
+{
+	if (!IsEnemyAlive()) return;
+	if (!AnimInstance || !EnemyStunnedMontage) return;
+
+	Debug::Print(TEXT("EnemyLongStunned"));
+
+	GetWorld()->GetTimerManager().ClearTimer(UnStunned_TimerHandle);
+	CancelAttack();
+
+	EnemyState = EEnemyState::EES_Stunned;
+	bIsLongStunned = true;
+
+	AnimInstance->Montage_Play(EnemyStunnedMontage);
+	AnimInstance->Montage_JumpToSection(FName("Enter"), EnemyStunnedMontage);
+
+	GetWorld()->GetTimerManager().SetTimer(UnStunned_TimerHandle, [this]() {this->UnStunned(); }, UnStunnedLongTime, false);
+}
+
+
+bool ABaseEnemy::IsStunned()
+{
+	return EnemyState == EEnemyState::EES_Stunned;
+}
+
 #pragma endregion
 
 #pragma region HitDamage&Death
@@ -313,6 +439,18 @@ void ABaseEnemy::AssassinationKilled()
 void ABaseEnemy::GetHit(const FVector& ImpactPoint, AActor* Hitter)
 {
 	if (!IsEnemyAlive() || !Hitter) return;
+
+	if (IsStunned())
+	{
+		AnimInstance->Montage_Play(EnemyStunnedMontage);
+		AnimInstance->Montage_JumpToSection(FName("Enter"), EnemyStunnedMontage);
+
+		GetWorld()->GetTimerManager().ClearTimer(GetHitFX_TimerHandle);
+		GetMesh()->SetScalarParameterValueOnMaterials(FName("HitFxSwitch"), 1.f);
+		GetWorld()->GetTimerManager().SetTimer(GetHitFX_TimerHandle, [this]() {this->GetMesh()->SetScalarParameterValueOnMaterials(FName("HitFxSwitch"), 0.f); }, GetHitFX_Time, false);
+
+		return;
+	}
 
 	if (HitReact_Montages.Num() != 0)
 	{
@@ -348,12 +486,15 @@ void ABaseEnemy::GetHit(const FVector& ImpactPoint, AActor* Hitter)
 
 }
 
+
+
 void ABaseEnemy::OnHitReactMontageEnded(UAnimMontage* Montage, bool bInterrupted)
 {
 	GetMesh()->SetScalarParameterValueOnMaterials(FName("HitFxSwitch"), 0.f);
 
 	bIsUnderAttack = true;
 	GetWorld()->GetTimerManager().SetTimer(UnderAttack_TimerHandle, [this]() {this->bIsUnderAttack = false; }, UnderAttack_Time, false);
+
 }
 
 bool ABaseEnemy::IsEnemyAlive()
@@ -458,3 +599,92 @@ UPawnUIComponent* ABaseEnemy::GetPawnUIComponent() const
 	return EnemyUIComponent;
 }
 //~ End IPawnUIInterface Interface
+
+void ABaseEnemy::OnPlayerAttack(AActor* Attacker)
+{
+	if (!IsEnemyAlive() || !Attacker) return;
+
+	UE_LOG(LogTemp, Warning, TEXT("Il giocatore sta attaccando!"));
+	
+	
+	
+
+	if (bSeen && EnemyState != EEnemyState::EES_Stunned && CanBlockPlayerAttack(Attacker))
+	{
+		bool ChanceToBlock = UKismetMathLibrary::RandomBoolWithWeight(UKismetMathLibrary::RandomFloatInRange(SuccessChanceBlockMin, SuccessChanceBlockMax));
+		if(ChanceToBlock)
+			Block();
+	}
+	
+}
+
+bool ABaseEnemy::CanBlockPlayerAttack(AActor* Attacker)
+{
+	// Calcola la direzione tra il nemico e il giocatore
+	const FVector PlayerLocation = Attacker->GetActorLocation();
+	const FVector EnemyLocation = GetActorLocation();
+	// Controlla la distanza tra il nemico e il giocatore
+	const float DistanceToPlayer = FVector::Dist(PlayerLocation, EnemyLocation);
+
+	if (DistanceToPlayer > MaxBlockDistance) { UE_LOG(LogTemp, Warning, TEXT("Il giocatore sta attaccando, ma il nemico è troppo lontano ")); return false; }
+
+	const FVector DirectionToPlayer = (PlayerLocation - EnemyLocation).GetSafeNormal();
+	const FVector EnemyForward = GetActorForwardVector();
+
+	// Calcola l'angolo tra la direzione dell'attacco e la direzione del nemico
+	const float DotProduct = FVector::DotProduct(EnemyForward, DirectionToPlayer);
+	//const float Angle = FMath::Acos(DotProduct) * (180.0f / PI); // Converti in gradi
+	const float AngleInRadians = FMath::Acos(DotProduct); // Converti in gradi
+	const float Angle = FMath::RadiansToDegrees(AngleInRadians);
+
+	// Se l'angolo è inferiore al massimo, l'attacco è rivolto verso il nemico
+	if (Angle <= MaxBlockAngle)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Il giocatore sta attaccando e il nemico lo vede ed è abbastanza vicino per parare!"));
+		return true;
+		
+	}
+
+	UE_LOG(LogTemp, Warning, TEXT("Il giocatore sta attaccando, ma il nemico non è rivolto verso di lui."));
+	return false;
+	
+}
+
+void ABaseEnemy::UnBlock()
+{
+	AnimInstance->Montage_Stop(0.25, EnemyBlockMontage);
+
+	if (EnemyState == EEnemyState::EES_Blocking)
+	{
+		EnemyState = EEnemyState::EES_Default;
+
+	}
+}
+
+void ABaseEnemy::UnStunned()
+{
+	if (!IsEnemyAlive()) return;
+
+	AnimInstance->Montage_Play(EnemyStunnedMontage);
+	AnimInstance->Montage_JumpToSection(FName("Exit"), EnemyStunnedMontage);
+	bIsLongStunned = false;
+
+	if (EnemyState == EEnemyState::EES_Stunned)
+	{
+		EnemyState = EEnemyState::EES_Default;
+
+	}
+}
+
+void ABaseEnemy::OnShortStunnedMontageEnded(UAnimMontage* Montage, bool bInterrupted)
+{
+	if (!Montage) return;
+	if (!IsEnemyAlive()) return;
+	if (bIsLongStunned) return;
+
+	if (EnemyState == EEnemyState::EES_Stunned)
+	{
+		EnemyState = EEnemyState::EES_Default;
+
+	}
+}
