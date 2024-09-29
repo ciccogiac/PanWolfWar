@@ -442,7 +442,7 @@ void APanWolfWarCharacter::StartDodge()
 	}
 
 	OriginalCapsuleRadius = GetCapsuleComponent()->GetScaledCapsuleRadius();
-	float NewCapsuleRadius = OriginalCapsuleRadius * 0.4f;
+	float NewCapsuleRadius = OriginalCapsuleRadius * 0.3f;
 	GetCapsuleComponent()->SetCapsuleRadius(NewCapsuleRadius);
 }
 

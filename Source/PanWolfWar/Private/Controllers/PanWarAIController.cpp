@@ -73,6 +73,7 @@ void APanWarAIController::BeginPlay()
 
 		CrowdComp->SetAvoidanceGroup(1);
 		CrowdComp->SetGroupsToAvoid(1);
+
 		CrowdComp->SetCrowdCollisionQueryRange(CollisionQueryRange);
 	}
 

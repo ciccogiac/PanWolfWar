@@ -250,6 +250,7 @@ void ABaseEnemy::CancelAttack()
 {
 	/*Debug::Print(TEXT("CancelAttack"));*/
 	EnemyUIComponent->OnAttackingCanceled.Broadcast();
+	EnemyCombatComponent->CancelAttack();
 }
 
 float ABaseEnemy::PerformAttack()
@@ -481,6 +482,9 @@ void ABaseEnemy::GetHit(const FVector& ImpactPoint, AActor* Hitter)
 
 	if (IsStunned())
 	{
+		const FRotator NewFaceRotation = UKismetMathLibrary::FindLookAtRotation(GetActorLocation(), Hitter->GetActorLocation());
+		SetActorRotation(NewFaceRotation);
+
 		AnimInstance->Montage_Play(EnemyStunnedMontage);
 		AnimInstance->Montage_JumpToSection(FName("Enter"), EnemyStunnedMontage);
 
@@ -501,6 +505,8 @@ void ABaseEnemy::GetHit(const FVector& ImpactPoint, AActor* Hitter)
 
 		if (AnimInstance && HitReact_Montage)
 		{
+			CancelAttack();
+
 			AnimInstance->Montage_Play(HitReact_Montage);
 
 			// Bind al delegate per la fine del montage

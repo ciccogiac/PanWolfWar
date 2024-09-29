@@ -302,7 +302,7 @@ protected:
 	float UnBlockTime = 1.2f;
 
 	FTimerHandle BlockAttackRecently_TimerHandle;
-	float BlockAttackRecentlyTime = 1.f;
+	float BlockAttackRecentlyTime = 1.5f;
 
 	FTimerHandle UnStunned_TimerHandle;
 	/*float UnStunnedShortTime = 3.f;*/
@@ -312,7 +312,7 @@ protected:
 
 
 	UPROPERTY(EditDefaultsOnly, Category = Block)
-	float MaxBlockDistance = 300.0f;
+	float MaxBlockDistance = 310.0f;
 
 	UPROPERTY(EditDefaultsOnly, Category = Block)
 	float MaxBlockAngle = 65.0f;
@@ -321,10 +321,10 @@ protected:
 	float MaxPrevisionBlockAngle = 75.0f;
 
 	UPROPERTY(EditDefaultsOnly, Category = Block)
-	float SuccessChanceBlockMin = 0.65f;
+	float SuccessChanceBlockMin = 0.8f;
 
 	UPROPERTY(EditDefaultsOnly, Category = Block)
-	float SuccessChanceBlockMax = 0.85f;
+	float SuccessChanceBlockMax = 0.9f;
 
 #pragma endregion
 

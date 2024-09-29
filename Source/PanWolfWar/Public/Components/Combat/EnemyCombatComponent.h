@@ -38,6 +38,7 @@ public:
 	void PerformAttack();
 	virtual void ResetAttack() override;
 
+    void CancelAttack();
 
 protected:
 	virtual void BeginPlay() override;
@@ -60,5 +61,7 @@ private:
     UNiagaraSystem* UnblockableNiagaraSystem;
 
 	FTimerHandle UnblockableWarning_TimerHandle;
+
+    UAnimMontage* CachedAttackMontage = nullptr;
 
 };

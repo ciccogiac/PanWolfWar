@@ -33,10 +33,17 @@ void UEnemyCombatComponent::PerformAttack()
 	{
 		CachedUnblockableAttack = false;
 		AttackState = EAttackState::EAS_Attacking;
+		CachedAttackMontage = AttackMontage;
 		OwningPlayerAnimInstance->Montage_Play(AttackMontage);
 		BindAttackMontageEnded(AttackMontage);
 	}
 
+}
+
+void UEnemyCombatComponent::CancelAttack()
+{
+	if (AttackState == EAttackState::EAS_Attacking && CachedAttackMontage && OwningPlayerAnimInstance)
+		OwningPlayerAnimInstance->Montage_Stop(0.45f, CachedAttackMontage);
 }
 
 void UEnemyCombatComponent::ResetAttack()
@@ -51,6 +58,7 @@ void UEnemyCombatComponent::DoUnblockableAttack(UAnimMontage* AttackMontage)
 
 	CachedUnblockableAttack = true;
 	AttackState = EAttackState::EAS_Attacking;
+	CachedAttackMontage = AttackMontage;
 	OwningPlayerAnimInstance->Montage_Play(AttackMontage);
 	BindAttackMontageEnded(AttackMontage);
 }
@@ -79,4 +87,5 @@ void UEnemyCombatComponent::BindAttackMontageEnded(UAnimMontage* Montage)
 void UEnemyCombatComponent::OnAttackMontageEnded(UAnimMontage* Montage, bool bInterrupted)
 {
 	AttackState = EAttackState::EAS_Nothing;
+	CachedAttackMontage = nullptr;
 }
