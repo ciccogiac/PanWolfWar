@@ -26,11 +26,12 @@ void UPawnCombatComponent::BeginPlay()
 	Super::BeginPlay();
 }
 
-void UPawnCombatComponent::InitializeCombatStats(float _BaseDamage, float _AttackPower, float _DefensePower)
+void UPawnCombatComponent::InitializeCombatStats(float _BaseDamage, float _AttackPower, float _DefensePower , float _BlockPower)
 {
 	BaseAttackDamage = _BaseDamage;
 	AttackPower = _AttackPower;
 	DefensePower = _DefensePower;
+	BlockPower = _BlockPower;
 }
 
 #pragma endregion
@@ -113,6 +114,7 @@ void UPawnCombatComponent::BoxCollisionTrace(EToggleDamageType ToggleDamageType)
 		if (bIsValidBlock && CombatInterface)
 		{
 			CombatInterface->SuccesfulBlock(CharacterOwner);
+			ApplyDamageToActorHit(Hit.GetActor(), BaseAttackDamage, CharacterOwner->GetInstigator()->GetController(), CharacterOwner, UDamageType::StaticClass());
 		}
 
 		else

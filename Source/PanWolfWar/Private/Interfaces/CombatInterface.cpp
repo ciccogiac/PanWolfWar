@@ -17,6 +17,15 @@ void ICombatInterface::Block()
 {
 }
 
+void ICombatInterface::UnBlock()
+{
+}
+
+bool ICombatInterface::IsBlockingAttackRecently()
+{
+    return false;
+}
+
 bool ICombatInterface::IsBlockingCharged()
 {
     return false;

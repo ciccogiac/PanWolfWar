@@ -43,6 +43,9 @@ struct FEnemyInitStats
 	FScalableFloat DefensePower;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Stats", meta = (AllowPrivateAccess = "true"))
+	FScalableFloat BlockPower;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Stats", meta = (AllowPrivateAccess = "true"))
 	FScalableFloat BaseDamage;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Stats", meta = (AllowPrivateAccess = "true"))
@@ -85,11 +88,13 @@ public:
 	virtual float GetDefensePower() override;
 	virtual void OnDeathEnter() override;
 	virtual bool IsBlocking() override;
+	virtual bool IsBlockingAttackRecently() override;
 	virtual void SuccesfulBlock(AActor* Attacker) override;
 	virtual void FireProjectile() override;
 	virtual float GetHealthPercent() override;
 	virtual void AssassinationKilled() override;
 	virtual void Block() override;
+	virtual void UnBlock() override;
 	virtual bool IsValidBlock(AActor* InAttacker, AActor* InDefender) override;
 	virtual void ShortStunned();
 	virtual void LongStunned();
@@ -148,7 +153,6 @@ private:
 	UFUNCTION()
 	void OnShortStunnedMontageEnded(UAnimMontage* Montage, bool bInterrupted);
 
-	void UnBlock();
 	void UnStunned();
 	bool CanBlockPlayerAttack(AActor* Attacker);
 
@@ -165,6 +169,7 @@ protected:
 	bool bDied = false;
 	bool bSeen = false;
 	bool bIsUnderAttack = false;
+	bool bIsBlockingAttackRecently = false;
 
 	EEnemyState EnemyState;
 	ACharacter* Player;
@@ -241,7 +246,7 @@ protected:
 	FTimerHandle GetHitFX_TimerHandle;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Combat", meta = (AllowPrivateAccess = "true"))
-	float UnderAttack_Time = 6.f;
+	float UnderAttack_Time = 4.f;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Combat", meta = (AllowPrivateAccess = "true"))
 	float GetHitFX_Time = 0.3f;
@@ -294,7 +299,10 @@ protected:
 	UNiagaraSystem* PerfectBlockEffectNiagara;
 
 	FTimerHandle UnBlock_TimerHandle;
-	float UnBlockTime = 1.5f;
+	float UnBlockTime = 1.2f;
+
+	FTimerHandle BlockAttackRecently_TimerHandle;
+	float BlockAttackRecentlyTime = 1.f;
 
 	FTimerHandle UnStunned_TimerHandle;
 	/*float UnStunnedShortTime = 3.f;*/
@@ -304,16 +312,19 @@ protected:
 
 
 	UPROPERTY(EditDefaultsOnly, Category = Block)
-	float MaxBlockDistance = 350.0f;
+	float MaxBlockDistance = 300.0f;
 
 	UPROPERTY(EditDefaultsOnly, Category = Block)
-	float MaxBlockAngle = 50.0f;
+	float MaxBlockAngle = 65.0f;
 
 	UPROPERTY(EditDefaultsOnly, Category = Block)
-	float SuccessChanceBlockMin = 0.5f;
+	float MaxPrevisionBlockAngle = 75.0f;
 
 	UPROPERTY(EditDefaultsOnly, Category = Block)
-	float SuccessChanceBlockMax = 0.8f;
+	float SuccessChanceBlockMin = 0.65f;
+
+	UPROPERTY(EditDefaultsOnly, Category = Block)
+	float SuccessChanceBlockMax = 0.85f;
 
 #pragma endregion
 

@@ -15,6 +15,13 @@ enum class EToggleDamageType : uint8
 	RightHand
 };
 
+UENUM(BlueprintType)
+enum class EAttackState : uint8
+{
+	EAS_Nothing UMETA(DisplayName = "Nothing"),
+	EAS_Attacking UMETA(DisplayName = "Attacking")
+};
+
 // Delegate multicast che sarà emesso quando viene effettuato un attacco
 //DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnPerformAttack);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnPerformAttack, AActor*, Attacker);
@@ -27,7 +34,7 @@ class PANWOLFWAR_API UPawnCombatComponent : public UActorComponent
 public:	
 	UPawnCombatComponent();
 
-	void InitializeCombatStats(float _BaseDamage ,float _AttackPower , float _DefensePower);
+	void InitializeCombatStats(float _BaseDamage ,float _AttackPower , float _DefensePower , float _BlockPower = 1);
 
 	UFUNCTION(BlueprintCallable, Category = "Combat")
 	void EquipWeapon(APanWarWeaponBase* InWeaponToRegister);
@@ -67,6 +74,8 @@ protected:
 	ACharacter* CharacterOwner;
 	UAnimInstance* OwningPlayerAnimInstance = nullptr;
 
+	EAttackState AttackState = EAttackState::EAS_Nothing;
+
 	FTimerHandle WeaponCollision_TimerHandle;
 	FTimerHandle RightHandCollision_TimerHandle;
 	FTimerHandle LeftHandCollision_TimerHandle;
@@ -85,6 +94,7 @@ protected:
 	float BaseAttackDamage = 10.f;
 	float AttackPower = 1.f;
 	float DefensePower = 1.f;
+	float BlockPower = 1.f;
 	 
 	bool CachedUnblockableAttack = false;
 	bool CachedStunnedAttack = false;
@@ -99,4 +109,7 @@ private:
 
 public:
 	FORCEINLINE float GetDefensePower() const { return DefensePower; }
+	FORCEINLINE float GetBlockPower() const { return BlockPower; }
+	FORCEINLINE EAttackState GetAttackState() const { return AttackState; }
+	FORCEINLINE bool IsAttacking() const { return AttackState == EAttackState::EAS_Attacking; }
 };

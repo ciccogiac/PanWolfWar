@@ -177,7 +177,8 @@ void ABaseEnemy::InitEnemyStats()
 	float AttackPower = EnemyInitStats.AttackPower.GetValueAtLevel(CurrentGameDifficulty);
 	float DefensePower = EnemyInitStats.DefensePower.GetValueAtLevel(CurrentGameDifficulty);
 	float BaseDamage = EnemyInitStats.BaseDamage.GetValueAtLevel(CurrentGameDifficulty);
-	EnemyCombatComponent->InitializeCombatStats(BaseDamage, AttackPower, DefensePower);
+	float BlockPower = bEnableBlockAttack ? EnemyInitStats.BlockPower.GetValueAtLevel(CurrentGameDifficulty) : 1.f;
+	EnemyCombatComponent->InitializeCombatStats(BaseDamage, AttackPower, DefensePower, BlockPower);
 
 }
 
@@ -255,6 +256,8 @@ float ABaseEnemy::PerformAttack()
 {
 
 	if (!EnemyCombatComponent) return 0.f;
+	if (IsBlocking()) UnBlock();
+
 	EnemyUIComponent->OnAttackingStateChanged.Broadcast(true);
 	EnemyCombatComponent->PerformAttack();
 
@@ -273,6 +276,9 @@ void ABaseEnemy::SetUnderAttack()
 
 float ABaseEnemy::GetDefensePower()
 {
+	if (IsBlocking())
+		return EnemyCombatComponent->GetDefensePower() * EnemyCombatComponent->GetBlockPower();
+
 	return EnemyCombatComponent->GetDefensePower();
 }
 
@@ -289,6 +295,11 @@ void ABaseEnemy::OnDeathEnter()
 bool ABaseEnemy::IsBlocking()
 {
 	return EnemyState == EEnemyState::EES_Blocking; 
+}
+
+bool ABaseEnemy::IsBlockingAttackRecently()
+{
+	return bIsBlockingAttackRecently;
 }
 
 bool ABaseEnemy::IsValidBlock(AActor* InAttacker, AActor* InDefender)
@@ -312,6 +323,10 @@ void ABaseEnemy::SuccesfulBlock(AActor* Attacker)
 
 	const FRotator NewFaceRotation = UKismetMathLibrary::FindLookAtRotation(GetActorLocation(), Attacker->GetActorLocation());
 	SetActorRotation(NewFaceRotation);
+
+	FVector PushDirection = -GetActorForwardVector();
+	float PushbackStrength = 800.f;
+	LaunchCharacter(PushDirection * PushbackStrength, true, true);
 
 	if (Attacker && AnimInstance)
 	{
@@ -340,6 +355,14 @@ void ABaseEnemy::SuccesfulBlock(AActor* Attacker)
 		/*UGameplayStatics::SetGlobalTimeDilation(this, 0.2f);
 		GetWorld()->GetTimerManager().SetTimer(PerfectBlock_TimerHandle, [this]() {this->ResetPerfectBlock(); }, PerfectBlockTimer, false);*/
 	}
+
+	GetWorld()->GetTimerManager().ClearTimer(UnderAttack_TimerHandle);
+	bIsUnderAttack = true;
+	GetWorld()->GetTimerManager().SetTimer(UnderAttack_TimerHandle, [this]() {this->bIsUnderAttack = false; }, UnderAttack_Time, false);
+
+	GetWorld()->GetTimerManager().ClearTimer(BlockAttackRecently_TimerHandle);
+	bIsBlockingAttackRecently = true;
+	GetWorld()->GetTimerManager().SetTimer(BlockAttackRecently_TimerHandle, [this]() {this->bIsBlockingAttackRecently = false; }, BlockAttackRecentlyTime, false);
 }
 
 void ABaseEnemy::FireProjectile()
@@ -380,6 +403,23 @@ void ABaseEnemy::Block()
 	AnimInstance->Montage_JumpToSection(FName("Idle"), EnemyBlockMontage);	
 
 	GetWorld()->GetTimerManager().SetTimer(UnBlock_TimerHandle, [this]() {this->UnBlock(); }, UnBlockTime, false);
+
+	GetWorld()->GetTimerManager().ClearTimer(UnderAttack_TimerHandle);
+	bIsUnderAttack = true;
+	GetWorld()->GetTimerManager().SetTimer(UnderAttack_TimerHandle, [this]() {this->bIsUnderAttack = false; }, UnderAttack_Time, false);
+}
+
+void ABaseEnemy::UnBlock()
+{
+	GetWorld()->GetTimerManager().ClearTimer(UnBlock_TimerHandle);
+
+	AnimInstance->Montage_Stop(0.25, EnemyBlockMontage);
+
+	if (EnemyState == EEnemyState::EES_Blocking)
+	{
+		EnemyState = EEnemyState::EES_Default;
+
+	}
 }
 
 void ABaseEnemy::ShortStunned()
@@ -424,7 +464,6 @@ void ABaseEnemy::LongStunned()
 
 	GetWorld()->GetTimerManager().SetTimer(UnStunned_TimerHandle, [this]() {this->UnStunned(); }, UnStunnedLongTime, false);
 }
-
 
 bool ABaseEnemy::IsStunned()
 {
@@ -485,8 +524,6 @@ void ABaseEnemy::GetHit(const FVector& ImpactPoint, AActor* Hitter)
 	/*EnemyCombatComponent->SpawnHitParticles(ImpactPoint);*/
 
 }
-
-
 
 void ABaseEnemy::OnHitReactMontageEnded(UAnimMontage* Montage, bool bInterrupted)
 {
@@ -609,9 +646,9 @@ void ABaseEnemy::OnPlayerAttack(AActor* Attacker)
 	
 	
 
-	if (bSeen && EnemyState != EEnemyState::EES_Stunned && CanBlockPlayerAttack(Attacker))
+	if (bEnableBlockAttack && bSeen && EnemyState != EEnemyState::EES_Stunned && !EnemyCombatComponent->IsAttacking() && CanBlockPlayerAttack(Attacker))
 	{
-		bool ChanceToBlock = UKismetMathLibrary::RandomBoolWithWeight(UKismetMathLibrary::RandomFloatInRange(SuccessChanceBlockMin, SuccessChanceBlockMax));
+		bool ChanceToBlock = BlockAttackRecentlyTime &&  UKismetMathLibrary::RandomBoolWithWeight(UKismetMathLibrary::RandomFloatInRange(SuccessChanceBlockMin, SuccessChanceBlockMax));
 		if(ChanceToBlock)
 			Block();
 	}
@@ -631,35 +668,56 @@ bool ABaseEnemy::CanBlockPlayerAttack(AActor* Attacker)
 	const FVector DirectionToPlayer = (PlayerLocation - EnemyLocation).GetSafeNormal();
 	const FVector EnemyForward = GetActorForwardVector();
 
-	// Calcola l'angolo tra la direzione dell'attacco e la direzione del nemico
-	const float DotProduct = FVector::DotProduct(EnemyForward, DirectionToPlayer);
-	//const float Angle = FMath::Acos(DotProduct) * (180.0f / PI); // Converti in gradi
-	const float AngleInRadians = FMath::Acos(DotProduct); // Converti in gradi
-	const float Angle = FMath::RadiansToDegrees(AngleInRadians);
+	//// Calcola l'angolo tra la direzione dell'attacco e la direzione del nemico
+	//const float DotProduct = FVector::DotProduct(EnemyForward, DirectionToPlayer);
+	////const float Angle = FMath::Acos(DotProduct) * (180.0f / PI); // Converti in gradi
+	//const float AngleInRadians = FMath::Acos(DotProduct); // Converti in gradi
+	//const float Angle = FMath::RadiansToDegrees(AngleInRadians);
 
-	// Se l'angolo è inferiore al massimo, l'attacco è rivolto verso il nemico
-	if (Angle <= MaxBlockAngle)
+	//// Se l'angolo è inferiore al massimo, l'attacco è rivolto verso il nemico
+	//if (Angle <= MaxBlockAngle)
+	//{
+	//	UE_LOG(LogTemp, Warning, TEXT("Il giocatore sta attaccando e il nemico lo vede ed è abbastanza vicino per parare!"));
+	//	return true;
+	//	
+	//}
+
+	//UE_LOG(LogTemp, Warning, TEXT("Il giocatore sta attaccando, ma il nemico non è rivolto verso di lui."));
+	//return false;
+
+	 // Calcola l'angolo tra la direzione del nemico e il giocatore
+	const float DotProductEnemy = FVector::DotProduct(EnemyForward, DirectionToPlayer);
+	const float AngleInRadiansEnemy = FMath::Acos(DotProductEnemy);
+	const float AngleEnemy = FMath::RadiansToDegrees(AngleInRadiansEnemy);
+
+	// Verifica se il nemico è rivolto verso il giocatore
+	if (AngleEnemy > MaxBlockAngle)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("Il giocatore sta attaccando e il nemico lo vede ed è abbastanza vicino per parare!"));
-		return true;
-		
+		UE_LOG(LogTemp, Warning, TEXT("Il giocatore sta attaccando, ma il nemico non è rivolto verso di lui."));
+		return false;
 	}
 
-	UE_LOG(LogTemp, Warning, TEXT("Il giocatore sta attaccando, ma il nemico non è rivolto verso di lui."));
-	return false;
+	// Ora controlla se il giocatore è rivolto verso il nemico
+	const FVector PlayerForward = Attacker->GetActorForwardVector();
+	const FVector DirectionFromPlayerToEnemy = (EnemyLocation - PlayerLocation).GetSafeNormal();
+
+	const float DotProductPlayer = FVector::DotProduct(PlayerForward, DirectionFromPlayerToEnemy);
+	const float AngleInRadiansPlayer = FMath::Acos(DotProductPlayer);
+	const float AnglePlayer = FMath::RadiansToDegrees(AngleInRadiansPlayer);
+
+	// Verifica se il giocatore è rivolto verso il nemico
+	if (AnglePlayer > MaxPrevisionBlockAngle)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Il giocatore sta attaccando, ma non è rivolto verso il nemico."));
+		return false;
+	}
+
+	UE_LOG(LogTemp, Warning, TEXT("Il giocatore sta attaccando e il nemico lo vede ed è abbastanza vicino per parare!"));
+	return true;
 	
 }
 
-void ABaseEnemy::UnBlock()
-{
-	AnimInstance->Montage_Stop(0.25, EnemyBlockMontage);
 
-	if (EnemyState == EEnemyState::EES_Blocking)
-	{
-		EnemyState = EEnemyState::EES_Default;
-
-	}
-}
 
 void ABaseEnemy::UnStunned()
 {

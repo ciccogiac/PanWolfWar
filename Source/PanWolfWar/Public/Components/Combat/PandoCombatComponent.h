@@ -21,13 +21,6 @@ enum class ETransformationCombatType : uint8
 	ETCT_PanWolf UMETA(DisplayName = "PanWolfCombat")
 };
 
-UENUM(BlueprintType)
-enum class EAttackState : uint8
-{
-	EAS_Nothing UMETA(DisplayName = "Nothing"),
-	EAS_Attacking UMETA(DisplayName = "Attacking")
-};
-
 
 UCLASS()
 class PANWOLFWAR_API UPandoCombatComponent : public UPawnCombatComponent
@@ -81,8 +74,6 @@ private:
 	bool bJumpToFinisher = false;
 	FTimerHandle ComboLightCountReset_TimerHandle;
 	FTimerHandle ComboHeavyCountReset_TimerHandle;
-
-	EAttackState AttackState = EAttackState::EAS_Nothing;
 
 #pragma region CombatStats
 
@@ -139,7 +130,5 @@ private:
 	int32 UsedLightComboCount;
 	int32 UsedHeavyComboCount;
 
-public:
-	FORCEINLINE EAttackState GetAttackState() const { return AttackState; }
-	FORCEINLINE bool IsAttacking() const { return AttackState == EAttackState::EAS_Attacking; }
+
 };

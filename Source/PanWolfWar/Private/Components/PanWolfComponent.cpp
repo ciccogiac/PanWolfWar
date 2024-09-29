@@ -376,6 +376,10 @@ void UPanWolfComponent::SuccesfulBlock(AActor* Attacker)
 			LeftBlock();
 		}
 
+		FVector PushDirection = - CharacterOwner->GetActorForwardVector();
+		float PushbackStrength = 350.f;
+		CharacterOwner->LaunchCharacter(PushDirection * PushbackStrength, true, true);
+
 		/*const FRotator BlockRotation = UKismetMathLibrary::FindLookAtRotation(CharacterOwner->GetActorLocation(), Attacker->GetActorLocation());
 		CharacterOwner->SetActorRotation(BlockRotation);*/
 

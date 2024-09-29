@@ -680,6 +680,8 @@ float APanWolfWarCharacter::TakeDamage(float DamageAmount, FDamageEvent const& D
 {
 	if (!Attributes || bIsInvulnerable) return 0.f;
 
+	if (TransformationComponent->GetCurrentTransformationState() == ETransformationState::ETS_PanWolf &&  PanWolfComponent->IsActive() && PanWolfComponent->IsBlocking()) return 0.f;
+
 	//const float Damage = DamageAmount / GetDamageDivisor();
 	Attributes->ReceiveDamage(DamageAmount);
 	if (!Attributes->IsAlive())

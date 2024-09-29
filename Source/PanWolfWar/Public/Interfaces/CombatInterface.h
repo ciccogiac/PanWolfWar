@@ -51,7 +51,11 @@ public:
 	UFUNCTION(BlueprintCallable)
 	virtual void Block() ;
 	UFUNCTION(BlueprintCallable)
+	virtual void UnBlock();
+	UFUNCTION(BlueprintCallable)
 	virtual bool IsBlocking() = 0;
+	UFUNCTION(BlueprintCallable)
+	virtual bool IsBlockingAttackRecently();
 	UFUNCTION(BlueprintCallable)
 	virtual bool IsBlockingCharged() ;
 	UFUNCTION(BlueprintCallable)

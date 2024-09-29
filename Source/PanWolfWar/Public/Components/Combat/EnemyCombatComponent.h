@@ -46,6 +46,11 @@ private:
     void UnblockableAttackWarning();
     void DoUnblockableAttack(UAnimMontage* AttackMontage);
 
+    void BindAttackMontageEnded(UAnimMontage* Montage);
+
+    UFUNCTION()
+    void OnAttackMontageEnded(UAnimMontage* Montage, bool bInterrupted);
+
 private:
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Attack Montages", meta = (AllowPrivateAccess = "true"))

@@ -23,6 +23,7 @@ void UEnemyCombatComponent::PerformAttack()
 	UAnimMontage* AttackMontage = EnemyAttackMontage.AnimMontage;
 	if (!AttackMontage) return;
 
+
 	if (EnemyAttackMontage.bIsUnblockable)
 	{
 		UnblockableAttackWarning();
@@ -31,7 +32,9 @@ void UEnemyCombatComponent::PerformAttack()
 	else
 	{
 		CachedUnblockableAttack = false;
+		AttackState = EAttackState::EAS_Attacking;
 		OwningPlayerAnimInstance->Montage_Play(AttackMontage);
+		BindAttackMontageEnded(AttackMontage);
 	}
 
 }
@@ -45,8 +48,11 @@ void UEnemyCombatComponent::ResetAttack()
 void UEnemyCombatComponent::DoUnblockableAttack(UAnimMontage* AttackMontage)
 {
 	if (!OwningPlayerAnimInstance || OwningPlayerAnimInstance->IsAnyMontagePlaying() || CharacterOwner->ActorHasTag("Dead")) return;
+
 	CachedUnblockableAttack = true;
+	AttackState = EAttackState::EAS_Attacking;
 	OwningPlayerAnimInstance->Montage_Play(AttackMontage);
+	BindAttackMontageEnded(AttackMontage);
 }
 
 void UEnemyCombatComponent::UnblockableAttackWarning()
@@ -63,3 +69,14 @@ void UEnemyCombatComponent::UnblockableAttackWarning()
 	
 }
 
+void UEnemyCombatComponent::BindAttackMontageEnded(UAnimMontage* Montage)
+{
+	FOnMontageEnded AttackMontageEndedDelegate;
+	AttackMontageEndedDelegate.BindUObject(this, &UEnemyCombatComponent::OnAttackMontageEnded);
+	OwningPlayerAnimInstance->Montage_SetEndDelegate(AttackMontageEndedDelegate, Montage);
+}
+
+void UEnemyCombatComponent::OnAttackMontageEnded(UAnimMontage* Montage, bool bInterrupted)
+{
+	AttackState = EAttackState::EAS_Nothing;
+}
