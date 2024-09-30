@@ -69,4 +69,7 @@ public:
 	virtual void AssassinationKilled();
 
 	virtual bool IsValidBlock(AActor* InAttacker, AActor* InDefender) = 0;
+
+	UFUNCTION(BlueprintCallable)
+	virtual bool IsDodging();
 };

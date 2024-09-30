@@ -379,16 +379,6 @@ void UPanWolfComponent::SuccesfulBlock(AActor* Attacker)
 		FVector PushDirection = - CharacterOwner->GetActorForwardVector();
 		float PushbackStrength = 350.f;
 		CharacterOwner->LaunchCharacter(PushDirection * PushbackStrength, true, true);
-
-		/*const FRotator BlockRotation = UKismetMathLibrary::FindLookAtRotation(CharacterOwner->GetActorLocation(), Attacker->GetActorLocation());
-		CharacterOwner->SetActorRotation(BlockRotation);*/
-
-		//const FVector Force = (CharacterOwner->GetActorForwardVector() * -1.f) * BlockRepulsionForce;
-		//CharacterOwner->GetCharacterMovement()->AddForce(Force);
-
-		//Da Provare
-		//NewVel = GetActorForwardVector() * (-4000.f);
-		//GetMesh()->SetPhysicsLinearVelocity(NewVel, false, FName("pelvis"));
 	}
 
 

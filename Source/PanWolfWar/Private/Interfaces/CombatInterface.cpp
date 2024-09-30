@@ -39,6 +39,11 @@ void ICombatInterface::AssassinationKilled()
 {
 }
 
+bool ICombatInterface::IsDodging()
+{
+    return false;
+}
+
 void ICombatInterface::CancelAttack()
 {
 }

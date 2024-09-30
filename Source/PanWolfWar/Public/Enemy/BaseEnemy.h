@@ -25,7 +25,8 @@ enum class EEnemyState : uint8
 	EES_Default UMETA(DisplayName = "Default"),
 	EES_Strafing UMETA(DisplayName = "Strafing"),
 	EES_Blocking UMETA(DisplayName = "Blocking"),
-	EES_Stunned UMETA(DisplayName = "Stunned")
+	EES_Stunned UMETA(DisplayName = "Stunned"),
+	EES_Dodging UMETA(DisplayName = "Dodging")
 };
 
 USTRUCT(BlueprintType)
@@ -99,6 +100,7 @@ public:
 	virtual void ShortStunned();
 	virtual void LongStunned();
 	virtual bool IsStunned() override;
+	virtual bool IsDodging() override;
 	//~ End ICombatInterface Interface
 
 	//HitInterface
@@ -156,6 +158,13 @@ private:
 	void UnStunned();
 	bool CanBlockPlayerAttack(AActor* Attacker);
 
+	void Dodge(FName Direction);
+	FName GetDodgeDirection(AActor* Attacker);
+	bool IsDirectionClear(const FVector& Direction);
+
+	UFUNCTION()
+	void OnDodgeMontageEnded(UAnimMontage* Montage, bool bInterrupted);
+
 #pragma endregion
 
 #pragma region Variables
@@ -168,6 +177,7 @@ protected:
 
 	bool bDied = false;
 	bool bSeen = false;
+	bool bHitted = false;
 	bool bIsUnderAttack = false;
 	bool bIsBlockingAttackRecently = false;
 
@@ -194,6 +204,10 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Combat | Assassination")
 	bool bEnableBlockAttack = false;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Combat | Assassination")
+	bool bEnableDodge = false;
+
 
 #pragma endregion
 
@@ -289,6 +303,9 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Block Montages", meta = (AllowPrivateAccess = "true"))
 	UAnimMontage* EnemyStunnedMontage;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Block Montages", meta = (AllowPrivateAccess = "true"))
+	UAnimMontage* EnemyDodgeMontage;
+
 	UPROPERTY(EditDefaultsOnly, Category = Block)
 	USoundBase* Block_Sound;
 
@@ -321,10 +338,10 @@ protected:
 	float MaxPrevisionBlockAngle = 75.0f;
 
 	UPROPERTY(EditDefaultsOnly, Category = Block)
-	float SuccessChanceBlockMin = 0.8f;
+	float SuccessChanceBlockMin = 0.6f;
 
 	UPROPERTY(EditDefaultsOnly, Category = Block)
-	float SuccessChanceBlockMax = 0.9f;
+	float SuccessChanceBlockMax = 0.75f;
 
 #pragma endregion
 

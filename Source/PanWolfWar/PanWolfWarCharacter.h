@@ -120,6 +120,7 @@ private:
 	bool bIsHiding = false;
 	bool bIsInvulnerable = false;
 	bool bIsUnderAttack = false;
+	bool bHitted = false;
 	FTimerHandle UnderAttack_TimerHandle;
 	TArray<AActor*> EnemyAware = TArray<AActor*>();
 

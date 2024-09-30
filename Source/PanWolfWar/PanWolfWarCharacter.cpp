@@ -607,10 +607,13 @@ void APanWolfWarCharacter::PlayHitReactMontage(const FName& SectionName)
 	GetHitReactMontage(ReactMontage);
 	if (!ReactMontage) return;
 
-	if (AnimInstance->Montage_IsPlaying(ReactMontage)) return;
+	if (bHitted || AnimInstance->Montage_IsPlaying(ReactMontage)) return;
+
+	bHitted = true;
 
 	AnimInstance->SetRootMotionMode(ERootMotionMode::IgnoreRootMotion);
 
+	GetCharacterMovement()->StopMovementImmediately();
 
 	AnimInstance->Montage_Play(ReactMontage);
 	AnimInstance->Montage_JumpToSection(SectionName, ReactMontage);
@@ -630,6 +633,8 @@ void APanWolfWarCharacter::OnHitReactMontageEnded(UAnimMontage* Montage, bool bI
 {
 	if (Montage)
 	{
+		bHitted = false;
+
 		/*Debug::Print(TEXT("HitReact Ended"));*/
 		UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
 		if (!AnimInstance) return;
