@@ -667,15 +667,58 @@ void ABaseEnemy::OnPlayerAttack(AActor* Attacker)
 	if ( (bEnableBlockAttack || bEnableDodge) && bSeen && EnemyState != EEnemyState::EES_Stunned && !EnemyCombatComponent->IsAttacking() && CanBlockPlayerAttack(Attacker))
 	{
 		bool ChanceToBlock =  UKismetMathLibrary::RandomBoolWithWeight(UKismetMathLibrary::RandomFloatInRange(SuccessChanceBlockMin, SuccessChanceBlockMax));
-		if(ChanceToBlock )
-			Block();
 
-		else if(bEnableDodge)
+		if (bEnableBlockAttack && ChanceToBlock && !bEnableDodge)
+		{
+			Block();
+			return;
+		}
+
+		if (bEnableDodge && ChanceToBlock && !bEnableBlockAttack && !IsDodging())
 		{
 			FName Direction = GetDodgeDirection(Attacker);
 			if (Direction != FName("Nothing"))
 				Dodge(Direction);
+			return;
 		}
+
+		if (bEnableDodge && bEnableBlockAttack && ChanceToBlock )
+		{
+			bool ChanceToDodge = UKismetMathLibrary::RandomBoolWithWeight(UKismetMathLibrary::RandomFloatInRange(SuccessChanceDodgeMin, SuccessChanceDodgeMax));
+
+			if (ChanceToDodge && !IsDodging())
+			{
+				FName Direction = GetDodgeDirection(Attacker);
+				if (Direction != FName("Nothing"))
+					Dodge(Direction);
+				else
+					Block();
+
+				return;
+			}
+
+			else
+			{
+				Block();
+				return;
+			}
+
+		}
+			
+
+		/*else if(bEnableDodge && !IsDodging())
+		{
+			FName Direction = GetDodgeDirection(Attacker);
+			if (Direction != FName("Nothing"))
+				Dodge(Direction);
+		}*/
+
+	/*	if (bEnableDodge && !IsDodging())
+		{
+			FName Direction = GetDodgeDirection(Attacker);
+			if (Direction != FName("Nothing"))
+				Dodge(Direction);
+		}*/
 		
 	}
 	
@@ -689,7 +732,7 @@ bool ABaseEnemy::CanBlockPlayerAttack(AActor* Attacker)
 	// Controlla la distanza tra il nemico e il giocatore
 	const float DistanceToPlayer = FVector::Dist(PlayerLocation, EnemyLocation);
 
-	if (DistanceToPlayer > MaxBlockDistance) 
+	if (DistanceToPlayer > MaxBlockDistance )
 	{ /*UE_LOG(LogTemp, Warning, TEXT("Il giocatore sta attaccando, ma il nemico è troppo lontano "));*/
 		return false; 
 	}
@@ -785,48 +828,102 @@ FName ABaseEnemy::GetDodgeDirection(AActor* Attacker)
 	FVector ToAttacker = (AttackerLocation - EnemyLocation).GetSafeNormal();
 	FVector CrossProduct = FVector::CrossProduct(ToAttacker, EnemyForward);
 
-	// Calcola le direzioni di schivata: sinistra, destra e indietro
-	FVector EnemyRight = GetActorRightVector();      // Destra del nemico
-	FVector EnemyLeft = -EnemyRight;                 // Sinistra del nemico
-	FVector EnemyBack = -EnemyForward;               // Indietro del nemico
+
+	FVector AttackerForward = Attacker->GetActorForwardVector();
+	FVector AttackerRight = Attacker->GetActorRightVector();      // Destra del nemico
+	FVector AttackerLeft = -AttackerRight;                 // Sinistra del nemico
 
 	// Verifica se c'è spazio in ciascuna direzione
-	if (CrossProduct.Z < 0 &&  IsDirectionClear(EnemyLeft)) {
-		return FName("Left");
+	if (CrossProduct.Z < 0 ) 
+	{ //Attacker a sinistra di enemy
+		if (IsDirectionClear(AttackerRight))
+		{
+			MotionWarping->AddOrUpdateWarpTargetFromLocation(FName("DodgeLocation"), EnemyLocation + AttackerRight * 600.f);
+			return FName("Left");
+		}
+
+		else if (IsDirectionClear(AttackerForward)) 
+		{
+			MotionWarping->AddOrUpdateWarpTargetFromLocation(FName("DodgeLocation"), EnemyLocation + AttackerForward * 400.f);
+			return FName("Back");
+		}
+
+		else if (IsDirectionClear(AttackerLeft)) 
+		{ //Attacker a destra di enemy
+			MotionWarping->AddOrUpdateWarpTargetFromLocation(FName("DodgeLocation"), EnemyLocation + AttackerLeft * 600.f);
+			return FName("Right");
+		}
+
 	}
-	else if (CrossProduct.Z > 0 && IsDirectionClear(EnemyRight)) {
-		return FName("Right");
+
+	else if (CrossProduct.Z > 0) 
+	{ //Attacker a destra di enemy
+		if (IsDirectionClear(AttackerLeft))
+		{
+			MotionWarping->AddOrUpdateWarpTargetFromLocation(FName("DodgeLocation"), EnemyLocation + AttackerLeft * 600.f);
+			return FName("Right");
+		}
+
+		else if (IsDirectionClear(AttackerForward)) 
+		{
+			MotionWarping->AddOrUpdateWarpTargetFromLocation(FName("DodgeLocation"), EnemyLocation + AttackerForward * 400.f);
+			return FName("Back");
+		}
+
+		else if (IsDirectionClear(AttackerRight))
+		{
+			MotionWarping->AddOrUpdateWarpTargetFromLocation(FName("DodgeLocation"), EnemyLocation + AttackerRight * 600.f);
+			return FName("Left");
+		}
+
 	}
-	else if (IsDirectionClear(EnemyBack)) {
+
+	else if (IsDirectionClear(AttackerForward)) 
+	{
+		MotionWarping->AddOrUpdateWarpTargetFromLocation(FName("DodgeLocation"), EnemyLocation + AttackerForward * 400.f);
 		return FName("Back");
 	}
 
 	// Se nessuna direzione è libera, rimani fermo (oppure puoi implementare un'altra logica)
 	return FName("Nothing");
+
+
 }
 
 bool ABaseEnemy::IsDirectionClear(const FVector& Direction)
 {
-	FVector Start = GetActorLocation();
-	FVector End = Start + (Direction * 500.0f);  // Raggio di 500 unità per il controllo
+	FVector Offset = GetActorUpVector() * 40.f;
+	FVector Start = GetActorLocation() + 2*Offset;
+	FVector End;
+	
 
-	FHitResult HitResult;
-	FCollisionQueryParams QueryParams;
-	QueryParams.AddIgnoredActor(this);  // Ignora il nemico stesso
+	for (size_t i = 0; i < 3; i++)
+	{
+		Start = Start - Offset;
+		End = Start + (Direction * 500.0f);  // Raggio di 500 unità per il controllo
 
-	// Esegui il line trace
-	bool bHit = GetWorld()->LineTraceSingleByChannel(
-		HitResult,
-		Start,
-		End,
-		ECC_Visibility,  // Canale di collisione
-		QueryParams
-	);
+		FHitResult OutHit;
+		EDrawDebugTrace::Type DebugTraceType = ShowDebugTrace ? EDrawDebugTrace::ForDuration : EDrawDebugTrace::None;
+		UKismetSystemLibrary::SphereTraceSingle(this, Start, End, 30.f, ETraceTypeQuery::TraceTypeQuery1, false, TArray<AActor*>(), DebugTraceType, OutHit, true);
 
-	// Debugging: Disegna il line trace
-	DrawDebugLine(GetWorld(), Start, End, FColor::Green, false, 1.0f, 0, 2.0f);
+		if (OutHit.bBlockingHit) return false;
+	}
 
-	return !bHit;  // Ritorna true se la direzione è libera
+	for (size_t i = 0; i < 8; i++)
+	{
+		FVector LineGroundStart = Start + (Direction * 500.0f * i / 7);
+		FVector LineGroundEnd = LineGroundStart - GetActorUpVector() * 100.f;
+
+		FHitResult OutHit;
+		EDrawDebugTrace::Type DebugTraceType = ShowDebugTrace ? EDrawDebugTrace::ForDuration : EDrawDebugTrace::None;
+		UKismetSystemLibrary::LineTraceSingle(this, LineGroundStart, LineGroundEnd,  ETraceTypeQuery::TraceTypeQuery1, false, TArray<AActor*>(), DebugTraceType, OutHit, true);
+
+		if (!OutHit.bBlockingHit) return false;
+	}
+
+
+
+	return true;  // Ritorna true se la direzione è libera
 }
 
 void ABaseEnemy::OnDodgeMontageEnded(UAnimMontage* Montage, bool bInterrupted)

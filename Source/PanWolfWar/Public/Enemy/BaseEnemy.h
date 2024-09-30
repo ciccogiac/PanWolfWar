@@ -185,6 +185,9 @@ protected:
 	ACharacter* Player;
 	UAnimInstance* AnimInstance;
 
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Debug", meta = (AllowPrivateAccess = "true"))
+	bool ShowDebugTrace = false;
+
 #pragma region Initialization
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Stats", meta = (AllowPrivateAccess = "true"))
@@ -329,7 +332,7 @@ protected:
 
 
 	UPROPERTY(EditDefaultsOnly, Category = Block)
-	float MaxBlockDistance = 310.0f;
+	float MaxBlockDistance = 350.0f;
 
 	UPROPERTY(EditDefaultsOnly, Category = Block)
 	float MaxBlockAngle = 65.0f;
@@ -338,10 +341,16 @@ protected:
 	float MaxPrevisionBlockAngle = 75.0f;
 
 	UPROPERTY(EditDefaultsOnly, Category = Block)
-	float SuccessChanceBlockMin = 0.6f;
+	float SuccessChanceBlockMin = 0.8f;
 
 	UPROPERTY(EditDefaultsOnly, Category = Block)
-	float SuccessChanceBlockMax = 0.75f;
+	float SuccessChanceBlockMax = 0.9f;
+
+	UPROPERTY(EditDefaultsOnly, Category = Block)
+	float SuccessChanceDodgeMin = 0.4f;
+
+	UPROPERTY(EditDefaultsOnly, Category = Block)
+	float SuccessChanceDodgeMax =0.75f;
 
 #pragma endregion
 
