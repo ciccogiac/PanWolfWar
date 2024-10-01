@@ -301,7 +301,13 @@ bool ABaseEnemy::IsBlocking()
 
 bool ABaseEnemy::IsBlockingAttackRecently()
 {
-	return bIsBlockingAttackRecently;
+	if (bEnableBlockAttack)
+		return bIsBlockingAttackRecently;
+
+	else if(bIsUnderAttack)
+		return true;
+
+	return false;
 }
 
 bool ABaseEnemy::IsValidBlock(AActor* InAttacker, AActor* InDefender)

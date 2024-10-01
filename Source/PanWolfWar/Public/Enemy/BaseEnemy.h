@@ -263,7 +263,7 @@ protected:
 	FTimerHandle GetHitFX_TimerHandle;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Combat", meta = (AllowPrivateAccess = "true"))
-	float UnderAttack_Time = 4.f;
+	float UnderAttack_Time = 3.f;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Combat", meta = (AllowPrivateAccess = "true"))
 	float GetHitFX_Time = 0.3f;
@@ -332,13 +332,13 @@ protected:
 
 
 	UPROPERTY(EditDefaultsOnly, Category = Block)
-	float MaxBlockDistance = 350.0f;
+	float MaxBlockDistance = 310.0f;
 
 	UPROPERTY(EditDefaultsOnly, Category = Block)
 	float MaxBlockAngle = 65.0f;
 
 	UPROPERTY(EditDefaultsOnly, Category = Block)
-	float MaxPrevisionBlockAngle = 75.0f;
+	float MaxPrevisionBlockAngle = 65.0f;
 
 	UPROPERTY(EditDefaultsOnly, Category = Block)
 	float SuccessChanceBlockMin = 0.8f;
