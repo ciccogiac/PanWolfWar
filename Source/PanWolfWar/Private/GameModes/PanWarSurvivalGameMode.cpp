@@ -190,8 +190,8 @@ int32 APanWarSurvivalGameMode::TrySpawnWaveEnemies()
 			FVector RandomLocation;
 			UNavigationSystemV1::K2_GetRandomLocationInNavigableRadius(this, SpawnOrigin, RandomLocation, 400.f);
 
-			//RandomLocation += FVector(0.f, 0.f, 150.f);
-			RandomLocation += FVector(0.f, 0.f, 15.f);
+			RandomLocation += FVector(0.f, 0.f, 150.f);
+			//RandomLocation += FVector(0.f, 0.f, 15.f);
 
 			ABaseEnemy* SpawnedEnemy = GetWorld()->SpawnActor<ABaseEnemy>(LoadedEnemyClass, RandomLocation, SpawnRotation, SpawnParam);
 

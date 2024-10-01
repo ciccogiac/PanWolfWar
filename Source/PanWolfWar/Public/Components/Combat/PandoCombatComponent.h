@@ -57,8 +57,21 @@ private:
 
 	virtual float CalculateFinalDamage(float BaseDamage, float TargetDefensePower) override;
 
+	//UFUNCTION()
+	//void OnAttackMontageEnded(UAnimMontage* Montage, bool bInterrupted);
+
+	void BindLightAttackMontageEnded(UAnimMontage* Montage);
+	void BindHeavyAttackMontageEnded(UAnimMontage* Montage);
+	void BindCounterAttackMontageEnded(UAnimMontage* Montage);
+
 	UFUNCTION()
-	void OnAttackMontageEnded(UAnimMontage* Montage, bool bInterrupted);
+	void OnLightAttackMontageEnded(UAnimMontage* Montage, bool bInterrupted);
+
+	UFUNCTION()
+	void OnHeavyAttackMontageEnded(UAnimMontage* Montage, bool bInterrupted);
+
+	UFUNCTION()
+	void OnCounterAttackMontageEnded(UAnimMontage* Montage, bool bInterrupted);
 
 private:
 	APlayerController* PlayerController = nullptr;

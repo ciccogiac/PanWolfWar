@@ -16,7 +16,7 @@ void UPandoCombatComponent::SetCombatEnabled(UAnimInstance* PlayerAnimInstance, 
 {
 	OwningPlayerAnimInstance = PlayerAnimInstance;
 	if (!OwningPlayerAnimInstance) return;
-	OwningPlayerAnimInstance->OnMontageEnded.AddDynamic(this, &UPandoCombatComponent::OnAttackMontageEnded);
+	//OwningPlayerAnimInstance->OnMontageEnded.AddDynamic(this, &UPandoCombatComponent::OnAttackMontageEnded);
 
 	CurrentTransformationCombatType = TransformationCombatType;
 
@@ -105,23 +105,6 @@ void UPandoCombatComponent::LightAttack()
 
 void UPandoCombatComponent::WolfLightAttack()
 {
-	/*GetWorld()->GetTimerManager().ClearTimer(ComboLightCountReset_TimerHandle);
-	UAnimMontage* AttackMontage = *WOLF_LightAttackMontages.Find(CurrentLightAttackComboCount);
-	if (!AttackMontage) return;
-
-	AttackState = EAttackState::EAS_Attacking;
-
-	OwningPlayerAnimInstance->Montage_Play(AttackMontage);
-	LastAttackType = EAttackType::EAT_LightAttack;
-	UsedLightComboCount = CurrentLightAttackComboCount;
-
-	if (CurrentLightAttackComboCount == WOLF_LightAttackMontages.Num()) { ResetLightAttackComboCount(); return; }
-
-	if (CurrentLightAttackComboCount == (WOLF_LightAttackMontages.Num() - 1)) { bJumpToFinisher = true; }
-	else ResetHeavyAttackComboCount();
-
-	CurrentLightAttackComboCount++;*/
-
 	GetWorld()->GetTimerManager().ClearTimer(ComboLightCountReset_TimerHandle);
 	UAnimMontage* AttackMontage = *WOLF_LightAttackMontages.Find(CurrentLightAttackComboCount);
 	if (!AttackMontage) return;
@@ -131,6 +114,7 @@ void UPandoCombatComponent::WolfLightAttack()
 	CurrentLightAttackComboCount++;
 
 	OwningPlayerAnimInstance->Montage_Play(AttackMontage);
+	BindLightAttackMontageEnded(AttackMontage);
 	LastAttackType = EAttackType::EAT_LightAttack;
 
 
@@ -138,7 +122,6 @@ void UPandoCombatComponent::WolfLightAttack()
 
 	if (UsedLightComboCount == (WOLF_LightAttackMontages.Num() - 1)) { bJumpToFinisher = true; }
 	else ResetHeavyAttackComboCount();
-
 	
 }
 
@@ -151,6 +134,7 @@ void UPandoCombatComponent::PandoLightAttack()
 	AttackState = EAttackState::EAS_Attacking;
 
 	OwningPlayerAnimInstance->Montage_Play(AttackMontage);
+	BindLightAttackMontageEnded(AttackMontage);
 	LastAttackType = EAttackType::EAT_LightAttack;
 	UsedLightComboCount = CurrentLightAttackComboCount;
 
@@ -169,6 +153,7 @@ void UPandoCombatComponent::FlowerLightAttack()
 	AttackState = EAttackState::EAS_Attacking;
 
 	OwningPlayerAnimInstance->Montage_Play(AttackMontage);
+	BindLightAttackMontageEnded(AttackMontage);
 	LastAttackType = EAttackType::EAT_LightAttack;
 	UsedLightComboCount = CurrentLightAttackComboCount;
 
@@ -200,24 +185,6 @@ void UPandoCombatComponent::HeavyAttack()
 
 void UPandoCombatComponent::WolfHeavyAttack()
 {
-	/*GetWorld()->GetTimerManager().ClearTimer(ComboHeavyCountReset_TimerHandle);
-	if (bJumpToFinisher) { CurrentHeavyAttackComboCount = WOLF_HeavyAttackMontages.Num(); }
-	UAnimMontage* AttackMontage = *WOLF_HeavyAttackMontages.Find(CurrentHeavyAttackComboCount);
-	if (!AttackMontage) return;
-
-	AttackState = EAttackState::EAS_Attacking;
-
-	OwningPlayerAnimInstance->Montage_Play(AttackMontage);
-	LastAttackType = EAttackType::EAT_HeavyAttack;
-	UsedHeavyComboCount = CurrentHeavyAttackComboCount;
-
-	ResetLightAttackComboCount();
-
-	if (CurrentHeavyAttackComboCount == WOLF_HeavyAttackMontages.Num()) { ResetHeavyAttackComboCount(); return; }
-
-
-	CurrentHeavyAttackComboCount++;*/
-
 	GetWorld()->GetTimerManager().ClearTimer(ComboHeavyCountReset_TimerHandle);
 	if (bJumpToFinisher) { CurrentHeavyAttackComboCount = WOLF_HeavyAttackMontages.Num(); }
 	UAnimMontage* AttackMontage = *WOLF_HeavyAttackMontages.Find(CurrentHeavyAttackComboCount);
@@ -228,13 +195,12 @@ void UPandoCombatComponent::WolfHeavyAttack()
 	CurrentHeavyAttackComboCount++;
 
 	OwningPlayerAnimInstance->Montage_Play(AttackMontage);
+	BindHeavyAttackMontageEnded(AttackMontage);
 	LastAttackType = EAttackType::EAT_HeavyAttack;
 	
 
 	if (UsedHeavyComboCount < (WOLF_LightAttackMontages.Num()-1)) { CurrentLightAttackComboCount = 2; }
 	else ResetLightAttackComboCount(); 
-
-	//ResetLightAttackComboCount();
 
 	if (UsedHeavyComboCount == WOLF_HeavyAttackMontages.Num()) { ResetHeavyAttackComboCount(); return; }
 
@@ -250,6 +216,7 @@ void UPandoCombatComponent::Counterattack()
 	AttackState = EAttackState::EAS_Attacking;
 	CachedStunnedAttack = true;
 	OwningPlayerAnimInstance->Montage_Play(WOLF_CounterattackMontage);
+	BindCounterAttackMontageEnded(WOLF_CounterattackMontage);
 
 	CurrentLightAttackComboCount = 2;
 }
@@ -268,61 +235,47 @@ void UPandoCombatComponent::ResetHeavyAttackComboCount()
 	bJumpToFinisher = false;
 }
 
-void UPandoCombatComponent::OnAttackMontageEnded(UAnimMontage* Montage, bool bInterrupted)
-{
-	bool IsLigtAttack = false;
-	bool IsHeavyAttack = false;
-
-	switch (CurrentTransformationCombatType)
-	{
-	case ETransformationCombatType::ETCT_Pandolfo:
-		if (PANDO_LightAttackMontages.FindKey(Montage)) IsLigtAttack = true;
-		break;
-	case ETransformationCombatType::ETCT_PandolFlower:
-		if (FLOWER_LightAttackMontages.FindKey(Montage)) IsLigtAttack = true;
-		break;
-	case ETransformationCombatType::ETCT_PanWolf:
-		if (WOLF_LightAttackMontages.FindKey(Montage)) IsLigtAttack = true;
-		else if (WOLF_HeavyAttackMontages.FindKey(Montage))  IsHeavyAttack = true;
-		break;
-	default:
-		break;
-	}
-
-	if (IsLigtAttack)
-	{
-		AttackState = EAttackState::EAS_Nothing;
-		if (bInterrupted) { return; }
-		GetWorld()->GetTimerManager().SetTimer(ComboLightCountReset_TimerHandle, [this]() {this->ResetLightAttackComboCount(); }, 0.025f, false);
-	}
-		
-	else if (IsHeavyAttack)
-	{
-		AttackState = EAttackState::EAS_Nothing;
-		if (bInterrupted) return;
-		GetWorld()->GetTimerManager().SetTimer(ComboHeavyCountReset_TimerHandle, [this]() {this->ResetHeavyAttackComboCount(); }, 0.025f, false);
-	}
-
-	else if (Montage == WOLF_CounterattackMontage)
-	{
-		AttackState = EAttackState::EAS_Nothing;
-		GetWorld()->GetTimerManager().SetTimer(ComboLightCountReset_TimerHandle, [this]() {this->ResetLightAttackComboCount(); }, 0.025f, false);
-	}
-
-
-
-	/*if (WOLF_LightAttackMontages.FindKey(Montage))
-	{
-		if (bInterrupted) return;
-		GetWorld()->GetTimerManager().SetTimer(ComboLightCountReset_TimerHandle, [this]() {this->ResetLightAttackComboCount(); }, 0.025f, false);
-	}
-
-	else if (WOLF_HeavyAttackMontages.FindKey(Montage))
-	{
-		if (bInterrupted) return;
-		GetWorld()->GetTimerManager().SetTimer(ComboHeavyCountReset_TimerHandle, [this]() {this->ResetHeavyAttackComboCount(); }, 0.025f, false);
-	}*/
-}
+//void UPandoCombatComponent::OnAttackMontageEnded(UAnimMontage* Montage, bool bInterrupted)
+//{
+//	bool IsLigtAttack = false;
+//	bool IsHeavyAttack = false;
+//
+//	switch (CurrentTransformationCombatType)
+//	{
+//	case ETransformationCombatType::ETCT_Pandolfo:
+//		if (PANDO_LightAttackMontages.FindKey(Montage)) IsLigtAttack = true;
+//		break;
+//	case ETransformationCombatType::ETCT_PandolFlower:
+//		if (FLOWER_LightAttackMontages.FindKey(Montage)) IsLigtAttack = true;
+//		break;
+//	case ETransformationCombatType::ETCT_PanWolf:
+//		if (WOLF_LightAttackMontages.FindKey(Montage)) IsLigtAttack = true;
+//		else if (WOLF_HeavyAttackMontages.FindKey(Montage))  IsHeavyAttack = true;
+//		break;
+//	default:
+//		break;
+//	}
+//
+//	if (IsLigtAttack)
+//	{
+//		AttackState = EAttackState::EAS_Nothing;
+//		if (bInterrupted) { return; }
+//		GetWorld()->GetTimerManager().SetTimer(ComboLightCountReset_TimerHandle, [this]() {this->ResetLightAttackComboCount(); }, 0.025f, false);
+//	}
+//		
+//	else if (IsHeavyAttack)
+//	{
+//		AttackState = EAttackState::EAS_Nothing;
+//		if (bInterrupted) return;
+//		GetWorld()->GetTimerManager().SetTimer(ComboHeavyCountReset_TimerHandle, [this]() {this->ResetHeavyAttackComboCount(); }, 0.025f, false);
+//	}
+//
+//	else if (Montage == WOLF_CounterattackMontage)
+//	{
+//		AttackState = EAttackState::EAS_Nothing;
+//		GetWorld()->GetTimerManager().SetTimer(ComboLightCountReset_TimerHandle, [this]() {this->ResetLightAttackComboCount(); }, 0.025f, false);
+//	}
+//}
 
 float UPandoCombatComponent::CalculateFinalDamage(float BaseDamage, float TargetDefensePower)
 {
@@ -383,3 +336,54 @@ void UPandoCombatComponent::ResetAttack()
 	GetWorld()->GetTimerManager().ClearTimer(ComboLightCountReset_TimerHandle);
 	GetWorld()->GetTimerManager().ClearTimer(ComboHeavyCountReset_TimerHandle);
 }
+
+#pragma region AttackMontageEnded
+
+void UPandoCombatComponent::BindLightAttackMontageEnded(UAnimMontage* Montage)
+{
+	FOnMontageEnded AttackMontageEndedDelegate;
+	AttackMontageEndedDelegate.BindUObject(this, &UPandoCombatComponent::OnLightAttackMontageEnded);
+	OwningPlayerAnimInstance->Montage_SetEndDelegate(AttackMontageEndedDelegate, Montage);
+}
+
+void UPandoCombatComponent::BindHeavyAttackMontageEnded(UAnimMontage* Montage)
+{
+	FOnMontageEnded AttackMontageEndedDelegate;
+	AttackMontageEndedDelegate.BindUObject(this, &UPandoCombatComponent::OnHeavyAttackMontageEnded);
+	OwningPlayerAnimInstance->Montage_SetEndDelegate(AttackMontageEndedDelegate, Montage);
+}
+
+void UPandoCombatComponent::BindCounterAttackMontageEnded(UAnimMontage* Montage)
+{
+	FOnMontageEnded AttackMontageEndedDelegate;
+	AttackMontageEndedDelegate.BindUObject(this, &UPandoCombatComponent::OnCounterAttackMontageEnded);
+	OwningPlayerAnimInstance->Montage_SetEndDelegate(AttackMontageEndedDelegate, Montage);
+}
+
+void UPandoCombatComponent::OnLightAttackMontageEnded(UAnimMontage* Montage, bool bInterrupted)
+{
+	if (!Montage) return;
+
+	AttackState = EAttackState::EAS_Nothing;
+	if (bInterrupted) { return; }
+	GetWorld()->GetTimerManager().SetTimer(ComboLightCountReset_TimerHandle, [this]() {this->ResetLightAttackComboCount(); }, 0.025f, false);
+}
+
+void UPandoCombatComponent::OnHeavyAttackMontageEnded(UAnimMontage* Montage, bool bInterrupted)
+{
+	if (!Montage) return;
+
+	AttackState = EAttackState::EAS_Nothing;
+	if (bInterrupted) return;
+	GetWorld()->GetTimerManager().SetTimer(ComboHeavyCountReset_TimerHandle, [this]() {this->ResetHeavyAttackComboCount(); }, 0.025f, false);
+}
+
+void UPandoCombatComponent::OnCounterAttackMontageEnded(UAnimMontage* Montage, bool bInterrupted)
+{
+	if (!Montage) return;
+
+	AttackState = EAttackState::EAS_Nothing;
+	GetWorld()->GetTimerManager().SetTimer(ComboLightCountReset_TimerHandle, [this]() {this->ResetLightAttackComboCount(); }, 0.025f, false);
+}
+
+#pragma endregion
