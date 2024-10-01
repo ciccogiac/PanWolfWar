@@ -329,8 +329,8 @@ void ABaseEnemy::SuccesfulBlock(AActor* Attacker)
 			UGameplayStatics::GetTimeSeconds(this) - BlockActivatedTime < PerfectBlockTime
 			) ? true : false;
 
-	const FRotator NewFaceRotation = UKismetMathLibrary::FindLookAtRotation(GetActorLocation(), Attacker->GetActorLocation());
-	SetActorRotation(NewFaceRotation);
+	/*const FRotator NewFaceRotation = UKismetMathLibrary::FindLookAtRotation(GetActorLocation(), Attacker->GetActorLocation());
+	SetActorRotation(NewFaceRotation);*/
 
 	FVector PushDirection = -GetActorForwardVector();
 	float PushbackStrength = 800.f;

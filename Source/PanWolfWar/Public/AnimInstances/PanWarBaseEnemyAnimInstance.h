@@ -7,6 +7,7 @@
 #include "PanWarBaseEnemyAnimInstance.generated.h"
 
 class ABaseEnemy;
+class UCharacterMovementComponent;
 enum class EEnemyState : uint8;
 /**
  * 
@@ -18,6 +19,7 @@ class PANWOLFWAR_API UPanWarBaseEnemyAnimInstance : public UPanWarCharacterAnimI
 	
 public:
 	virtual void NativeInitializeAnimation() override;
+	virtual void NativeThreadSafeUpdateAnimation(float DeltaSeconds) override;
 
 protected:
 	UFUNCTION(BlueprintPure, meta = (BlueprintThreadSafe))
@@ -25,5 +27,14 @@ protected:
 
 	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, Category = "AnimData|Components")
 	ABaseEnemy* OwningEnemyCharacter;
+
+	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, Category = "AnimData|LocomotionData")
+	float RotationIdle = 0.f;
+
+	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, Category = "AnimData|LocomotionData")
+	bool bShouldMove;
+
+private:
+	float LastRotationIdle = 0.f;
 
 };
