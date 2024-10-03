@@ -1,5 +1,6 @@
 #include "Components/AttributeComponent.h"
-#include "UserWidgets/PanwolfwarOverlay.h"
+
+#include "Components/UI/PandoUIComponent.h"
 
 #pragma region EngineFunctions
 
@@ -12,28 +13,32 @@ void UAttributeComponent::BeginPlay()
 {
 	Super::BeginPlay();
 
-	//Add Overlay
-	UWorld* World = GetWorld();
-	if (World)
-	{
-		if (PanwolfwarOverlayClass)
-		{
-			PanwolfwarOverlay = CreateWidget<UPanwolfwarOverlay>(World, PanwolfwarOverlayClass);
-			PanwolfwarOverlay->AddToViewport();
-		}
-	}
 
-	if (PanwolfwarOverlayClass)
+	/*if (PanwolfwarOverlayClass)
 	{
-		PanwolfwarOverlay->SetBeers(Beers);
-		PanwolfwarOverlay->SetHealthBarPercent(0.f);
-		PanwolfwarOverlay->SetFlowerStaminaBarPercent(FlowerStamina);
-		PanwolfwarOverlay->SetBirdStaminaBarPercent(BirdStamina);
+		PanwolfwarOverlay->SetBirdStaminaBarPercent(BirdStamina);		
+	}*/
 
-	    Beers > 0 ? PanwolfwarOverlay->SetBeerBarPercent(1.f) : PanwolfwarOverlay->SetBeerBarPercent(0.f);
 		
-	}
 
+	
+
+}
+
+void UAttributeComponent::InitializeAttributeUI(UPandoUIComponent* _PandoUIComponent)
+{
+	if (!_PandoUIComponent) return;
+
+	PandoUIComponent = _PandoUIComponent;
+
+	if (PandoUIComponent)
+	{
+		PandoUIComponent->OnCurrentHealthChanged.Broadcast(0.f);
+		PandoUIComponent->OnCurrentBeerCounterChanged.Broadcast(Beers);
+		Beers > 0 ? PandoUIComponent->OnCurrentBeerPercentChanged.Broadcast(1.f) : PandoUIComponent->OnCurrentBeerPercentChanged.Broadcast(0.f);
+		PandoUIComponent->OnCurrentFlowerPercentChanged.Broadcast(FlowerStamina);
+		PandoUIComponent->OnFlowerIconVisibilityChanged.Broadcast(false);
+	}
 }
 
 #pragma endregion
@@ -44,9 +49,9 @@ void UAttributeComponent::ReceiveDamage(float Damage)
 {
 	Health = FMath::Clamp(Health - Damage, 0.f, MaxHealth);
 
-	if (PanwolfwarOverlay)
+	if (PandoUIComponent)
 	{
-		PanwolfwarOverlay->SetHealthBarPercent(1 - GetHealthPercent());
+		PandoUIComponent->OnCurrentHealthChanged.Broadcast(1 - GetHealthPercent());
 	}
 }
 
@@ -65,9 +70,9 @@ void UAttributeComponent::AddHealth(float healthToAdd)
 {
 	Health = FMath::Clamp(Health + healthToAdd, 0.f, MaxHealth);
 
-	if (PanwolfwarOverlay)
+	if (PandoUIComponent)
 	{
-		PanwolfwarOverlay->SetHealthBarPercent(1 - GetHealthPercent());
+		PandoUIComponent->OnCurrentHealthChanged.Broadcast(1 - GetHealthPercent());
 	}
 }
 
@@ -84,10 +89,11 @@ void UAttributeComponent::AddBeers(int32 NumberOfBeers)
 {
 	Beers = FMath::Clamp(Beers + NumberOfBeers, 0.f, MaxBeers);
 
-	if (PanwolfwarOverlay)
+
+	if (PandoUIComponent)
 	{
-		PanwolfwarOverlay->SetBeers(Beers);
-		PanwolfwarOverlay->SetBeerBarPercent(1);
+		PandoUIComponent->OnCurrentBeerCounterChanged.Broadcast(Beers);
+		PandoUIComponent->OnCurrentBeerPercentChanged.Broadcast(1.f);
 	}
 		
 
@@ -106,9 +112,9 @@ bool UAttributeComponent::ConsumeBeer()
 		return false;
 		
 
-	if (PanwolfwarOverlay)
+	if (PandoUIComponent)
 	{
-		PanwolfwarOverlay->SetBeers(Beers);
+		PandoUIComponent->OnCurrentBeerCounterChanged.Broadcast(Beers);
 	}
 
 	return true;
@@ -117,11 +123,21 @@ bool UAttributeComponent::ConsumeBeer()
 bool UAttributeComponent::ConsumingBeer()
 {
 		BeerConsuming = FMath::Clamp(BeerConsuming - BeerConsumingRate, 0.f, BeerConsumingMAX);
-		PanwolfwarOverlay->SetBeerBarPercent(BeerConsuming / BeerConsumingMAX);
+
+		if (PandoUIComponent)
+		{
+			PandoUIComponent->OnCurrentBeerPercentChanged.Broadcast(BeerConsuming / BeerConsumingMAX);
+		}
 
 		if (BeerConsuming <= 0.f)
 		{
-			if (Beers > 0) { PanwolfwarOverlay->SetBeerBarPercent(1); }
+			if (Beers > 0) 
+			{
+				if (PandoUIComponent)
+				{
+					PandoUIComponent->OnCurrentBeerPercentChanged.Broadcast(1.f);
+				}
+			}
 			return false;
 		}
 
@@ -131,7 +147,11 @@ bool UAttributeComponent::ConsumingBeer()
 void UAttributeComponent::AddBeerStamina(float Value)
 {
 	BeerConsuming = FMath::Clamp(BeerConsuming + Value, 0.f, BeerConsumingMAX);
-	PanwolfwarOverlay->SetBeerBarPercent(BeerConsuming / BeerConsumingMAX);
+
+	if (PandoUIComponent)
+	{
+		PandoUIComponent->OnCurrentBeerPercentChanged.Broadcast(BeerConsuming / BeerConsumingMAX);
+	}
 }
 
 #pragma endregion
@@ -156,13 +176,21 @@ bool UAttributeComponent::ConsumeFlowerStamina()
 void UAttributeComponent::RegenFlowerStamina()
 {
 	FlowerStamina = FMath::Clamp(FlowerStamina + FlowerStaminaRegenRate , 0.f, MaxFlowerStamina);
-	PanwolfwarOverlay->SetFlowerStaminaBarPercent(FlowerStamina / MaxFlowerStamina);
+
+	if (PandoUIComponent)
+	{
+		PandoUIComponent->OnCurrentFlowerPercentChanged.Broadcast(FlowerStamina / MaxFlowerStamina);
+	}
 }
 
 bool UAttributeComponent::ConsumingFlowerStamina()
 {
 	FlowerStamina = FMath::Clamp(FlowerStamina - FlowerStaminaCost , 0.f, MaxFlowerStamina);
-	PanwolfwarOverlay->SetFlowerStaminaBarPercent(FlowerStamina / MaxFlowerStamina);
+
+	if (PandoUIComponent)
+	{
+		PandoUIComponent->OnCurrentFlowerPercentChanged.Broadcast(FlowerStamina / MaxFlowerStamina);
+	}
 
 	if (FlowerStamina <= 0.f)
 	{
@@ -175,7 +203,11 @@ bool UAttributeComponent::ConsumingFlowerStamina()
 void UAttributeComponent::AddFlowerStamina(float Value)
 {
 	FlowerStamina = FMath::Clamp(FlowerStamina + Value, 0.f, MaxFlowerStamina);
-	PanwolfwarOverlay->SetFlowerStaminaBarPercent(FlowerStamina / MaxFlowerStamina);
+
+	if (PandoUIComponent)
+	{
+		PandoUIComponent->OnCurrentFlowerPercentChanged.Broadcast(FlowerStamina / MaxFlowerStamina);
+	}
 }
 
 #pragma endregion
@@ -197,13 +229,13 @@ bool UAttributeComponent::ConsumeBirdStamina()
 void UAttributeComponent::RegenBirdStamina()
 {
 	BirdStamina = FMath::Clamp(BirdStamina + BirdStaminaRegenRate, 0.f, MaxBirdStamina);
-	PanwolfwarOverlay->SetBirdStaminaBarPercent(BirdStamina / MaxBirdStamina);
+	/*PanwolfwarOverlay->SetBirdStaminaBarPercent(BirdStamina / MaxBirdStamina);*/
 }
 
 bool UAttributeComponent::ConsumingBirdStamina()
 {
 	BirdStamina = FMath::Clamp(BirdStamina - BirdStaminaCost, 0.f, MaxBirdStamina);
-	PanwolfwarOverlay->SetBirdStaminaBarPercent(BirdStamina / MaxBirdStamina);
+	/*PanwolfwarOverlay->SetBirdStaminaBarPercent(BirdStamina / MaxBirdStamina);*/
 
 	if (BirdStamina <= 0.f)
 	{
@@ -216,14 +248,17 @@ bool UAttributeComponent::ConsumingBirdStamina()
 void UAttributeComponent::AddBirdStamina(float Value)
 {
 	BirdStamina = FMath::Clamp(BirdStamina + Value, 0.f, MaxBirdStamina);
-	PanwolfwarOverlay->SetBirdStaminaBarPercent(BirdStamina / MaxBirdStamina);
+	/*PanwolfwarOverlay->SetBirdStaminaBarPercent(BirdStamina / MaxBirdStamina);*/
 }
 #pragma endregion
 
 
-void UAttributeComponent::SetTransformationIcon(bool bVisibility, bool bRight)
+void UAttributeComponent::SetTransformationIcon(bool bVisibility, bool IsBirdIcon)
 {
-	PanwolfwarOverlay->SetTransformationIcon(bVisibility, bRight);
+	if (PandoUIComponent && !IsBirdIcon)
+	{
+		PandoUIComponent->OnFlowerIconVisibilityChanged.Broadcast(bVisibility);
+	}
 }
 
 

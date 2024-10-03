@@ -9,11 +9,10 @@
 
 #include "TransformationComponent.generated.h"
 
-
-class UTransformationWidget;
 class UNiagaraSystem;
 class UPandolFlowerComponent;
 class UInputAction;
+class UPandoUIComponent;
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class PANWOLFWAR_API UTransformationComponent : public UActorComponent
@@ -39,6 +38,8 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void SelectDesiredTransformation(int32 TransformationState_ID);
 
+	void InitializeTransformationUI(UPandoUIComponent* _PandoUIComponent);
+
 protected:
 	virtual void BeginPlay() override;
 
@@ -59,6 +60,8 @@ private:
 	bool bCanRegenFlower = false;
 	bool bCanRegenBird = false;
 
+	UPandoUIComponent* PandoUIComponent;
+
 	// Timer handle
 	FTimerHandle Transformation_TimerHandle;
 	FTimerHandle RegenFlower_TimerHandle;
@@ -72,12 +75,6 @@ private:
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Transformation State ", meta = (AllowPrivateAccess = "true"))
 	TArray<ETransformationState>  PossibleTransformationState;
-
-	
-	UTransformationWidget* TransformationWidget;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Transformation State ", meta = (AllowPrivateAccess = "true"))
-	TSubclassOf<UTransformationWidget> TransformationWidgetClass;
 
 	class APanWolfWarCharacter* PanWolfWarCharacter;
 

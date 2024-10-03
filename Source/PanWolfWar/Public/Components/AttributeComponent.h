@@ -6,7 +6,7 @@
 #include "Components/ActorComponent.h"
 #include "AttributeComponent.generated.h"
 
-class UPanwolfwarOverlay;
+class UPandoUIComponent;
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class PANWOLFWAR_API UAttributeComponent : public UActorComponent
@@ -39,7 +39,10 @@ public:
 	void RegenBirdStamina();
 	void AddBirdStamina(float Value);
 
-	void SetTransformationIcon(bool bVisibility, bool bRight);
+	void SetTransformationIcon(bool bVisibility, bool IsBirdIcon );
+
+
+	void InitializeAttributeUI(UPandoUIComponent* _PandoUIComponent);
 
 protected:
 	virtual void BeginPlay() override;
@@ -47,6 +50,8 @@ protected:
 private:
 
 	#pragma region Variables
+
+	UPandoUIComponent* PandoUIComponent;
 
 	// Health
 	UPROPERTY(EditAnywhere, Category = "Actor Attributes")
@@ -101,14 +106,6 @@ private:
 
 	#pragma endregion
 
-	#pragma region HUD
-
-	UPanwolfwarOverlay* PanwolfwarOverlay;
-
-	UPROPERTY(EditDefaultsOnly, Category = HUD)
-	TSubclassOf<UPanwolfwarOverlay> PanwolfwarOverlayClass;
-
-	#pragma endregion
 
 		
 };

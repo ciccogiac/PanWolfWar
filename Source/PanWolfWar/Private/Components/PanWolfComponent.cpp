@@ -50,7 +50,7 @@ void UPanWolfComponent::Activate(bool bReset)
 
 
 
-	PanWolfCharacter->AddMappingContext(PanWolfMappingContext, 1);
+	
 
 	PanWolfState = EPanWolfState::EPWS_PanWolf;
 
@@ -77,6 +77,8 @@ void UPanWolfComponent::Activate(bool bReset)
 
 	bIsBlocking = false;
 	bIsBlockingReact = false;
+
+	PanWolfCharacter->AddMappingContext(PanWolfMappingContext, 1);
 }
 
 void UPanWolfComponent::Deactivate()

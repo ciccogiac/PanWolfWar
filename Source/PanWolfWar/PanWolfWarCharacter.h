@@ -32,6 +32,8 @@ class UPanBirdComponent;
 
 class UTargetingComponent;
 
+class UPanWarWidgetBase;
+
 DECLARE_LOG_CATEGORY_EXTERN(LogTemplateCharacter, Log, All);
 
 UCLASS(config=Game, Blueprintable)
@@ -84,6 +86,7 @@ public:
 
 	//~ Begin IPawnUIInterface Interface.
 	virtual UPawnUIComponent* GetPawnUIComponent() const override;
+	virtual UPandoUIComponent* GetPandoUIComponent() const override;
 	//~ End IPawnUIInterface Interface
 
 	#pragma region InputCallback
@@ -180,6 +183,15 @@ private:
 	
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Movement, meta = (AllowPrivateAccess = "true"))
 	UTargetingComponent* TargetingComponent;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "UI", meta = (AllowPrivateAccess = "true"))
+	UPandoUIComponent* PandoUIComponent;
+
+	UPROPERTY()
+	UPanWarWidgetBase* PanWarOverlay;
+
+	UPROPERTY(EditDefaultsOnly, Category = HUD)
+	TSubclassOf<UPanWarWidgetBase> PanWarOverlayClass;
 
 	//MetaHuman
 

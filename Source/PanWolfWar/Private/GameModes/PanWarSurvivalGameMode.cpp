@@ -35,7 +35,7 @@ void APanWarSurvivalGameMode::BeginPlay()
 
 	PreLoadNextWaveEnemies();
 
-	switch (CurrentGameDifficulty)
+	/*switch (CurrentGameDifficulty)
 	{
 	case EPanWarGameDifficulty::Easy:
 		Debug::Print(TEXT("Easy"));
@@ -51,7 +51,7 @@ void APanWarSurvivalGameMode::BeginPlay()
 		break;
 	default:
 		break;
-	}
+	}*/
 
 }
 

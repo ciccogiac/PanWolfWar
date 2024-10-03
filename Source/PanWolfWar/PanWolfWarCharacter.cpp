@@ -46,6 +46,9 @@
 
 #include "GameModes/PanWarSurvivalGameMode.h"
 
+#include "Components/UI/PandoUIComponent.h"
+#include "Widgets/PanWarWidgetBase.h"
+
 DEFINE_LOG_CATEGORY(LogTemplateCharacter);
 
 //////////////////////////////////////////////////////////////////////////
@@ -108,8 +111,8 @@ APanWolfWarCharacter::APanWolfWarCharacter()
 	TransformationComponent = CreateDefaultSubobject<UTransformationComponent>(TEXT("TransformationComponent"));
 
 	PandoCombatComponent = CreateDefaultSubobject<UPandoCombatComponent>(TEXT("PandoCombatComponent"));
-
 	TargetingComponent = CreateDefaultSubobject<UTargetingComponent>(TEXT("TargetingComponent"));
+	PandoUIComponent = CreateDefaultSubobject<UPandoUIComponent>(TEXT("PandoUIComponent"));
 
 	PandolfoComponent = CreateDefaultSubobject<UPandolfoComponent>(TEXT("PandolfoComponent"));
 	PanWolfComponent = CreateDefaultSubobject<UPanWolfComponent>(TEXT("PanWolfComponent"));
@@ -188,6 +191,26 @@ void APanWolfWarCharacter::BeginPlay()
 		RightHandCollisionBox->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, FName("Hand_R_Combat"));
 		PandoCombatComponent->EnableHandToHandCombat(LeftHandCollisionBox, RightHandCollisionBox);
 	}
+
+	if (PanWarOverlayClass)
+	{
+		// Controlla se hai un Player Controller valido
+		APlayerController* PlayerController = GetWorld()->GetFirstPlayerController();
+		if (PlayerController)
+		{
+			// Crea il widget
+			PanWarOverlay = CreateWidget<UPanWarWidgetBase>(PlayerController, PanWarOverlayClass);
+			if (PanWarOverlay)
+			{
+				// Aggiungilo allo schermo
+				Attributes->InitializeAttributeUI(PandoUIComponent);
+				TransformationComponent->InitializeTransformationUI(PandoUIComponent);
+				PanWarOverlay->AddToViewport();
+			}
+		}
+	}
+
+	if (TransformationComponent) TransformationComponent->SelectDesiredTransformation(0);
 }
 
 #pragma endregion
@@ -738,7 +761,12 @@ void APanWolfWarCharacter::OnDeathEnter()
 
 UPawnUIComponent* APanWolfWarCharacter::GetPawnUIComponent() const
 {
-	return nullptr;
+	return PandoUIComponent;
+}
+
+UPandoUIComponent* APanWolfWarCharacter::GetPandoUIComponent() const
+{
+	return PandoUIComponent;
 }
 
 bool APanWolfWarCharacter::IsBlocking()

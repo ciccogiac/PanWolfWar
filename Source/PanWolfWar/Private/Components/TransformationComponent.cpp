@@ -1,7 +1,6 @@
 #include "Components/TransformationComponent.h"
 
 #include "PanWolfWar/PanWolfWarCharacter.h"
-#include "UserWidgets/TransformationWidget.h"
 #include "NiagaraComponent.h"
 
 #include "Components/AttributeComponent.h"
@@ -13,6 +12,8 @@
 #include "Components/PanBirdComponent.h"
 
 #include "TimerManager.h"
+
+#include "Components/UI/PandoUIComponent.h"
 
 #include "PanWolfWar/DebugHelper.h"
 
@@ -36,16 +37,16 @@ void UTransformationComponent::BeginPlay()
 		InteractComponent = PanWolfWarCharacter->GetInteractComponent();
 	}
 
-
-	TransformationWidget = CreateWidget< UTransformationWidget>(GetWorld(), TransformationWidgetClass, FName("TransformationWidget"));
-	if (TransformationWidget)
-	{
-		TransformationWidget->AddToViewport();
-	}
-
 }
 
 #pragma endregion
+
+void UTransformationComponent::InitializeTransformationUI(UPandoUIComponent* _PandoUIComponent)
+{
+	if (!_PandoUIComponent) return;
+
+	PandoUIComponent = _PandoUIComponent;
+}
 
 #pragma region SelectingTransformation
 
@@ -112,7 +113,7 @@ void UTransformationComponent::SetTransformation(ETransformationState NewTransfo
 
 		ExecuteTransformation(NewTransformationState);
 		HandleComponentActivation(NewTransformationState, PreviousTransformationState);
-		Attributes->SetTransformationIcon(false, false);
+		//Attributes->SetTransformationIcon(false, false);
 		Attributes->SetTransformationIcon(false, true);
 		break;
 
@@ -183,7 +184,9 @@ void UTransformationComponent::ConsumingTransformation(ETransformationState Tran
 void UTransformationComponent::ExecuteTransformation(ETransformationState NewTransformationState)
 {
 	CurrentTransformationState = NewTransformationState;
-	TransformationWidget->SetTransformation(CurrentTransformationState);
+
+	if (PandoUIComponent) PandoUIComponent->OnTransformationStateChangedDelegate.Broadcast(CurrentTransformationState);
+
 
 	InteractComponent->ResetOverlappingObject();
 

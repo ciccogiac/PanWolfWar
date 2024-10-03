@@ -33,14 +33,17 @@ ABaseEnemy::ABaseEnemy()
 	EnemyAttributeComponent = CreateDefaultSubobject<UEnemyAttributeComponent>("EnemyAttributeComponent");
 	AssassinableComponent = CreateDefaultSubobject<UAssassinableComponent>("AssassinableComponent");
 
-	EnemyHealthBarWidgetComponent = CreateDefaultSubobject<UWidgetComponent>(TEXT("EnemyHealthBarWidgetComponent"));
-	EnemyHealthBarWidgetComponent->SetupAttachment(GetMesh());
+	/*EnemyHealthBarWidgetComponent = CreateDefaultSubobject<UWidgetComponent>(TEXT("EnemyHealthBarWidgetComponent"));
+	EnemyHealthBarWidgetComponent->SetupAttachment(GetMesh());*/
 
 	EnemyAwarenessBarWidgetComponent = CreateDefaultSubobject<UWidgetComponent>(TEXT("EnemyAwarenessBarWidgetComponent"));
 	EnemyAwarenessBarWidgetComponent->SetupAttachment(GetMesh()); 
 
-	EnemyAttackWarningWidgetComponent = CreateDefaultSubobject<UWidgetComponent>(TEXT("EnemyAttackWarningWidgetComponent"));
-	EnemyAttackWarningWidgetComponent->SetupAttachment(GetMesh());
+	/*EnemyAttackWarningWidgetComponent = CreateDefaultSubobject<UWidgetComponent>(TEXT("EnemyAttackWarningWidgetComponent"));
+	EnemyAttackWarningWidgetComponent->SetupAttachment(GetMesh());*/
+
+	EnemyCombatBaseWidgetComponent = CreateDefaultSubobject<UWidgetComponent>(TEXT("EnemyCombatBaseWidgetComponent"));
+	EnemyCombatBaseWidgetComponent->SetupAttachment(GetMesh());
 
 	LeftHandCollisionBox = CreateDefaultSubobject<UBoxComponent>("LeftHandCollisionBox");
 	LeftHandCollisionBox->SetupAttachment(GetMesh());
@@ -114,22 +117,16 @@ void ABaseEnemy::BeginPlay()
 	InitEnemyStats();
 
 
-	if (UPanWarWidgetBase* HealthWidget = Cast<UPanWarWidgetBase>(EnemyHealthBarWidgetComponent->GetUserWidgetObject()))
-	{
-		HealthWidget->InitEnemyCreatedWidget(this);
-		EnemyUIComponent->OnCurrentHealthChanged.Broadcast(EnemyAttributeComponent->GetHealthPercent());
-	}
-
 	if (UPanWarWidgetBase* AwarenessWidget = Cast<UPanWarWidgetBase>(EnemyAwarenessBarWidgetComponent->GetUserWidgetObject()))
 	{
 		AwarenessWidget->InitEnemyCreatedWidget(this);
 		EnemyUIComponent->OnCurrentAwarenessChanged.Broadcast(0.f);
 	}
-	
-	if (UPanWarWidgetBase* AttackWarningWidget = Cast<UPanWarWidgetBase>(EnemyAttackWarningWidgetComponent->GetUserWidgetObject()))
+
+	if (UPanWarWidgetBase* CombatBaseWidget = Cast<UPanWarWidgetBase>(EnemyCombatBaseWidgetComponent->GetUserWidgetObject()))
 	{
-		AttackWarningWidget->InitEnemyCreatedWidget(this);
-		/*EnemyUIComponent->OnAttackingStateChanged.Broadcast(false);*/
+		CombatBaseWidget->InitEnemyCreatedWidget(this);
+		EnemyUIComponent->OnCurrentHealthChanged.Broadcast(EnemyAttributeComponent->GetHealthPercent());
 	}
 
 	if (bEnableHandToHandCombat && EnemyCombatComponent)

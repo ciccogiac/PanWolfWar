@@ -18,6 +18,9 @@ class PANWOLFWAR_API APanWarBaseGameMode : public AGameModeBase
 public:
 	APanWarBaseGameMode();
 
+	UFUNCTION(BlueprintCallable)
+	void CancelAllTimer();
+
 protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Game Settings")
 	EPanWarGameDifficulty CurrentGameDifficulty;

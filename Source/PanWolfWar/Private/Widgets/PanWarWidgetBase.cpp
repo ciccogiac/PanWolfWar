@@ -7,9 +7,9 @@ void UPanWarWidgetBase::NativeOnInitialized()
 
 	if (IPawnUIInterface* PawnUIInterface = Cast<IPawnUIInterface>(GetOwningPlayerPawn()))
 	{
-		if (UPandoUIComponent* HeroUIComponent = PawnUIInterface->GetPandoUIComponent())
+		if (UPandoUIComponent* PandoUIComponent = PawnUIInterface->GetPandoUIComponent())
 		{
-			BP_OnOwningPandoUIComponentInitialized(HeroUIComponent);
+			BP_OnOwningPandoUIComponentInitialized(PandoUIComponent);
 		}
 	}
 }

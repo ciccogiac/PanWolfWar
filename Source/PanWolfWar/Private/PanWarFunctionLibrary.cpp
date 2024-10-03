@@ -123,7 +123,7 @@ void UPanWarFunctionLibrary::SaveCurrentGameDifficulty(EPanWarGameDifficulty InD
        /* const bool bWasSaved = UGameplayStatics::SaveGameToSlot(PanWarSaveGameObject, WarriorGameplayTags::GameData_SaveGame_Slot_1.GetTag().ToString(), 0);*/
         const bool bWasSaved = UGameplayStatics::SaveGameToSlot(PanWarSaveGameObject, FString("SaveGame.Slot.1"), 0);
 
-        Debug::Print(bWasSaved ? TEXT("Difficulty Saved") : TEXT("Difficulty NOT Saved"));
+       /* Debug::Print(bWasSaved ? TEXT("Difficulty Saved") : TEXT("Difficulty NOT Saved"));*/
     }
 }
 
@@ -139,7 +139,7 @@ bool UPanWarFunctionLibrary::TryLoadSavedGameDifficulty(EPanWarGameDifficulty& O
         {
             OutSavedDifficulty = PanWarSaveGameObject->SavedCurrentGameDifficulty;
 
-            Debug::Print(TEXT("Loading Successful"), FColor::Green);
+          /*  Debug::Print(TEXT("Loading Successful"), FColor::Green);*/
 
             return true;
         }

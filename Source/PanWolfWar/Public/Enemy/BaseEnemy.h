@@ -229,13 +229,10 @@ protected:
 	UAssassinableComponent* AssassinableComponent;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Combat", meta = (AllowPrivateAccess = "true"))
-	UWidgetComponent* EnemyHealthBarWidgetComponent;
+	UWidgetComponent* EnemyCombatBaseWidgetComponent;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Combat", meta = (AllowPrivateAccess = "true"))
 	UWidgetComponent* EnemyAwarenessBarWidgetComponent;
-
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Combat", meta = (AllowPrivateAccess = "true"))
-	UWidgetComponent* EnemyAttackWarningWidgetComponent;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components", meta = (AllowPrivateAccess = "true"))
 	UEnemyAttributeComponent* EnemyAttributeComponent;
