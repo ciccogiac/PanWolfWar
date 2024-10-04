@@ -37,7 +37,6 @@ void UAttributeComponent::InitializeAttributeUI(UPandoUIComponent* _PandoUICompo
 		PandoUIComponent->OnCurrentBeerCounterChanged.Broadcast(Beers);
 		Beers > 0 ? PandoUIComponent->OnCurrentBeerPercentChanged.Broadcast(1.f) : PandoUIComponent->OnCurrentBeerPercentChanged.Broadcast(0.f);
 		PandoUIComponent->OnCurrentFlowerPercentChanged.Broadcast(FlowerStamina);
-		PandoUIComponent->OnFlowerIconVisibilityChanged.Broadcast(false);
 	}
 }
 
@@ -251,14 +250,3 @@ void UAttributeComponent::AddBirdStamina(float Value)
 	/*PanwolfwarOverlay->SetBirdStaminaBarPercent(BirdStamina / MaxBirdStamina);*/
 }
 #pragma endregion
-
-
-void UAttributeComponent::SetTransformationIcon(bool bVisibility, bool IsBirdIcon)
-{
-	if (PandoUIComponent && !IsBirdIcon)
-	{
-		PandoUIComponent->OnFlowerIconVisibilityChanged.Broadcast(bVisibility);
-	}
-}
-
-

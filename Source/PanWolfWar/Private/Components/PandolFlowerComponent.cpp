@@ -168,6 +168,7 @@ void UPandolFlowerComponent::Crouch()
 {
 	/*if ( bInGrapplingAnimation || bMovingWithGrapple || bSwinging ) return;*/
 	if (PandolFlowerState != EPandolFlowerState::EPFS_PandolFlower && PandolFlowerState != EPandolFlowerState::EPFS_FlowerCover) return;
+	if (PanWolfCharacter && PanWolfCharacter->IsForcedCrouch()) return;
 
 	if (FlowerHideObject && PandolFlowerState == EPandolFlowerState::EPFS_FlowerCover)
 	{
@@ -185,7 +186,12 @@ void UPandolFlowerComponent::Crouch()
 	{
 		//CrouchingTimeline.PlayFromStart();
 
-		CheckCanCrouchHide();
+
+		if (PanWolfCharacter->IsInsideHideBox())
+		{
+			//Debug::Print(TEXT("Try to hide"));
+			PanWolfCharacter->SetIsHiding(true);
+		}
 
 	}
 
@@ -193,11 +199,11 @@ void UPandolFlowerComponent::Crouch()
 	{
 		//CrouchingTimeline.Reverse();
 
-		//if (PanWolfCharacter->IsHiding())
-		//	PanWolfCharacter->SetIsHiding(false);
-
-		if (PanWolfCharacter->IsHiding())
-			CheckCanHideStandUP();
+		if (PanWolfCharacter->IsInsideHideBox())
+		{
+			//Debug::Print(TEXT("Try to Unhide"));
+			PanWolfCharacter->SetIsHiding(false);
+		}
 	}
 }
 
@@ -210,7 +216,7 @@ void UPandolFlowerComponent::CheckCanCrouchHide()
 	FHitResult Hit;
 	UKismetSystemLibrary::SphereTraceSingleForObjects(this, Start, End, 60.f, HidingObjectTypes, false, TArray<AActor*>(), EDrawDebugTrace::None, Hit, true);
 	if (Hit.bBlockingHit)
-		PanWolfCharacter->SetIsHiding(true, false);
+		PanWolfCharacter->SetIsHiding(true);
 }
 
 void UPandolFlowerComponent::CheckCanHideStandUP()
@@ -251,7 +257,7 @@ void UPandolFlowerComponent::Activate(bool bReset)
 	}
 
 	if (PanWolfCharacter->IsHiding())
-		CharacterOwner->GetMesh()->SetScalarParameterValueOnMaterials(FName("Emissive Multiplier"), 10.f);
+		CharacterOwner->GetMesh()->SetScalarParameterValueOnMaterials(FName("HideFxSwitch"), 10.f);
 
 	FlowerCable = GetWorld()->SpawnActor<AFlowerCable>(BP_FlowerCable, CharacterOwner->GetActorLocation(), CharacterOwner->GetActorRotation());
 	FAttachmentTransformRules AttachmentRules(EAttachmentRule::SnapToTarget, true);
@@ -283,8 +289,13 @@ void UPandolFlowerComponent::Deactivate()
 
 	CombatComponent->ResetAttack();
 
+
+
 	if (FlowerCable)
 		FlowerCable->Destroy();
+
+	if (PandolFlowerState == EPandolFlowerState::EPFS_FlowerCover)
+		UnHide();
 
 	if (PandolFlowerState == EPandolFlowerState::EPFS_Swinging) {
 		PanWolfCharacter->DetachRootComponentFromParent();
@@ -297,8 +308,7 @@ void UPandolFlowerComponent::Deactivate()
 
 	ResetMovement();
 
-	if (PandolFlowerState == EPandolFlowerState::EPFS_FlowerCover)
-		UnHide();
+
 
 	GetWorld()->GetTimerManager().ClearTimer(AirAssassination_TimerHandle);
 
@@ -628,7 +638,7 @@ void UPandolFlowerComponent::Hide()
 		CharacterOwner->GetCharacterMovement()->MaxWalkSpeed = 100.f;
 
 		CameraBoom->TargetArmLength = 1000.f;
-		PanWolfCharacter->SetIsHiding(true, false);
+		PanWolfCharacter->SetIsHiding(true);
 	}
 
 
@@ -636,14 +646,11 @@ void UPandolFlowerComponent::Hide()
 
 void UPandolFlowerComponent::UnHide()
 {
-
-
 	if (FlowerHideObject)
 	{
 		FlowerHideObject->ChangeCollisionType(true);
 		FlowerHideObject = nullptr;
 	}
-		
 
 	PandolFlowerState = EPandolFlowerState::EPFS_PandolFlower;
 
@@ -654,7 +661,7 @@ void UPandolFlowerComponent::UnHide()
 	CharacterOwner->GetCharacterMovement()->MaxWalkSpeed = 500.f;
 
 	CameraBoom->TargetArmLength = 400.f;
-	PanWolfCharacter->SetIsHiding(false, false);
+	PanWolfCharacter->SetIsHiding(false);
 }
 
 void UPandolFlowerComponent::SetCharRotation(const FVector ImpactNormal, bool Istantaneus)

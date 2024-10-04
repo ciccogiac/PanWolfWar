@@ -53,9 +53,12 @@ public:
 	void SetMotionWarpTarget(const FName& InWarpTargetName, const FVector& InTargetPosition, const FRotator& InTargetRotation = FRotator::ZeroRotator);
 
 	void SetMetaHumanVisibility(bool bVisible);
+	void SetMetaHumanHitFX(float bVisible);
+	void SetMetaHumanHideFX(float bVisible);
 
-	UFUNCTION(BlueprintCallable)
-	void SetIsHiding(bool Value, bool DoCrouchCheck = true);
+	void SetIsHiding(bool Value);
+
+	virtual void SetIsInsideHideBox(bool Value, bool ForceCrouch = false) override;
 
 	bool CanPerformDodge();
 	virtual FRotator GetDesiredDodgeRotation() override;
@@ -88,6 +91,11 @@ public:
 	virtual UPawnUIComponent* GetPawnUIComponent() const override;
 	virtual UPandoUIComponent* GetPandoUIComponent() const override;
 	//~ End IPawnUIInterface Interface
+
+	//CharacterInterface
+	ETransformationState GetCurrentTransformationState() const override;
+
+	void HandleTransformationChangedState();
 
 	#pragma region InputCallback
 
@@ -124,6 +132,11 @@ private:
 	bool bIsInvulnerable = false;
 	bool bIsUnderAttack = false;
 	bool bHitted = false;
+	bool bIsInsideHideBox = false;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = crouch, meta = (AllowPrivateAccess = "true"))
+	bool bIsForcedCrouch = false;
+
 	FTimerHandle UnderAttack_TimerHandle;
 	TArray<AActor*> EnemyAware = TArray<AActor*>();
 
@@ -305,14 +318,16 @@ public:
 	FORCEINLINE UPanBirdComponent* GetPanBirdComponent() const { return PanBirdComponent; }
 
 	FORCEINLINE UNiagaraComponent* GetNiagaraTransformation() { return NiagaraTransformation; }
-	FORCEINLINE UNiagaraComponent* GetNiagaraTransformationEffect() { return NiagaraApplyTransformationEffect; }
+	//FORCEINLINE UNiagaraComponent* GetNiagaraTransformationEffect() { return NiagaraApplyTransformationEffect; }
 
 
 
 
 	FORCEINLINE virtual bool IsHiding() const override { return bIsHiding; }
+	FORCEINLINE bool IsInsideHideBox() const  { return bIsInsideHideBox; }
+	FORCEINLINE bool IsForcedCrouch() const { return bIsForcedCrouch; }
 
-
+	
 	virtual void AddEnemyAware(AActor* Enemy) override;
 	virtual void RemoveEnemyAware(AActor* Enemy) override;
 

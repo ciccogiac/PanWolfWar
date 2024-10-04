@@ -80,7 +80,11 @@ void UPandolfoComponent::Activate(bool bReset)
 	}
 
 	if (PanWolfCharacter->IsHiding())
-		CharacterOwner->GetMesh()->SetScalarParameterValueOnMaterials(FName("Emissive Multiplier"), 10.f);
+	{
+		CharacterOwner->GetMesh()->SetScalarParameterValueOnMaterials(FName("HideFxSwitch"), 10.f);
+		PanWolfCharacter->SetMetaHumanHideFX(10.f);
+	}
+
 
 
 	if(CharacterOwner->GetCharacterMovement()->IsFalling())
@@ -134,7 +138,6 @@ void UPandolfoComponent::Deactivate()
 		PanWolfCharacter->EndDodge();
 
 	PandolfoState = EPandolfoState::EPS_Pandolfo;
-
 }
 
 void UPandolfoComponent::BeginPlay()
@@ -243,7 +246,8 @@ void UPandolfoComponent::Dodge()
 
 void UPandolfoComponent::Crouch()
 {
-	if (PandolfoState != EPandolfoState::EPS_Pandolfo) return;
+	if (PandolfoState != EPandolfoState::EPS_Pandolfo ) return;
+	if (PanWolfCharacter && PanWolfCharacter->IsForcedCrouch()) return;
 
 	const bool IsCrouched = CharacterOwner->bIsCrouched;
 	CharacterOwner->GetCharacterMovement()->bWantsToCrouch = !IsCrouched;
@@ -251,20 +255,26 @@ void UPandolfoComponent::Crouch()
 	if (!IsCrouched)
 	{
 		CrouchingTimeline.PlayFromStart();
-
-		CheckCanHide();
 		
+		if (PanWolfCharacter->IsInsideHideBox())
+		{
+			//Debug::Print(TEXT("Try to hide"));
+			PanWolfCharacter->SetIsHiding(true);
+		}
+
 	}
 		
 	else
 	{		
 		CrouchingTimeline.Reverse();
 
-		//if (PanWolfCharacter->IsHiding())
-		//	PanWolfCharacter->SetIsHiding(false);
 
-		if (PanWolfCharacter->IsHiding())
-			CheckCanHideStandUP();
+		if (PanWolfCharacter->IsInsideHideBox())
+		{
+			//Debug::Print(TEXT("Try to Unhide"));
+			PanWolfCharacter->SetIsHiding(false);
+		}
+
 	}
 
 }
@@ -278,7 +288,7 @@ void UPandolfoComponent::CheckCanHide()
 	FHitResult Hit;
 	UKismetSystemLibrary::SphereTraceSingleForObjects(this, Start, End, 60.f, HidingObjectTypes, false, TArray<AActor*>(), EDrawDebugTrace::None, Hit, true);
 	if(Hit.bBlockingHit)
-		PanWolfCharacter->SetIsHiding(true,false);
+		PanWolfCharacter->SetIsHiding(true);
 }
 
 void UPandolfoComponent::CheckCanHideStandUP()

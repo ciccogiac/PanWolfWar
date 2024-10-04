@@ -39,8 +39,6 @@ public:
 	void RegenBirdStamina();
 	void AddBirdStamina(float Value);
 
-	void SetTransformationIcon(bool bVisibility, bool IsBirdIcon );
-
 
 	void InitializeAttributeUI(UPandoUIComponent* _PandoUIComponent);
 

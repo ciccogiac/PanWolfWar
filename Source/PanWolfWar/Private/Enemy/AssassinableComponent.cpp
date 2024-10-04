@@ -10,6 +10,8 @@
 #include "Kismet/KismetSystemLibrary.h"
 #include "Kismet/GameplayStatics.h"
 
+#include <PanWolfWar/CharacterStates.h>
+
 UAssassinableComponent::UAssassinableComponent()
 {
 	PrimaryComponentTick.bCanEverTick = false;
@@ -21,7 +23,6 @@ void UAssassinableComponent::BeginPlay()
 	Super::BeginPlay();
 	CharacterOwner = Cast<ACharacter>(GetOwner());	
 	EnemyOwner = Cast<ABaseEnemy>(CharacterOwner);
-
 }
 
 void UAssassinableComponent::BoxCollisionEnter(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
@@ -36,13 +37,26 @@ void UAssassinableComponent::BoxCollisionEnter(UPrimitiveComponent* OverlappedCo
 		if (!CharacterInterface) return;
 
 		UPandolfoComponent* PandolfoComponent = CharacterInterface->GetPandolfoComponent();
-		UPandolFlowerComponent* PandolFlowerComponent = CharacterInterface->GetPandolFlowerComponent();
+		/*UPandolFlowerComponent* PandolFlowerComponent = CharacterInterface->GetPandolFlowerComponent();*/
 
-		if (!PandolfoComponent || (!PandolfoComponent->IsActive() && !PandolFlowerComponent->IsActive())) return;
+		/*if (!PandolfoComponent || (!PandolfoComponent->IsActive() && !PandolFlowerComponent->IsActive())) return;*/
 
+		//PandolfoComponent->SetAssassinableEnemy(EnemyOwner);
+		//EnemyOwner->SetAssassinationWidgetVisibility(true);
+		//MarkAsTarget(true);
+		//bCanBeAssassinated = true;
+
+		if (!PandolfoComponent) return;
+		bCanBeAssassinated = true;
 		PandolfoComponent->SetAssassinableEnemy(EnemyOwner);
+
+		ETransformationState TransformationState = CharacterInterface->GetCurrentTransformationState();
+		if (!(TransformationState==ETransformationState::ETS_Pandolfo || TransformationState == ETransformationState::ETS_PanFlower)) return;
+
+
 		EnemyOwner->SetAssassinationWidgetVisibility(true);
 		MarkAsTarget(true);
+
 	}
 }
 
@@ -57,19 +71,38 @@ void UAssassinableComponent::BoxCollisionExit(UPrimitiveComponent* OverlappedCom
 		if (!CharacterInterface) return;
 
 		UPandolfoComponent* PandolfoComponent = CharacterInterface->GetPandolfoComponent();
-		UPandolFlowerComponent* PandolFlowerComponent = CharacterInterface->GetPandolFlowerComponent();
+		/*UPandolFlowerComponent* PandolFlowerComponent = CharacterInterface->GetPandolFlowerComponent();
 
-		if (!PandolfoComponent || (!PandolfoComponent->IsActive() && !PandolFlowerComponent->IsActive())) return;
+		if (!PandolfoComponent || (!PandolfoComponent->IsActive() && !PandolFlowerComponent->IsActive())) return;*/
+
+		if (!PandolfoComponent) return;
 
 		PandolfoComponent->SetAssassinableEnemy(nullptr);
 		EnemyOwner->SetAssassinationWidgetVisibility(false);
 		MarkAsTarget(false);
+		bCanBeAssassinated = false;
 	}
 }
 
-void UAssassinableComponent::MarkAsTarget(bool IsTargeted)
+void UAssassinableComponent::OnPlayerTransformationStateChanged(ETransformationState NewTransformationState)
 {
-	const float EmissiveMultiplier = UKismetMathLibrary::SelectFloat(1.0, 0.f, IsTargeted);
+	if (bCanBeAssassinated && NewTransformationState == ETransformationState::ETS_PanWolf)
+	{
+		EnemyOwner->SetAssassinationWidgetVisibility(false);
+		MarkAsTarget(false);
+	}
+
+	else if (bCanBeAssassinated && !bIsMarked && (NewTransformationState == ETransformationState::ETS_Pandolfo || NewTransformationState == ETransformationState::ETS_PanFlower))
+	{
+		EnemyOwner->SetAssassinationWidgetVisibility(true);
+		MarkAsTarget(true);
+	}
+}
+
+void UAssassinableComponent::MarkAsTarget(bool IsMarked)
+{
+	bIsMarked = IsMarked;
+	const float EmissiveMultiplier = UKismetMathLibrary::SelectFloat(1.0, 0.f, IsMarked);
 	CharacterOwner->GetMesh()->SetScalarParameterValueOnMaterials(FName("HitFxSwitch"), EmissiveMultiplier);
 }
 

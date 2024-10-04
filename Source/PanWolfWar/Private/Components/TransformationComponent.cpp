@@ -46,6 +46,13 @@ void UTransformationComponent::InitializeTransformationUI(UPandoUIComponent* _Pa
 	if (!_PandoUIComponent) return;
 
 	PandoUIComponent = _PandoUIComponent;
+
+	if (PandoUIComponent)
+	{
+		PandoUIComponent->OnFlowerIconVisibilityChanged.Broadcast(false);
+		PandoUIComponent->OnBirdIconVisibilityChanged.Broadcast(false);
+	}
+
 }
 
 #pragma region SelectingTransformation
@@ -113,8 +120,6 @@ void UTransformationComponent::SetTransformation(ETransformationState NewTransfo
 
 		ExecuteTransformation(NewTransformationState);
 		HandleComponentActivation(NewTransformationState, PreviousTransformationState);
-		//Attributes->SetTransformationIcon(false, false);
-		Attributes->SetTransformationIcon(false, true);
 		break;
 
 	case ETransformationState::ETS_Transforming:
@@ -138,7 +143,7 @@ void UTransformationComponent::SetTransformation(ETransformationState NewTransfo
 		break;
 
 	case ETransformationState::ETS_PanBird:
-		if (!bCanRegenBird || !Attributes->ConsumeBirdStamina()) { CurrentTransformationState = PreviousTransformationState; break; }
+		if (!bBirdConsuptionStopped || !Attributes->ConsumeBirdStamina()) { CurrentTransformationState = PreviousTransformationState; break; }
 		//if (!Attributes->ConsumeBirdStamina()) { CurrentTransformationState = PreviousTransformationState; break; }
 		ExecuteTransformation(NewTransformationState);
 		HandleComponentActivation(NewTransformationState, PreviousTransformationState);
@@ -162,11 +167,11 @@ void UTransformationComponent::ConsumingTransformation(ETransformationState Tran
 			break;
 
 		case ETransformationState::ETS_PanFlower:
-			bEndTrasformation = bCanRegenFlower ? false : !Attributes->ConsumingFlowerStamina();
+			bEndTrasformation = bFlowerConsuptionStopped ? false : !Attributes->ConsumingFlowerStamina();
 			break;
 
 		case ETransformationState::ETS_PanBird:
-			bEndTrasformation = bCanRegenBird ? false : !Attributes->ConsumingBirdStamina();
+			bEndTrasformation = bBirdConsuptionStopped ? false : !Attributes->ConsumingBirdStamina();
 			break;
 		}
 
@@ -185,12 +190,13 @@ void UTransformationComponent::ExecuteTransformation(ETransformationState NewTra
 {
 	CurrentTransformationState = NewTransformationState;
 
-	if (PandoUIComponent) PandoUIComponent->OnTransformationStateChangedDelegate.Broadcast(CurrentTransformationState);
-
+	OnTransformationStateChanged.Broadcast(NewTransformationState);
 
 	InteractComponent->ResetOverlappingObject();
 
-	PanWolfWarCharacter->GetNiagaraTransformationEffect()->Activate(true);
+	//PanWolfWarCharacter->GetNiagaraTransformationEffect()->Activate(true);
+
+	PanWolfWarCharacter->HandleTransformationChangedState();
 
 }
 
@@ -259,64 +265,40 @@ void UTransformationComponent::AnnulTrasnformation()
 
 #pragma region FlowerRegeneration
 
-void UTransformationComponent::SetCanRegenFlower(bool Value)
+void UTransformationComponent::SetCanRegenFlower(bool CanRegenFlower)
 {
-	bCanRegenFlower = Value;
+	/*Attributes->SetTransformationIcon(CanRegenFlower, false);*/
+	bFlowerConsuptionStopped = CanRegenFlower;
 
+	if(PandoUIComponent)
+		PandoUIComponent->OnFlowerIconVisibilityChanged.Broadcast(CanRegenFlower);
 
-	if (bCanRegenFlower)
-		GetWorld()->GetTimerManager().SetTimer(RegenFlower_TimerHandle, this, &UTransformationComponent::RegenFlower, 0.05f, true);
+	if (CanRegenFlower)
+		GetWorld()->GetTimerManager().SetTimer(RegenFlower_TimerHandle, Attributes, &UAttributeComponent::RegenFlowerStamina, 0.05f, true);
+
 	else
-	{
 		GetWorld()->GetTimerManager().ClearTimer(RegenFlower_TimerHandle);
-
-		if (CurrentTransformationState != ETransformationState::ETS_PanFlower)
-			Attributes->SetTransformationIcon(false, false);
-	}
-
-
-}
-
-void UTransformationComponent::RegenFlower()
-{
-	if (CurrentTransformationState == ETransformationState::ETS_Pandolfo || CurrentTransformationState == ETransformationState::ETS_PanFlower)
-	{
-		Attributes->RegenFlowerStamina();
-		Attributes->SetTransformationIcon(bCanRegenFlower, false);
-	}
-
+	
 }
 
 #pragma endregion
 
 #pragma region BirdRegeneration
 
-void UTransformationComponent::SetCanRegenBird(bool Value)
+void UTransformationComponent::SetCanRegenBird(bool CanRegenBird)
 {
-	bCanRegenBird = Value;
+	bBirdConsuptionStopped = CanRegenBird;
 
-	if (bCanRegenBird)
-		GetWorld()->GetTimerManager().SetTimer(RegenBird_TimerHandle, this, &UTransformationComponent::RegenBird, 0.05f, true);
+	if (PandoUIComponent)
+		PandoUIComponent->OnBirdIconVisibilityChanged.Broadcast(CanRegenBird);
+
+	if (CanRegenBird)
+		GetWorld()->GetTimerManager().SetTimer(RegenBird_TimerHandle, Attributes, &UAttributeComponent::RegenBirdStamina, 0.05f, true);
 	else
-	{
 		GetWorld()->GetTimerManager().ClearTimer(RegenBird_TimerHandle);
 
-		if (CurrentTransformationState != ETransformationState::ETS_PanBird)
-			Attributes->SetTransformationIcon(false, true);
-	}
-
-
 }
 
-void UTransformationComponent::RegenBird()
-{
-	if (CurrentTransformationState == ETransformationState::ETS_Pandolfo || CurrentTransformationState == ETransformationState::ETS_PanBird)
-	{
-		Attributes->RegenBirdStamina();
-		Attributes->SetTransformationIcon(bCanRegenBird, true);
-	}
-
-}
 
 #pragma endregion
 

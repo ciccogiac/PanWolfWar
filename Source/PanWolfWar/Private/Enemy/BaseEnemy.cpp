@@ -7,7 +7,6 @@
 #include "Kismet/GameplayStatics.h"
 #include "Components/Combat/EnemyCombatComponent.h"
 #include "Components/CapsuleComponent.h"
-#include "UserWidgets/BaseEnemyWidget.h"
 #include "Components/UI/EnemyUIComponent.h"
 #include "Widgets/PanWarWidgetBase.h"
 #include "Components/EnemyAttributeComponent.h"
@@ -16,6 +15,7 @@
 #include "PanWarFunctionLibrary.h"
 #include "Enemy/AssassinableComponent.h"
 #include <NiagaraFunctionLibrary.h>
+#include "Components/TransformationComponent.h"
 
 #include "PanWolfWar/DebugHelper.h"
 
@@ -110,7 +110,7 @@ void ABaseEnemy::BeginPlay()
 {
 	Super::BeginPlay(); 
 
-	Player = UGameplayStatics::GetPlayerCharacter(this, 0);
+	Player = Cast<ACharacter>(GetWorld()->GetFirstPlayerController()->GetPawn());
 	AnimInstance = GetMesh()->GetAnimInstance();
 
 
@@ -136,25 +136,29 @@ void ABaseEnemy::BeginPlay()
 
 	EnemyState = EEnemyState::EES_Default;
 
-	if (bEnableAssassination && AssassinableComponent)
+	if (bEnableAssassination && AssassinableComponent && Player)
 	{
 		AssassinationBoxComponent->OnComponentBeginOverlap.AddDynamic(AssassinableComponent, &UAssassinableComponent::BoxCollisionEnter);
 		AssassinationBoxComponent->OnComponentEndOverlap.AddDynamic(AssassinableComponent, &UAssassinableComponent::BoxCollisionExit);
+
+		UTransformationComponent* TransformationComponent = Player->FindComponentByClass<UTransformationComponent>();
+		if (!TransformationComponent) return;	
+		TransformationComponent->OnTransformationStateChanged.AddDynamic(AssassinableComponent, &UAssassinableComponent::OnPlayerTransformationStateChanged);
+		
+
+
 	}
 
-	if (bEnableBlockAttack || bEnableDodge)
+	if ((bEnableBlockAttack || bEnableDodge) && Player)
 	{
-		// Recupera il personaggio principale e il componente di combattimento
-		AActor* PlayerCharacter = GetWorld()->GetFirstPlayerController()->GetPawn();
-		if (PlayerCharacter)
+
+		UPawnCombatComponent* CombatComponent = Player->FindComponentByClass<UPawnCombatComponent>();
+		if (CombatComponent)
 		{
-			UPawnCombatComponent* CombatComponent = PlayerCharacter->FindComponentByClass<UPawnCombatComponent>();
-			if (CombatComponent)
-			{
-				// Associa la funzione OnPlayerAttack al delegate
-				CombatComponent->OnPerformAttack.AddDynamic(this, &ABaseEnemy::OnPlayerAttack);
-			}
+			// Associa la funzione OnPlayerAttack al delegate
+			CombatComponent->OnPerformAttack.AddDynamic(this, &ABaseEnemy::OnPlayerAttack);
 		}
+		
 	}
 
 }

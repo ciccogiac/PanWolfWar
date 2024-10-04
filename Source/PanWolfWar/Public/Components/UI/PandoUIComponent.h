@@ -25,8 +25,15 @@ public:
 	FOnVisibilityChangedDelegate OnFlowerIconVisibilityChanged;
 
 	UPROPERTY(BlueprintAssignable)
+	FOnVisibilityChangedDelegate OnBirdIconVisibilityChanged;
+
+	UPROPERTY(BlueprintAssignable)
 	FOnTransformationStateChangedDelegate OnTransformationStateChangedDelegate;
 
-	
+protected:
+	virtual void BeginPlay() override;
+
+	UFUNCTION()
+	FORCEINLINE void ChangeTransformationStateWidgets(ETransformationState NewState) { OnTransformationStateChangedDelegate.Broadcast(NewState); }
 	
 };

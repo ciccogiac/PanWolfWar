@@ -24,11 +24,14 @@ public:
 	UFUNCTION()
 	virtual void BoxCollisionExit(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
 
-	void MarkAsTarget(bool IsTargeted);
+	void MarkAsTarget(bool IsMarked);
 	void Assassinated(int32 AssassinationIndex, UPandolfoComponent* _PandolfoComponent, bool AirAssassination = false);
 
 
 	void Killed();
+
+	UFUNCTION()
+	void OnPlayerTransformationStateChanged(ETransformationState NewTransformationState);
 
 protected:
 	virtual void BeginPlay() override;
@@ -41,6 +44,9 @@ private:
 private:
 	ACharacter* CharacterOwner;
 	ABaseEnemy* EnemyOwner;
+
+	bool bCanBeAssassinated = false;
+	bool bIsMarked = false;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Assassination", meta = (AllowPrivateAccess = "true"))
 	UNiagaraSystem* BloodEffect_Niagara;

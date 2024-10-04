@@ -29,29 +29,12 @@ void APanWarSurvivalGameMode::BeginPlay()
 
 	checkf(EnemyWaveSpawnerDataTable, TEXT("Forgot to assign a valid datat table in survial game mode blueprint"));
 
-	SetCurrentSurvivalGameModeState(EPanWarSurvivalGameModeState::WaitSpawnNewWave);
+	/*SetCurrentSurvivalGameModeState(EPanWarSurvivalGameModeState::WaitSpawnNewWave);*/
+	SetCurrentSurvivalGameModeState(EPanWarSurvivalGameModeState::InProgress);
 
 	TotalWavesToSpawn = EnemyWaveSpawnerDataTable->GetRowNames().Num();
 
 	PreLoadNextWaveEnemies();
-
-	/*switch (CurrentGameDifficulty)
-	{
-	case EPanWarGameDifficulty::Easy:
-		Debug::Print(TEXT("Easy"));
-		break;
-	case EPanWarGameDifficulty::Normal:
-		Debug::Print(TEXT("Normal"));
-		break;
-	case EPanWarGameDifficulty::Hard:
-		Debug::Print(TEXT("Hard"));
-		break;
-	case EPanWarGameDifficulty::VeryHard:
-		Debug::Print(TEXT("VeryHard"));
-		break;
-	default:
-		break;
-	}*/
 
 }
 

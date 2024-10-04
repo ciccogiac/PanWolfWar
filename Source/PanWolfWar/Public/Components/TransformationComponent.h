@@ -14,6 +14,8 @@ class UPandolFlowerComponent;
 class UInputAction;
 class UPandoUIComponent;
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnTransformationStateChanged, ETransformationState, NewState);
+
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class PANWOLFWAR_API UTransformationComponent : public UActorComponent
 {
@@ -30,8 +32,8 @@ public:
 
 	void SetTransformation(ETransformationState NewTransformationState, ETransformationState PreviousTransformationState);
 
-	void SetCanRegenFlower(bool Value);
-	void SetCanRegenBird(bool Value);
+	void SetCanRegenFlower(bool CanRegenFlower);
+	void SetCanRegenBird(bool CanRegenBird);
 
 	bool AddItemStamina(ETransformationObjectTypes TransformationItemType,float Value);
 
@@ -39,6 +41,9 @@ public:
 	void SelectDesiredTransformation(int32 TransformationState_ID);
 
 	void InitializeTransformationUI(UPandoUIComponent* _PandoUIComponent);
+
+	UPROPERTY(BlueprintAssignable, Category = "Transformation")
+	FOnTransformationStateChanged OnTransformationStateChanged;
 
 protected:
 	virtual void BeginPlay() override;
@@ -52,13 +57,10 @@ private:
 
 	void ConsumingTransformation(ETransformationState TransfomingState);
 
-	void RegenFlower();
-	void RegenBird();
-
 #pragma region Variables
 
-	bool bCanRegenFlower = false;
-	bool bCanRegenBird = false;
+	bool bBirdConsuptionStopped = false;
+	bool bFlowerConsuptionStopped = false;
 
 	UPandoUIComponent* PandoUIComponent;
 
@@ -91,4 +93,6 @@ public:
 	UInputAction* AnnulTransformationAction;
 	
 	FORCEINLINE ETransformationState GetCurrentTransformationState() const { return CurrentTransformationState; }
+	FORCEINLINE void SetFlowerConsuptionStopped(bool NewValue)  {  bFlowerConsuptionStopped = NewValue; }
+	
 };

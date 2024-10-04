@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "UObject/Interface.h"
+#include <PanWolfWar/CharacterStates.h>
 #include "CharacterInterface.generated.h"
 
 class UTransformationComponent;
@@ -37,7 +38,10 @@ public:
 	 UFUNCTION(BlueprintCallable)
 	 virtual UTargetingComponent* GetTargetingComponent() const = 0;
 
+	 virtual ETransformationState GetCurrentTransformationState() const = 0;
 
+	 UFUNCTION(BlueprintCallable)
+	 virtual void SetIsInsideHideBox(bool Value, bool ForceCrouch = false)  = 0;
 	 UFUNCTION(BlueprintCallable)
 	 virtual bool IsHiding() const = 0;
 	 UFUNCTION(BlueprintCallable)

@@ -175,6 +175,9 @@ void APanWolfWarCharacter::SetMetaHumanVisibility(bool bVisible)
 	Feets->SetVisibility(bVisible);
 	Legs->SetVisibility(bVisible);
 	Face->SetVisibility(bVisible);
+
+	SetMetaHumanHitFX(0.f);
+	SetMetaHumanHideFX(0.f);
 }
 
 void APanWolfWarCharacter::BeginPlay()
@@ -494,6 +497,14 @@ void APanWolfWarCharacter::EndDodge()
 
 #pragma region Interfaces
 
+ETransformationState APanWolfWarCharacter::GetCurrentTransformationState() const
+{
+	if (TransformationComponent)
+		return TransformationComponent->GetCurrentTransformationState();
+
+	return ETransformationState::ETS_None;
+}
+
 bool APanWolfWarCharacter::SetOverlappingObject(AInteractableObject* InteractableObject, bool bEnter)
 {
 	if (InteractableObject->ActorHasTag(FName("Pandolfo_Object")) && !PandolfoComponent->IsActive()) return false;
@@ -538,13 +549,46 @@ void APanWolfWarCharacter::SetMotionWarpTarget(const FName& InWarpTargetName, co
 		MotionWarpingComponent->AddOrUpdateWarpTargetFromLocation(InWarpTargetName, InTargetPosition);
 }
 
+void APanWolfWarCharacter::SetIsInsideHideBox(bool Value, bool ForceCrouch)
+{
+	bIsInsideHideBox = Value;
 
-void APanWolfWarCharacter::SetIsHiding(bool Value, bool DoCrouchCheck)
+	if (ForceCrouch)
+	{
+		if (Value)
+		{
+			bIsForcedCrouch = true;
+			GetCharacterMovement()->bWantsToCrouch = true;
+			SetIsHiding(true);
+		}
+
+		else if (!Value)
+		{
+			bIsForcedCrouch = false;
+			SetIsHiding(false);
+		}
+	}
+
+	else
+	{
+		if (Value && bIsCrouched)
+		{
+			SetIsHiding(true);
+		}
+
+		else if (!Value && bIsCrouched)
+		{
+			SetIsHiding(false);
+		}
+	}
+
+
+
+}
+
+void APanWolfWarCharacter::SetIsHiding(bool Value)
 {
 	if (Value && !EnemyAware.IsEmpty())
-		return;
-
-	if (DoCrouchCheck && Value && !GetMovementComponent()->IsCrouching())
 		return;
 
 	bIsHiding = Value;
@@ -552,14 +596,28 @@ void APanWolfWarCharacter::SetIsHiding(bool Value, bool DoCrouchCheck)
 
 	if (bIsHiding)
 	{
-		GetMesh()->SetScalarParameterValueOnMaterials(FName("Emissive Multiplier"), 10.f);
+		GetMesh()->SetScalarParameterValueOnMaterials(FName("HideFxSwitch"), 10.f);
 		HidingAssassinBoxComponent->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+
+		if (PandolfoComponent->IsActive())
+		{
+			SetMetaHumanHideFX(10.f);
+		}
+
+		TransformationComponent->SetFlowerConsuptionStopped(true);
 	}
 		
 	else
 	{
-		GetMesh()->SetScalarParameterValueOnMaterials(FName("Emissive Multiplier"), 0.f);
+		GetMesh()->SetScalarParameterValueOnMaterials(FName("HideFxSwitch"), 0.f);
 		HidingAssassinBoxComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
+		if (PandolfoComponent->IsActive())
+		{
+			SetMetaHumanHideFX(0.f);
+		}
+
+		TransformationComponent->SetFlowerConsuptionStopped(false);
 	}
 		
 
@@ -649,7 +707,28 @@ void APanWolfWarCharacter::PlayHitReactMontage(const FName& SectionName)
 	GetCharacterMovement()->StopMovementImmediately();
 	GetMesh()->SetScalarParameterValueOnMaterials(FName("HitFxSwitch"), 1.f);
 
+	if (PandolfoComponent->IsActive())
+	{
+		SetMetaHumanHitFX(1.f);
+	}
+
 	PandoCombatComponent->ResetAttack();
+}
+
+void APanWolfWarCharacter::SetMetaHumanHitFX(float bVisible)
+{
+	Torso->SetScalarParameterValueOnMaterials(FName("HitFxSwitch"), bVisible);
+	Feets->SetScalarParameterValueOnMaterials(FName("HitFxSwitch"), bVisible);
+	Face->SetScalarParameterValueOnMaterials(FName("HitFxSwitch"), bVisible);
+	Legs->SetScalarParameterValueOnMaterials(FName("HitFxSwitch"), bVisible);
+}
+
+void APanWolfWarCharacter::SetMetaHumanHideFX(float bVisible)
+{
+	Torso->SetScalarParameterValueOnMaterials(FName("HideFxSwitch"), bVisible);
+	Feets->SetScalarParameterValueOnMaterials(FName("HideFxSwitch"), bVisible);
+	Face->SetScalarParameterValueOnMaterials(FName("HideFxSwitch"), bVisible);
+	Legs->SetScalarParameterValueOnMaterials(FName("HideFxSwitch"), bVisible);
 }
 
 void APanWolfWarCharacter::OnHitReactMontageEnded(UAnimMontage* Montage, bool bInterrupted)
@@ -664,6 +743,11 @@ void APanWolfWarCharacter::OnHitReactMontageEnded(UAnimMontage* Montage, bool bI
 		AnimInstance->SetRootMotionMode(ERootMotionMode::RootMotionFromMontagesOnly);
 
 		GetMesh()->SetScalarParameterValueOnMaterials(FName("HitFxSwitch"), 0.f);
+
+		if (PandolfoComponent->IsActive())
+		{
+			SetMetaHumanHitFX(0.f);
+		}
 	}
 }
 
@@ -819,4 +903,10 @@ float APanWolfWarCharacter::GetHealthPercent()
 UPawnCombatComponent* APanWolfWarCharacter::GetCombatComponent() const
 {
 	return PandoCombatComponent;
+}
+
+void APanWolfWarCharacter::HandleTransformationChangedState()
+{
+	bHitted = false;
+	NiagaraApplyTransformationEffect->Activate(true);
 }
