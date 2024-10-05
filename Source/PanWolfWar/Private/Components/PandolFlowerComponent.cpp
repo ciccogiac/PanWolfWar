@@ -74,8 +74,8 @@ void UPandolFlowerComponent::TickComponent(float DeltaTime, ELevelTick TickType,
 
 void UPandolFlowerComponent::Move(const FInputActionValue& Value)
 {
-	/*if (bInGrapplingAnimation) return;*/
-	if (PandolFlowerState == EPandolFlowerState::EPFS_Hooking || PandolFlowerState == EPandolFlowerState::EPFS_Dodging) return;
+	//if (PandolFlowerState == EPandolFlowerState::EPFS_Hooking || PandolFlowerState == EPandolFlowerState::EPFS_Dodging) return;
+	if (PandolFlowerState == EPandolFlowerState::EPFS_Hooking ) return;
 
 
 	if (PandolFlowerState == EPandolFlowerState::EPFS_FlowerCover)
@@ -162,6 +162,10 @@ void UPandolFlowerComponent::Dodge()
 
 	PanWolfCharacter->StartDodge();
 	OwningPlayerAnimInstance->Montage_Play(PandolFlowerDodgeMontage);
+
+	FOnMontageEnded AttackMontageEndedDelegate;
+	AttackMontageEndedDelegate.BindUObject(this, &UPandolFlowerComponent::OnDodgeMontageEnded); 
+	OwningPlayerAnimInstance->Montage_SetEndDelegate(AttackMontageEndedDelegate, PandolFlowerDodgeMontage);
 }
 
 void UPandolFlowerComponent::Crouch()
@@ -207,28 +211,6 @@ void UPandolFlowerComponent::Crouch()
 	}
 }
 
-void UPandolFlowerComponent::CheckCanCrouchHide()
-{
-	if (PanWolfCharacter->IsHiding()) return;
-
-	const FVector Start = CharacterOwner->GetActorLocation();
-	const FVector End = Start + CharacterOwner->GetActorForwardVector();
-	FHitResult Hit;
-	UKismetSystemLibrary::SphereTraceSingleForObjects(this, Start, End, 60.f, HidingObjectTypes, false, TArray<AActor*>(), EDrawDebugTrace::None, Hit, true);
-	if (Hit.bBlockingHit)
-		PanWolfCharacter->SetIsHiding(true);
-}
-
-void UPandolFlowerComponent::CheckCanHideStandUP()
-{
-	const FVector Start = CharacterOwner->GetActorLocation() + CharacterOwner->GetActorUpVector() * CharacterOwner->BaseEyeHeight * 3.f;
-	const FVector End = Start + CharacterOwner->GetActorForwardVector();
-	FHitResult Hit;
-	UKismetSystemLibrary::SphereTraceSingleForObjects(this, Start, End, 20.f, HidingObjectTypes, false, TArray<AActor*>(), EDrawDebugTrace::ForDuration, Hit, true);
-	if (!Hit.bBlockingHit)
-		PanWolfCharacter->SetIsHiding(false);
-}
-
 #pragma endregion
 
 #pragma region ActivationComponent
@@ -253,7 +235,6 @@ void UPandolFlowerComponent::Activate(bool bReset)
 	if (OwningPlayerAnimInstance)
 	{
 		CombatComponent->SetCombatEnabled(OwningPlayerAnimInstance, ETransformationCombatType::ETCT_PandolFlower);
-		OwningPlayerAnimInstance->OnMontageEnded.AddDynamic(this, &UPandolFlowerComponent::OnMontageEnded);
 	}
 
 	if (PanWolfCharacter->IsHiding())
@@ -280,7 +261,6 @@ void UPandolFlowerComponent::Deactivate()
 
 	if (PandolFlowerState == EPandolFlowerState::EPFS_Dodging)
 	{
-		Debug::Print(TEXT("OVA"));
 		PanWolfCharacter->EndDodge();
 	}
 
@@ -326,8 +306,8 @@ void UPandolFlowerComponent::Hook()
 {
 
 	if (!GrapplePointRef) return;
-	/*if (PandolFlowerState == EPandolFlowerState::EPFS_Dodging || PandolFlowerState == EPandolFlowerState::EPFS_Hooking) return;*/
-	if (PandolFlowerState == EPandolFlowerState::EPFS_Dodging ) return;
+	if (PandolFlowerState == EPandolFlowerState::EPFS_Dodging || PandolFlowerState == EPandolFlowerState::EPFS_Hooking) return;
+	//if (PandolFlowerState == EPandolFlowerState::EPFS_Dodging ) return;
 
 	const float DistanceFromGrapplePoint = (CharacterOwner->GetActorLocation() - GrapplePointRef->GetActorLocation()).Length();
 
@@ -382,8 +362,8 @@ void UPandolFlowerComponent::Hook()
 			GrappleMontage = GrappleAir_Swing_Montage;
 		}
 
-
 		PlayMontage(GrappleMontage);
+		
 	}
 }
 
@@ -422,7 +402,6 @@ void UPandolFlowerComponent::CheckForGrapplePoint()
 				AGrapplePoint* GrapplePoint = Cast<AGrapplePoint>(hit.GetActor());
 				if ((GrapplePoint && CurrentGrapplePoint && GrapplePoint!=CurrentGrapplePoint) || CurrentGrapplePoint==nullptr)
 				{
-
 					DetectedActor = hit.GetActor();
 					HighestDotProduct = Dot;
 				}
@@ -594,11 +573,17 @@ void UPandolFlowerComponent::PlayMontage(UAnimMontage* MontageToPlay)
 
 void UPandolFlowerComponent::OnMontageEnded(UAnimMontage* Montage, bool bInterrupted)
 {
-	if (Montage == PandolFlowerDodgeMontage)
-	{
-		PanWolfCharacter->EndDodge();
-		PandolFlowerState = EPandolFlowerState::EPFS_PandolFlower;
-	}
+	/*Debug::Print(TEXT("Hiii"));*/
+}
+
+void UPandolFlowerComponent::OnDodgeMontageEnded(UAnimMontage* Montage, bool bInterrupted)
+{
+	if (!Montage) return;
+
+	PandolFlowerState = EPandolFlowerState::EPFS_PandolFlower;
+	PanWolfCharacter->EndDodge();
+
+
 }
 
 

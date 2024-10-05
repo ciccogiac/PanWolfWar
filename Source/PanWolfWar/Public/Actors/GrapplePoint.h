@@ -73,7 +73,7 @@ private:
 
 	class UGrapplePointWidget* WidgetRef;
 
-	class UPandolFlowerComponent* PlayerRef;
+	class UPandolFlowerComponent* PandolFlowerRef;
 	#pragma endregion
 
 

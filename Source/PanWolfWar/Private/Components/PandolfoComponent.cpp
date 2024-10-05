@@ -279,28 +279,6 @@ void UPandolfoComponent::Crouch()
 
 }
 
-void UPandolfoComponent::CheckCanHide()
-{
-	if (PanWolfCharacter->IsHiding()) return;
-
-	const FVector Start = CharacterOwner->GetActorLocation();
-	const FVector End = Start + CharacterOwner->GetActorForwardVector();
-	FHitResult Hit;
-	UKismetSystemLibrary::SphereTraceSingleForObjects(this, Start, End, 60.f, HidingObjectTypes, false, TArray<AActor*>(), EDrawDebugTrace::None, Hit, true);
-	if(Hit.bBlockingHit)
-		PanWolfCharacter->SetIsHiding(true);
-}
-
-void UPandolfoComponent::CheckCanHideStandUP()
-{
-	const FVector Start = CharacterOwner->GetActorLocation() + CharacterOwner->GetActorUpVector() * CharacterOwner->BaseEyeHeight * 3.f;
-	const FVector End = Start + CharacterOwner->GetActorForwardVector();
-	FHitResult Hit;
-	UKismetSystemLibrary::SphereTraceSingleForObjects(this, Start, End, 20.f, HidingObjectTypes, false, TArray<AActor*>(), EDrawDebugTrace::None, Hit, true);
-	if (!Hit.bBlockingHit)
-		PanWolfCharacter->SetIsHiding(false);
-}
-
 void UPandolfoComponent::CrouchCameraUpdate(float Alpha)
 {
 	CameraBoom->TargetArmLength = UKismetMathLibrary::Lerp(400.f, 550.f, Alpha);
@@ -467,6 +445,7 @@ void UPandolfoComponent::Sliding()
 	if (OwningPlayerAnimInstance->IsAnyMontagePlaying()) return;
 	if (CharacterOwner->GetCharacterMovement()->GetLastInputVector().Length() < 0.5f) return;
 
+	PandolfoState = EPandolfoState::EPS_Sliding;
 	CharacterOwner->DisableInput(CharacterOwner->GetLocalViewingPlayerController());
 	OwningPlayerAnimInstance->Montage_Play(SlidingMontage);
 }
@@ -486,6 +465,12 @@ void UPandolfoComponent::StartSliding()
 
 	TimeElapsed = 0.f;
 	GetWorld()->GetTimerManager().SetTimer(Sliding_TimerHandle, [this]() {this->SetSlidingValues(false); }, 0.01f, true);
+
+	if (PanWolfCharacter->IsInsideHideBox())
+	{
+		//Debug::Print(TEXT("Try to hide"));
+		PanWolfCharacter->SetIsHiding(true);
+	}
 }
 
 void UPandolfoComponent::EndSliding()
@@ -497,7 +482,14 @@ void UPandolfoComponent::EndSliding()
 	TimeElapsed = 0.35f;
 	GetWorld()->GetTimerManager().SetTimer(Sliding_TimerHandle, [this]() {this->SetSlidingValues(true); }, 0.001f, true);
 
-	CheckCanHideStandUP();
+	PandolfoState = EPandolfoState::EPS_Pandolfo;
+	/*CheckCanHideStandUP();*/
+
+	if (PanWolfCharacter->IsInsideHideBox())
+	{
+		//Debug::Print(TEXT("Try to Unhide"));
+		PanWolfCharacter->SetIsHiding(false);
+	}
 }
 
 void UPandolfoComponent::SetSlidingValues(bool IsReverse)

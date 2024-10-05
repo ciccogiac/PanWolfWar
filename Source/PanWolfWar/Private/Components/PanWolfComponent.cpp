@@ -139,10 +139,6 @@ void UPanWolfComponent::Dodge()
 
 	PanWolfState = EPanWolfState::EPWS_Dodging;
 
-	/*const FVector CachedRollingDirection = CharacterOwner->GetCharacterMovement()->GetLastInputVector().GetSafeNormal();
-	const FRotator TargetRotation = UKismetMathLibrary::MakeRotFromX(CachedRollingDirection);
-	PanWolfCharacter->SetMotionWarpTarget(FName("RollingDirection"), FVector::ZeroVector, TargetRotation);*/
-
 	PanWolfCharacter->StartDodge();
 	OwningPlayerAnimInstance->Montage_Play(PanWolfDodgeMontage);
 }
@@ -506,30 +502,5 @@ void UPanWolfComponent::OnMontageEnded(UAnimMontage* Montage, bool bInterrupted)
 
 			return;
 		}
-
-	/*	if (PanWolfState != EPanWolfState::EPWS_Blocking || bIsPerfectBlock || CombatComponent->IsAttacking()) return;
-
-		if (PanWolfState == EPanWolfState::EPWS_Blocking && bIsBlocking) return;
-
-		PanWolfState = EPanWolfState::EPWS_PanWolf;*/
-		/*RemoveShield();
-
-		if (UGameplayStatics::GetGlobalTimeDilation(this) != 1.f)
-			UGameplayStatics::SetGlobalTimeDilation(this, 1.f);*/
 	}
-
-	//else if (bIsBlocking )
-	//{
-	//	//if (OwningPlayerAnimInstance->Montage_IsPlaying(PanWolf_HitReactMontage) || bHitted)
-	//	//{
-	//	//	/*Debug::Print(TEXT("HitReact Montage"));*/
-	//	//	return;
-	//	//}
-
-	//	/*Debug::Print(TEXT("Return to block"));*/
-	//	/*Block();*/
-	///*	PanWolfState = EPanWolfState::EPWS_Blocking;*/
-	//	/*InstantBlock();*/
-	//}
-
 }

@@ -65,7 +65,7 @@ void AGrapplePoint::Activate(UPandolFlowerComponent* Player)
 {
 	if (bUsed) return;
 
-	PlayerRef = Player;
+	PandolFlowerRef = Player;
 	bActive = true;
 	//Set widget visibility
 	if(WidgetRef)
@@ -88,17 +88,19 @@ void AGrapplePoint::Deactivate()
 
 void AGrapplePoint::CheckDistanceFromPlayer()
 {	
-	const float DistanceFromPlayer = (PlayerRef->GetOwner()->GetActorLocation() - GetActorLocation()).Length();
-	const float ClimbedSize = UKismetMathLibrary::MapRangeClamped(DistanceFromPlayer,PlayerRef->GetGrappleThrowDistance(), PlayerRef->GetDetectionRadius(), 80.f, 10.f);
+	const float DistanceFromPlayer = (PandolFlowerRef->GetOwner()->GetActorLocation() - GetActorLocation()).Length();
+	const float ClimbedSize = UKismetMathLibrary::MapRangeClamped(DistanceFromPlayer,PandolFlowerRef->GetGrappleThrowDistance(), PandolFlowerRef->GetDetectionRadius(), 80.f, 10.f);
+	EPandolFlowerState PandolFlowerState = PandolFlowerRef->GetPandolFlowerState();
+	bool IsInDeniedState = PandolFlowerState == EPandolFlowerState::EPFS_Dodging || PandolFlowerState == EPandolFlowerState::EPFS_Hooking;
 
 	if (WidgetRef)
 	{
 		const FVector2D NewSize = FVector2D(ClimbedSize, ClimbedSize);
 		WidgetRef->Filling_Image->SetDesiredSizeOverride(NewSize);
-		FLinearColor NewColor = ClimbedSize == 80.f ? FLinearColor::Green : FLinearColor::Gray;
+		FLinearColor NewColor = (ClimbedSize == 80.f && !IsInDeniedState) ? FLinearColor::Green : FLinearColor::Gray;
 		WidgetRef->Filling_Image->SetColorAndOpacity(NewColor);
 
-	}
+	} 		
 }
 
 void AGrapplePoint::Use()
@@ -125,14 +127,14 @@ const FVector AGrapplePoint::GetLandingZone()
 
 void AGrapplePoint::BoxCollisionEnter(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
-	if (!PlayerRef || OtherActor != PlayerRef->GetOwner()) return;
+	if (!PandolFlowerRef || OtherActor != PandolFlowerRef->GetOwner()) return;
 	
 	Detection_Mesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 }
 
 void AGrapplePoint::BoxCollisionExit(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
 {
-	if (!PlayerRef || OtherActor != PlayerRef->GetOwner()) return;
+	if (!PandolFlowerRef || OtherActor != PandolFlowerRef->GetOwner()) return;
 
 	Detection_Mesh->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
 

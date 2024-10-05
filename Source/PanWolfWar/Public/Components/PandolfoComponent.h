@@ -28,7 +28,8 @@ enum class EPandolfoState : uint8
 	EPS_Covering UMETA(DisplayName = "Covering"),
 	EPS_Gliding UMETA(DisplayName = "Gliding"),
 	EPS_Kiting UMETA(DisplayName = "Kiting"),
-	EPS_Dodging UMETA(DisplayName = "Dodging")
+	EPS_Dodging UMETA(DisplayName = "Dodging"),
+	EPS_Sliding UMETA(DisplayName = "Sliding")
 };
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
@@ -78,8 +79,6 @@ private:
 	UFUNCTION()
 	void OnMontageEnded(UAnimMontage* Montage, bool bInterrupted);
 
-	void CheckCanHide();
-	void CheckCanHideStandUP();
 	void DetectAirAssassinableEnemy();
 	
 

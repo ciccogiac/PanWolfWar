@@ -57,17 +57,18 @@ protected:
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
 private:
+
 	UFUNCTION()
 	void OnMontageEnded(UAnimMontage* Montage, bool bInterrupted);
+
+	UFUNCTION()
+	void OnDodgeMontageEnded(UAnimMontage* Montage, bool bInterrupted);
 
 	void CheckForGrapplePoint();
 	void ActivateGrapplePoint(AActor* DetectedActor);
 	void DeactivateGrapplePoint();
 	void MoveRope();
 	void GrapplingMovement();
-
-	void CheckCanCrouchHide();
-	void CheckCanHideStandUP();
 
 	void PlayMontage(UAnimMontage* MontageToPlay);
 
