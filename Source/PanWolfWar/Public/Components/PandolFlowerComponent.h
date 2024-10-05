@@ -197,7 +197,13 @@ private:
 	AGrapplePoint* CurrentGrapplePoint;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Grappling Params", meta = (AllowPrivateAccess = "true"))
-	float DetectionRadius = 2000.f;
+	float GrappleDetectionDistance = 2400.f;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Grappling Params", meta = (AllowPrivateAccess = "true"))
+	float GrappleDetectionRadius = 800.f;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Grappling Params", meta = (AllowPrivateAccess = "true"))
+	float GrappleDetection_CameraUPOffset = 500.f;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Grappling Params", meta = (AllowPrivateAccess = "true"))
 	float GrappleThrowDistance = 1200.f;
@@ -280,7 +286,7 @@ private:
 public:
 	UFUNCTION(BlueprintCallable)
 	FORCEINLINE EPandolFlowerState GetPandolFlowerState() const { return PandolFlowerState; }
-	FORCEINLINE float GetDetectionRadius() const { return DetectionRadius; }
+	FORCEINLINE float GetDetectionRadius() const { return GrappleDetectionDistance; }
 	FORCEINLINE float GetGrappleThrowDistance() const { return GrappleThrowDistance; }
 
 #pragma endregion

@@ -369,54 +369,85 @@ void UPandolFlowerComponent::Hook()
 
 void UPandolFlowerComponent::CheckForGrapplePoint()
 {
-	 const FVector CameraLocation2 = PanWolfCharacter->GetFollowCamera()->GetComponentLocation();
-	 const FVector CameraForward2 = PanWolfCharacter->GetFollowCamera()->GetForwardVector();
 
-	const FVector Start = CameraLocation2;
-	const FVector End = Start + CameraForward2 * DetectionRadius;
+	const FVector CameraLocation = FollowCamera->GetComponentLocation();
+	const FVector CameraForward = FollowCamera->GetForwardVector();
 
-	//const FVector Start = CharacterOwner->GetActorLocation();
-	//const FVector End = Start;
+	const FVector Start = CameraLocation + FollowCamera->GetUpVector() * GrappleDetection_CameraUPOffset;
+	const FVector End = Start + CameraForward * GrappleDetectionDistance;
 
 
 	EDrawDebugTrace::Type DebugTraceType = ShowDebugTrace ? EDrawDebugTrace::ForOneFrame : EDrawDebugTrace::None;
 	TArray<FHitResult> outHits;
-	bool bBlockingHits = UKismetSystemLibrary::SphereTraceMultiForObjects(this,Start,End, 1500.f, GrapplingObjectTypes,false,TArray<AActor*>(), DebugTraceType, outHits,true);
+	bool bBlockingHits = UKismetSystemLibrary::SphereTraceMultiForObjects(this, Start, End, GrappleDetectionRadius, GrapplingObjectTypes, false, TArray<AActor*>(), DebugTraceType, outHits, true);
 
 	if (bBlockingHits)
 	{
-		float HighestDotProduct = 0.7f;
-		AActor* DetectedActor = nullptr;
+		float HighestAngle = 75.f;        // L'angolo massimo accettabile per considerare un punto di aggancio
+		float NearestAngle = 75.f;        // L'angolo più basso trovato per gli attori entro GrappleThrowDistance
+		AActor* DetectedActor = nullptr;  // L'attore rilevato come punto di aggancio più valido
+		AActor* PreferredActor = nullptr; // Attore preferito se è più vicino di GrappleThrowDistance
 
 		for (const FHitResult& hit : outHits)
 		{
-			const FVector CameraForward = FollowCamera->GetForwardVector();
-			const FVector CameraLocation = FollowCamera->GetComponentLocation() + FollowCamera->GetUpVector() * 100.f;
 			const FVector HitActorLocation = hit.GetActor()->GetActorLocation();
 
-			const FVector Direction = UKismetMathLibrary::GetDirectionUnitVector(CameraLocation, HitActorLocation);
-			const double Dot = FVector::DotProduct(CameraForward, Direction);
+			// Calcola la distanza dal personaggio al punto di aggancio rilevato
+			const float DistanceToPlayer = FVector::Dist(CharacterOwner->GetActorLocation(), HitActorLocation);
 
-			if (Dot > HighestDotProduct)
+			// Calcola la direzione e l'angolo tra la camera e l'attore rilevato
+			const FVector Direction = (HitActorLocation - Start).GetSafeNormal();
+			const double Dot = FVector::DotProduct(CameraForward, Direction);
+			const float AngleInRadians = FMath::Acos(Dot);
+			const float Angle = FMath::RadiansToDegrees(AngleInRadians);
+
+			// Se l'attore è entro GrappleThrowDistance, seleziona quello con l'angolo minore
+			if (DistanceToPlayer <= GrappleThrowDistance)
 			{
-				AGrapplePoint* GrapplePoint = Cast<AGrapplePoint>(hit.GetActor());
-				if ((GrapplePoint && CurrentGrapplePoint && GrapplePoint!=CurrentGrapplePoint) || CurrentGrapplePoint==nullptr)
+				if (Angle < NearestAngle)
 				{
-					DetectedActor = hit.GetActor();
-					HighestDotProduct = Dot;
+					AGrapplePoint* GrapplePoint = Cast<AGrapplePoint>(hit.GetActor());
+
+					// Controlla se il punto di grapple è diverso dall'attuale punto di aggancio o se non c'è nessun punto attivo
+					if ((GrapplePoint && CurrentGrapplePoint && GrapplePoint != CurrentGrapplePoint) || CurrentGrapplePoint == nullptr)
+					{
+						PreferredActor = hit.GetActor();
+						NearestAngle = Angle; // Aggiorna l'angolo più basso trovato per gli attori vicini
+					}
 				}
 			}
+			// Altrimenti, se l'attore è fuori da GrappleThrowDistance ma entro GrappleDetectionDistance
 
-			else
+			else if (Angle < HighestAngle)
 			{
-				//Deactivate Grapple Point Ref
-				DeactivateGrapplePoint();
-			}
+				AGrapplePoint* GrapplePoint = Cast<AGrapplePoint>(hit.GetActor());
 
+				// Controlla se il punto di grapple è diverso dall'attuale punto di aggancio o se non c'è nessun punto attivo
+				if ((GrapplePoint && CurrentGrapplePoint && GrapplePoint != CurrentGrapplePoint) || CurrentGrapplePoint == nullptr)
+				{
+					DetectedActor = hit.GetActor();  // Aggiorna l'attore rilevato
+					HighestAngle = Angle;            // Aggiorna l'angolo più piccolo trovato
+				}
+			}
+			
 		}
 
-		//Activate Grapple Point Ref
-		ActivateGrapplePoint(DetectedActor);
+		// Se è stato trovato un punto preferito entro la distanza ridotta, usa quello
+		if (PreferredActor)
+		{
+			ActivateGrapplePoint(PreferredActor);
+		}
+		// Altrimenti, usa l'attore con l'angolo migliore
+		else if (DetectedActor)
+		{
+			ActivateGrapplePoint(DetectedActor);
+		}
+		else
+		{
+			// Disattiva il punto di grapple se non è stato trovato niente di valido
+			DeactivateGrapplePoint();
+		}
+		
 	}
 	else
 	{
