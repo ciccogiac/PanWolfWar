@@ -333,6 +333,7 @@ public:
 	UFUNCTION(BlueprintCallable)
 	FORCEINLINE TArray<AActor*> GetEnemyAware() { return EnemyAware; }
 	
+	FORCEINLINE bool IsHitted() { return bHitted; }
 #pragma endregion
 
 

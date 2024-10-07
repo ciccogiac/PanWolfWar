@@ -63,6 +63,9 @@ private:
 	UFUNCTION()
 	void OnDodgeMontageEnded(UAnimMontage* Montage, bool bInterrupted);
 
+	UFUNCTION()
+	void OnHookMontageEnded(UAnimMontage* Montage, bool bInterrupted);
+
 	void CheckForGrapplePoint();
 	void ActivateGrapplePoint(AActor* DetectedActor);
 	void DeactivateGrapplePoint();

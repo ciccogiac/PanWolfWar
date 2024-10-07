@@ -77,6 +77,7 @@ void UPanWolfComponent::Activate(bool bReset)
 
 	bIsBlocking = false;
 	bIsBlockingReact = false;
+	PanWolfCharacter->SetIsHiding(false);
 
 	PanWolfCharacter->AddMappingContext(PanWolfMappingContext, 1);
 }

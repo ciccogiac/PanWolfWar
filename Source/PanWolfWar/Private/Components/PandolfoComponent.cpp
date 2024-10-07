@@ -557,6 +557,12 @@ void UPandolfoComponent::UnGlide()
 
 #pragma region Assassination
 
+void UPandolfoComponent::AssassinationFromHiding(ABaseEnemy* HidingAssassinatedEnemy)
+{
+	AssassinableOverlapped = HidingAssassinatedEnemy;
+	Assassination();
+}
+
 void UPandolfoComponent::Assassination()
 {
 	if (PandolfoState != EPandolfoState::EPS_Pandolfo) return;

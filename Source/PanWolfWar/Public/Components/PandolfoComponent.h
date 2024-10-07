@@ -50,6 +50,7 @@ public:
 	void Sliding();
 	void Crouch();
 	void Assassination();
+	void AssassinationFromHiding(ABaseEnemy* HidingAssassinatedEnemy = nullptr);
 	void CheckCanAirAssassin();
 	void Dodge();
 	void LightAttack();
@@ -269,6 +270,7 @@ public:
 	FORCEINLINE void SetAssassinableEnemy(ABaseEnemy* Enemy) { AssassinableOverlapped = Enemy; }
 	FORCEINLINE void SetAssassinableAirEnemy(ABaseEnemy* Enemy) { AIR_AssassinableOverlapped = Enemy; }
 	FORCEINLINE bool IsAssassinableEnemy() { return (AssassinableOverlapped!= nullptr || AIR_AssassinableOverlapped != nullptr); }
+	FORCEINLINE ABaseEnemy* GetAssassinableEnemy() const { return AssassinableOverlapped; }
 
 	UFUNCTION(BlueprintCallable, Category = "Gliding")
 	FORCEINLINE bool IsGliding() const { return PandolfoState == EPandolfoState::EPS_Gliding; }

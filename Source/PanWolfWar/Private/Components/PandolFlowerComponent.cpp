@@ -72,147 +72,6 @@ void UPandolFlowerComponent::TickComponent(float DeltaTime, ELevelTick TickType,
 
 }
 
-void UPandolFlowerComponent::Move(const FInputActionValue& Value)
-{
-	//if (PandolFlowerState == EPandolFlowerState::EPFS_Hooking || PandolFlowerState == EPandolFlowerState::EPFS_Dodging) return;
-	if (PandolFlowerState == EPandolFlowerState::EPFS_Hooking ) return;
-
-
-	if (PandolFlowerState == EPandolFlowerState::EPFS_FlowerCover)
-	{
-		const FVector CameraForward = FollowCamera->GetForwardVector();
-		const double Dot = FVector::DotProduct(CameraForward, CharacterOwner->GetActorForwardVector());
-		float Multiplier = 1;
-		if (Dot > 0.4f)
-			Multiplier = -1.f;
-
-		FVector2D MovementVector = Value.Get<FVector2D>().GetSafeNormal();
-
-		CoverDirection = MovementVector.X > 0.5f ?
-			1.f : (MovementVector.X < -0.5f ? -1.f : 0.f);
-
-		if (CoverDirection == 0.f && MovementVector.Y > 0.5f)
-			CoverDirection = LastCoverDirection;
-		else if (CoverDirection == 0.f && MovementVector.Y < -0.5f)
-			CoverDirection = -LastCoverDirection;
-		else
-			LastCoverDirection = CoverDirection;
-			
-		if (CoverDirection == 0.f) return;
-
-		const FVector MoveDirection = -CharacterOwner->GetActorRightVector();
-
-		CharacterOwner->AddMovementInput(MoveDirection * Multiplier, CoverDirection);
-	}
-	
-	else if(PandolFlowerState == EPandolFlowerState::EPFS_Swinging)
-	{
-		FVector2D MovementVector = Value.Get<FVector2D>().GetSafeNormal();
-
-		const float ForceY = UKismetMathLibrary::MapRangeClamped(MovementVector.Y, -1, 1, -SwingForce, SwingForce);
-
-		CurrentGrapplePoint->LandingZone_Mesh->AddForce(CurrentGrapplePoint->LandingZone_Mesh->GetForwardVector() * ForceY );
-
-		const float X = MovementVector.Y >= 0.f ? MovementVector.X : -MovementVector.X;
-		CurrentGrapplePoint->LandingZone_Mesh->AddWorldRotation(FRotator(0.f,X, 0.f));
-	}
-
-	//else if (PandolFlowerState == EPandolFlowerState::EPFS_PandolFlower)
-	else 
-	{
-		PanWolfCharacter->Move(Value);
-	}
-	
-}
-
-void UPandolFlowerComponent::Jump()
-{
-	/*if (bInGrapplingAnimation) return;*/
-	if (PandolFlowerState != EPandolFlowerState::EPFS_PandolFlower && PandolFlowerState != EPandolFlowerState::EPFS_Swinging) return;
-
-
-	//CharacterOwner->LaunchCharacter(CharacterOwner->GetActorForwardVector() * 2000.f, true, true);
-
-	/*if (bSwinging) */
-	if(PandolFlowerState == EPandolFlowerState::EPFS_Swinging)
-	{
-		
-		//const FVector v = CurrentGrapplePoint->LandingZone_Mesh->GetForwardVector() * PanWolfCharacter->GetVelocity().Length();
-		const FVector v = CurrentGrapplePoint->LandingZone_Mesh->GetComponentVelocity().GetSafeNormal() * PanWolfCharacter->GetVelocity().Length();
-		PanWolfCharacter->DetachRootComponentFromParent();
-		CharacterOwner->GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Falling);
-
-
-		CurrentGrapplePoint->ResetLandingZone();
-
-		ResetMovement();
-		RopeVisibility(false);
-
-		
-		CharacterOwner->LaunchCharacter(v *2.3 , false, false);
-	}
-
-	CharacterOwner->Jump();
-}
-
-void UPandolFlowerComponent::Dodge()
-{
-	if (!PanWolfCharacter->CanPerformDodge() || (PandolFlowerState != EPandolFlowerState::EPFS_PandolFlower)) return;
-	if (!PandolFlowerDodgeMontage || !OwningPlayerAnimInstance) return;
-
-	PandolFlowerState = EPandolFlowerState::EPFS_Dodging;
-
-	PanWolfCharacter->StartDodge();
-	OwningPlayerAnimInstance->Montage_Play(PandolFlowerDodgeMontage);
-
-	FOnMontageEnded AttackMontageEndedDelegate;
-	AttackMontageEndedDelegate.BindUObject(this, &UPandolFlowerComponent::OnDodgeMontageEnded); 
-	OwningPlayerAnimInstance->Montage_SetEndDelegate(AttackMontageEndedDelegate, PandolFlowerDodgeMontage);
-}
-
-void UPandolFlowerComponent::Crouch()
-{
-	//if (PandolFlowerState != EPandolFlowerState::EPFS_PandolFlower && PandolFlowerState != EPandolFlowerState::EPFS_FlowerCover) return;
-	if (PandolFlowerState != EPandolFlowerState::EPFS_PandolFlower ) return;
-	if (PanWolfCharacter && PanWolfCharacter->IsForcedCrouch()) return;
-
-	/*if (FlowerHideObject && PandolFlowerState == EPandolFlowerState::EPFS_FlowerCover)
-	{
-		SetFlowerHideRotation(-CharacterOwner->GetActorForwardVector(), true);
-		SetFlowerHideLocation(CharacterOwner->GetActorLocation() + CharacterOwner->GetActorForwardVector() * 70.f,FVector::ZeroVector, true);
-		return;
-	}*/
-
-	const bool IsCrouched = CharacterOwner->bIsCrouched;
-	CharacterOwner->GetCharacterMovement()->bWantsToCrouch = !IsCrouched;
-
-	
-
-	if (!IsCrouched)
-	{
-		//CrouchingTimeline.PlayFromStart();
-
-
-		if (PanWolfCharacter->IsInsideHideBox())
-		{
-			//Debug::Print(TEXT("Try to hide"));
-			PanWolfCharacter->SetIsHiding(true);
-		}
-
-	}
-
-	else
-	{
-		//CrouchingTimeline.Reverse();
-
-		if (PanWolfCharacter->IsInsideHideBox())
-		{
-			//Debug::Print(TEXT("Try to Unhide"));
-			PanWolfCharacter->SetIsHiding(false);
-		}
-	}
-}
-
 #pragma endregion
 
 #pragma region ActivationComponent
@@ -302,6 +161,151 @@ void UPandolFlowerComponent::Deactivate()
 
 #pragma endregion
 
+#pragma region Actions
+
+void UPandolFlowerComponent::Move(const FInputActionValue& Value)
+{
+	//if (PandolFlowerState == EPandolFlowerState::EPFS_Hooking || PandolFlowerState == EPandolFlowerState::EPFS_Dodging) return;
+	if (PandolFlowerState == EPandolFlowerState::EPFS_Hooking) return;
+
+
+	if (PandolFlowerState == EPandolFlowerState::EPFS_FlowerCover)
+	{
+		const FVector CameraForward = FollowCamera->GetForwardVector();
+		const double Dot = FVector::DotProduct(CameraForward, CharacterOwner->GetActorForwardVector());
+		float Multiplier = 1;
+		if (Dot > 0.4f)
+			Multiplier = -1.f;
+
+		FVector2D MovementVector = Value.Get<FVector2D>().GetSafeNormal();
+
+		CoverDirection = MovementVector.X > 0.5f ?
+			1.f : (MovementVector.X < -0.5f ? -1.f : 0.f);
+
+		if (CoverDirection == 0.f && MovementVector.Y > 0.5f)
+			CoverDirection = LastCoverDirection;
+		else if (CoverDirection == 0.f && MovementVector.Y < -0.5f)
+			CoverDirection = -LastCoverDirection;
+		else
+			LastCoverDirection = CoverDirection;
+
+		if (CoverDirection == 0.f) return;
+
+		const FVector MoveDirection = -CharacterOwner->GetActorRightVector();
+
+		CharacterOwner->AddMovementInput(MoveDirection * Multiplier, CoverDirection);
+	}
+
+	else if (PandolFlowerState == EPandolFlowerState::EPFS_Swinging)
+	{
+		FVector2D MovementVector = Value.Get<FVector2D>().GetSafeNormal();
+
+		const float ForceY = UKismetMathLibrary::MapRangeClamped(MovementVector.Y, -1, 1, -SwingForce, SwingForce);
+
+		CurrentGrapplePoint->LandingZone_Mesh->AddForce(CurrentGrapplePoint->LandingZone_Mesh->GetForwardVector() * ForceY);
+
+		const float X = MovementVector.Y >= 0.f ? MovementVector.X : -MovementVector.X;
+		CurrentGrapplePoint->LandingZone_Mesh->AddWorldRotation(FRotator(0.f, X, 0.f));
+	}
+
+	//else if (PandolFlowerState == EPandolFlowerState::EPFS_PandolFlower)
+	else
+	{
+		PanWolfCharacter->Move(Value);
+	}
+
+}
+
+void UPandolFlowerComponent::Jump()
+{
+	/*if (bInGrapplingAnimation) return;*/
+	if (PandolFlowerState != EPandolFlowerState::EPFS_PandolFlower && PandolFlowerState != EPandolFlowerState::EPFS_Swinging) return;
+
+
+	//CharacterOwner->LaunchCharacter(CharacterOwner->GetActorForwardVector() * 2000.f, true, true);
+
+	/*if (bSwinging) */
+	if (PandolFlowerState == EPandolFlowerState::EPFS_Swinging)
+	{
+
+		//const FVector v = CurrentGrapplePoint->LandingZone_Mesh->GetForwardVector() * PanWolfCharacter->GetVelocity().Length();
+		const FVector v = CurrentGrapplePoint->LandingZone_Mesh->GetComponentVelocity().GetSafeNormal() * PanWolfCharacter->GetVelocity().Length();
+		PanWolfCharacter->DetachRootComponentFromParent();
+		CharacterOwner->GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Falling);
+
+
+		CurrentGrapplePoint->ResetLandingZone();
+
+		ResetMovement();
+		RopeVisibility(false);
+
+
+		CharacterOwner->LaunchCharacter(v * 2.3, false, false);
+	}
+
+	CharacterOwner->Jump();
+}
+
+void UPandolFlowerComponent::Dodge()
+{
+	if (!PanWolfCharacter->CanPerformDodge() || (PandolFlowerState != EPandolFlowerState::EPFS_PandolFlower)) return;
+	if (!PandolFlowerDodgeMontage || !OwningPlayerAnimInstance) return;
+
+	PandolFlowerState = EPandolFlowerState::EPFS_Dodging;
+
+	PanWolfCharacter->StartDodge();
+	OwningPlayerAnimInstance->Montage_Play(PandolFlowerDodgeMontage);
+
+	FOnMontageEnded AttackMontageEndedDelegate;
+	AttackMontageEndedDelegate.BindUObject(this, &UPandolFlowerComponent::OnDodgeMontageEnded);
+	OwningPlayerAnimInstance->Montage_SetEndDelegate(AttackMontageEndedDelegate, PandolFlowerDodgeMontage);
+}
+
+void UPandolFlowerComponent::Crouch()
+{
+	//if (PandolFlowerState != EPandolFlowerState::EPFS_PandolFlower && PandolFlowerState != EPandolFlowerState::EPFS_FlowerCover) return;
+	if (PandolFlowerState != EPandolFlowerState::EPFS_PandolFlower) return;
+	if (PanWolfCharacter && PanWolfCharacter->IsForcedCrouch()) return;
+
+	/*if (FlowerHideObject && PandolFlowerState == EPandolFlowerState::EPFS_FlowerCover)
+	{
+		SetFlowerHideRotation(-CharacterOwner->GetActorForwardVector(), true);
+		SetFlowerHideLocation(CharacterOwner->GetActorLocation() + CharacterOwner->GetActorForwardVector() * 70.f,FVector::ZeroVector, true);
+		return;
+	}*/
+
+	const bool IsCrouched = CharacterOwner->bIsCrouched;
+	CharacterOwner->GetCharacterMovement()->bWantsToCrouch = !IsCrouched;
+
+
+
+	if (!IsCrouched)
+	{
+		//CrouchingTimeline.PlayFromStart();
+
+
+		if (PanWolfCharacter->IsInsideHideBox())
+		{
+			//Debug::Print(TEXT("Try to hide"));
+			PanWolfCharacter->SetIsHiding(true);
+		}
+
+	}
+
+	else
+	{
+		//CrouchingTimeline.Reverse();
+
+		if (PanWolfCharacter->IsInsideHideBox())
+		{
+			//Debug::Print(TEXT("Try to Unhide"));
+			PanWolfCharacter->SetIsHiding(false);
+		}
+	}
+}
+
+#pragma endregion
+
 #pragma region Grappling
 
 void UPandolFlowerComponent::Hook()
@@ -309,6 +313,7 @@ void UPandolFlowerComponent::Hook()
 
 	if (!GrapplePointRef) return;
 	if (PandolFlowerState == EPandolFlowerState::EPFS_Dodging || PandolFlowerState == EPandolFlowerState::EPFS_Hooking) return;
+	if (TransformationComponent && PandolfoComponent && PandolfoComponent->IsAssassinableEnemy()) return;
 	//if (PandolFlowerState == EPandolFlowerState::EPFS_Dodging ) return;
 
 	const float DistanceFromGrapplePoint = (CharacterOwner->GetActorLocation() - GrapplePointRef->GetActorLocation()).Length();
@@ -356,16 +361,22 @@ void UPandolFlowerComponent::Hook()
 		if (CurrentGrapplePoint->GrapplePointType == EGrapplePointType::EGPT_Grapple)
 		{
 			GrappleMontage = CharacterOwner->GetCharacterMovement()->IsFalling() ? GrappleAir_Montage : GrappleGround_Montage;
+
+			PlayMontage(GrappleMontage);
+			FOnMontageEnded HookMontageEndedDelegate;
+			HookMontageEndedDelegate.BindUObject(this, &UPandolFlowerComponent::OnHookMontageEnded);
+			OwningPlayerAnimInstance->Montage_SetEndDelegate(HookMontageEndedDelegate, GrappleMontage);
 		}
 		else if (CurrentGrapplePoint->GrapplePointType == EGrapplePointType::EGPT_Swing)
 		{
 			GrapplingDestination = CurrentGrapplePoint->GetLandingZone() + FVector(0.f, 0.f, -110.f);
 			//GrappleMontage = CharacterOwner->GetCharacterMovement()->IsFalling() ? GrappleAir_Swing_Montage : GrappleGround_Swing_Montage;
 			GrappleMontage = GrappleAir_Swing_Montage;
+
+			PlayMontage(GrappleMontage);
 		}
 
-		PlayMontage(GrappleMontage);
-		
+
 	}
 }
 
@@ -542,13 +553,12 @@ void UPandolFlowerComponent::ResetMovement()
 {
 	bMovingWithGrapple = false;
 	CurrentGrapplePoint = nullptr;
-	/*bInGrapplingAnimation = false;
-	bSwinging = false;*/
+
 	PandolFlowerState = EPandolFlowerState::EPFS_PandolFlower;
 	CharacterOwner->GetCharacterMovement()->GravityScale = 2.2f;
 
 	CharacterOwner->GetCapsuleComponent()->SetCollisionResponseToChannel(ECollisionChannel::ECC_WorldStatic, ECollisionResponse::ECR_Block);
-	//CharacterOwner->GetCapsuleComponent()->SetCapsuleHalfHeight(90.f);
+
 }
 
 void UPandolFlowerComponent::ThrowRope()
@@ -608,6 +618,7 @@ void UPandolFlowerComponent::FlowerHide()
 	}
 	else
 	{
+		if (!PanWolfCharacter->GetEnemyAware().IsEmpty()) return;
 
 		FHitResult hit;
 		FlowerHideTrace(hit);
@@ -685,14 +696,14 @@ void UPandolFlowerComponent::SetCameraToFlowerHide()
 		CameraBoom->bInheritRoll = false;
 
 		FVector NewLocation = CharacterOwner->GetActorLocation(); /*+CharacterOwner->GetActorRightVector() * 350.f + hit.ImpactNormal * 250.f;*/
-		FRotator NewRotation2(0.f, CharacterOwner->GetActorRotation().Yaw + 180.f + 45.f, 0.f);
+		FRotator NewRotation(0.f, CharacterOwner->GetActorRotation().Yaw + 180.f + 45.f, 0.f);
 
 
 		CameraBoom->SetWorldLocation(NewLocation);
-		CameraBoom->SetRelativeRotation(NewRotation2);
+		CameraBoom->SetRelativeRotation(NewRotation);
 
-		CameraBoom->TargetArmLength = 400.f;
-		FollowCamera->SetFieldOfView(130.f);
+		CameraBoom->TargetArmLength = 700.f;
+		FollowCamera->SetFieldOfView(100.f);
 	}
 }
 
@@ -746,6 +757,48 @@ void UPandolFlowerComponent::ResetCameraFromFlowerHide()
 
 #pragma endregion
 
+#pragma region Assassination & Attack
+
+void UPandolFlowerComponent::Assassination()
+{
+
+	if (TransformationComponent && PandolfoComponent && PandolfoComponent->IsAssassinableEnemy())
+	{
+		bool bIsHidingAssassination = false;
+		ABaseEnemy* Enemy = nullptr;
+		if (PanWolfCharacter->IsHiding())
+		{
+			bIsHidingAssassination = true;
+			Enemy = PandolfoComponent->GetAssassinableEnemy();
+		}
+
+		TransformationComponent->SelectDesiredTransformation(0);
+
+		if(bIsHidingAssassination)
+			PandolfoComponent->AssassinationFromHiding(Enemy);
+		else
+			PandolfoComponent->Assassination();
+	}
+
+}
+
+void UPandolFlowerComponent::CheckCanAirAssassin()
+{
+	//Debug::Print(TEXT("CheckCanAirAssassin"));
+	if (PandolfoComponent)
+		PandolfoComponent->CheckCanAirAssassin();
+}
+
+void UPandolFlowerComponent::LightAttack()
+{
+	if (!CombatComponent || PandolFlowerState != EPandolFlowerState::EPFS_PandolFlower) return;
+
+	CombatComponent->PerformAttack(EAttackType::EAT_LightAttack);
+}
+
+#pragma endregion
+
+#pragma region MontageSection
 
 void UPandolFlowerComponent::PlayMontage(UAnimMontage* MontageToPlay)
 {
@@ -771,30 +824,16 @@ void UPandolFlowerComponent::OnDodgeMontageEnded(UAnimMontage* Montage, bool bIn
 
 }
 
-
-void UPandolFlowerComponent::Assassination()
+void UPandolFlowerComponent::OnHookMontageEnded(UAnimMontage* Montage, bool bInterrupted)
 {
-	
-	if (TransformationComponent && PandolfoComponent && PandolfoComponent->IsAssassinableEnemy())
+	if (!Montage) return;
+
+	if (bInterrupted && PanWolfCharacter->IsHitted())
 	{
-		//Debug::Print(TEXT("Assassin PandolFlower"));
-
-		TransformationComponent->SelectDesiredTransformation(0);
-		PandolfoComponent->Assassination();
+		RopeVisibility(false);
+		ResetMovement();
 	}
-
+		
 }
 
-void UPandolFlowerComponent::CheckCanAirAssassin()
-{
-	//Debug::Print(TEXT("CheckCanAirAssassin"));
-	if (PandolfoComponent)
-		PandolfoComponent->CheckCanAirAssassin();
-}
-
-void UPandolFlowerComponent::LightAttack()
-{
-	if (!CombatComponent || PandolFlowerState!= EPandolFlowerState::EPFS_PandolFlower) return;
-
-	CombatComponent->PerformAttack(EAttackType::EAT_LightAttack);
-}
+#pragma endregion

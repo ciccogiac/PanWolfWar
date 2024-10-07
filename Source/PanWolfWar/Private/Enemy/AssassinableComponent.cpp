@@ -11,7 +11,7 @@
 #include "Kismet/GameplayStatics.h"
 
 #include <PanWolfWar/CharacterStates.h>
-
+#include "PanWolfWar/DebugHelper.h"
 UAssassinableComponent::UAssassinableComponent()
 {
 	PrimaryComponentTick.bCanEverTick = false;
@@ -81,6 +81,7 @@ void UAssassinableComponent::BoxCollisionExit(UPrimitiveComponent* OverlappedCom
 		EnemyOwner->SetAssassinationWidgetVisibility(false);
 		MarkAsTarget(false);
 		bCanBeAssassinated = false;
+
 	}
 }
 
