@@ -355,7 +355,7 @@ void APanWolfWarCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInpu
 		EnhancedInputComponent->BindAction(PandolFlowerComponent->JumpAction, ETriggerEvent::Started, PandolFlowerComponent, &UPandolFlowerComponent::Jump);
 		EnhancedInputComponent->BindAction(PandolFlowerComponent->DodgeAction, ETriggerEvent::Started, PandolFlowerComponent, &UPandolFlowerComponent::Dodge);
 		EnhancedInputComponent->BindAction(PandolFlowerComponent->PandolFlower_CrouchAction, ETriggerEvent::Started, PandolFlowerComponent, &UPandolFlowerComponent::Crouch);
-		EnhancedInputComponent->BindAction(PandolFlowerComponent->PandolFlower_HideAction, ETriggerEvent::Started, PandolFlowerComponent, &UPandolFlowerComponent::Hide);	
+		EnhancedInputComponent->BindAction(PandolFlowerComponent->PandolFlower_HideAction, ETriggerEvent::Started, PandolFlowerComponent, &UPandolFlowerComponent::FlowerHide);
 		EnhancedInputComponent->BindAction(PandolFlowerComponent->PandolFlower_AssassinAction, ETriggerEvent::Started, PandolFlowerComponent, &UPandolFlowerComponent::Assassination);
 		EnhancedInputComponent->BindAction(PandolFlowerComponent->LightAttackAction, ETriggerEvent::Started, PandolFlowerComponent, &UPandolFlowerComponent::LightAttack);
 		#pragma endregion
@@ -419,7 +419,7 @@ void APanWolfWarCharacter::Look(const FInputActionValue& Value)
 	{
 		// add yaw and pitch input to controller
 		AddControllerYawInput(LookAxisVector.X);
-		AddControllerPitchInput(LookAxisVector.Y);
+		AddControllerPitchInput(LookAxisVector.Y); 
 	}
 }
 

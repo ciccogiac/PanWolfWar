@@ -127,7 +127,6 @@ protected:
 #pragma region PrivateVariables
 
 private:
-
 	bool bIsHiding = false;
 	bool bIsInvulnerable = false;
 	bool bIsUnderAttack = false;
@@ -333,7 +332,7 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	FORCEINLINE TArray<AActor*> GetEnemyAware() { return EnemyAware; }
-
+	
 #pragma endregion
 
 

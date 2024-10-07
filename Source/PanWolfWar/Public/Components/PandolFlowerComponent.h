@@ -46,8 +46,8 @@ public:
 	void Hook();
 	void Jump();
 	void Crouch();
-	void Hide();
-	void UnHide();
+	void FlowerHide();
+	void FlowerUnHide();
 	void Assassination();
 	void Dodge();
 	void LightAttack();
@@ -71,9 +71,6 @@ private:
 	void GrapplingMovement();
 
 	void PlayMontage(UAnimMontage* MontageToPlay);
-
-	void SetCharRotation(const FVector ImpactNormal, bool Istantaneus = false);
-	void SetCharLocation(const FVector HitLocation, const FVector HitNormal, bool Istantaneus = false);
 
 	void CheckCanAirAssassin();
 

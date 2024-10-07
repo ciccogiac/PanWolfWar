@@ -14,7 +14,9 @@ class PANWOLFWAR_API AFlowerHideObject : public AActor
 public:	
 	AFlowerHideObject();
 
-	void ChangeCollisionType(bool Enabled);
+	void ChangeCollisionType(bool CollisionEnabled);
+	float GetFlowerHideBoxWidthX() const;
+	FVector GetFlowerHideBoxForward() const;
 
 protected:
 	virtual void BeginPlay() override;
