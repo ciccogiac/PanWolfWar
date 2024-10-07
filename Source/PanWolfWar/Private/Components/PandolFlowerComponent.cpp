@@ -596,10 +596,6 @@ void UPandolFlowerComponent::StartSwinging()
 
 #pragma region FlowerHide
 
-float InitialTargetArmLength;
-FVector InitialCameraLocation;
-FRotator InitialCameraRotation;
-
 void UPandolFlowerComponent::FlowerHide()
 {
 
@@ -612,32 +608,11 @@ void UPandolFlowerComponent::FlowerHide()
 	}
 	else
 	{
-		const FVector Start = CharacterOwner->GetActorLocation();
-		const FVector End = Start + CharacterOwner->GetActorForwardVector() * 80.f;
+
 		FHitResult hit;
-		EDrawDebugTrace::Type DebugTraceType = ShowDebugTrace ? EDrawDebugTrace::ForDuration : EDrawDebugTrace::None;
-		UKismetSystemLibrary::SphereTraceSingleForObjects(this, Start, End, 100.f, PandolFlowerHideObjectTypes, false, TArray<AActor*>(), DebugTraceType, hit, true);
+		FlowerHideTrace(hit);
+		if (!CheckCanFlowerHide(hit)) return;
 
-		if (!hit.bBlockingHit) return;
-
-		DrawDebugLine(
-			GetWorld(),
-			hit.ImpactPoint,  // Punto di partenza della linea
-			hit.ImpactPoint + hit.ImpactNormal * 100.0f,  // La normale viene moltiplicata per la lunghezza della linea
-			FColor::Red,  // Colore della linea
-			false,  // Se true, la linea rimane permanentemente, altrimenti sparisce dopo un certo tempo
-			5.0f,   // Durata della linea in secondi
-			0,      // Spessore della linea
-			5.0f    // Spessore (facoltativo)
-		);
-
-		FlowerHideObject = Cast<AFlowerHideObject>(hit.GetActor());
-		if (!FlowerHideObject) return;
-
-		const double Dot = FVector::DotProduct(hit.ImpactNormal, FlowerHideObject->GetFlowerHideBoxForward());
-		if (!(FMath::IsWithinInclusive(FMath::Abs(Dot), 0.98f, 1.f))) return;
-
-		/*CharacterOwner->DisableInput(CharacterOwner->GetLocalViewingPlayerController());*/
 		APlayerController* PlayerController = GetWorld()->GetFirstPlayerController();
 		if (PlayerController)
 		{
@@ -651,57 +626,74 @@ void UPandolFlowerComponent::FlowerHide()
 			CharacterOwner->GetCharacterMovement()->bWantsToCrouch = false;
 
 		PandolFlowerState = EPandolFlowerState::EPFS_FlowerCover;
-		InitialCameraLocation = CameraBoom->GetComponentLocation();
-		InitialCameraRotation = CameraBoom->GetComponentRotation();
 
-		FRotator NewRotation = FRotator(0.f, UKismetMathLibrary::MakeRotFromX(hit.ImpactNormal).Yaw, 0.f);
-		CharacterOwner->SetActorRotation(NewRotation);
-		//NewRotation = Istantaneus ? NewRotation : UKismetMathLibrary::RInterpTo(CharacterOwner->GetActorRotation(), NewRotation, GetWorld()->GetDeltaSeconds(), 1.5f);
-
-
-		CharacterOwner->SetActorLocation(hit.ImpactPoint);
-		CharacterOwner->AddActorLocalOffset(FVector(-FlowerHideObject->GetFlowerHideBoxWidthX()/2, 0.f, 0.f)); 
-		//SetFlowerHideLocation(hit.ImpactPoint, hit.ImpactNormal, true);
-
-		CharacterOwner->GetCharacterMovement()->bOrientRotationToMovement = false;
-		CharacterOwner->GetCharacterMovement()->MaxWalkSpeed = 100.f;
-
-		/*CameraBoom->TargetArmLength = 1000.f;*/
+		SetCharacterToFlowerHide(hit);
 		PanWolfCharacter->SetIsHiding(true);
 
-		//CharacterOwner->EnableInput(CharacterOwner->GetLocalViewingPlayerController());
-		if (PlayerController)
-		{
-			CharacterOwner->EnableInput(PlayerController);
-		}
+		if (PlayerController){ CharacterOwner->EnableInput(PlayerController);}
 
-
-		// Assumendo che tu stia usando uno SpringArm per gestire la telecamera
-		if (CameraBoom && FollowCamera) // CameraBoom è il braccio che gestisce la telecamera
-		{
-
-
-			// Blocca la rotazione della telecamera
-			CameraBoom->bUsePawnControlRotation = false; // La telecamera non seguirà la rotazione del controller
-
-			CameraBoom->bInheritPitch = false;
-			CameraBoom->bInheritYaw = false;
-			CameraBoom->bInheritRoll = false;
-
-			FVector NewLocation = CharacterOwner->GetActorLocation(); /*+CharacterOwner->GetActorRightVector() * 350.f + hit.ImpactNormal * 250.f;*/
-			FRotator NewRotation2 = FRotator(0.f, UKismetMathLibrary::MakeRotFromX(-hit.Normal).Yaw, 0.f);
-
-			CameraBoom->SetWorldLocation(NewLocation);
-			/*CameraBoom->SetWorldRotation(FRotator(0.f, 225.f, 0.f));*/
-			CameraBoom->SetWorldRotation(NewRotation2);
-
-			CameraBoom->TargetArmLength = 400.f;
-			FollowCamera->SetFieldOfView(130.f);
-		}
+		SetCameraToFlowerHide();
 
 	}
+}
+
+void UPandolFlowerComponent::FlowerHideTrace(FHitResult& hit)
+{
+	const FVector Start = CharacterOwner->GetActorLocation();
+	const FVector End = Start + CharacterOwner->GetActorForwardVector() * 80.f;
+	EDrawDebugTrace::Type DebugTraceType = ShowDebugTrace ? EDrawDebugTrace::ForDuration : EDrawDebugTrace::None;
+	UKismetSystemLibrary::SphereTraceSingleForObjects(this, Start, End, 100.f, PandolFlowerHideObjectTypes, false, TArray<AActor*>(), DebugTraceType, hit, true);
+}
+
+bool UPandolFlowerComponent::CheckCanFlowerHide(const FHitResult& hit)
+{
+	if (!hit.bBlockingHit) return false;
+
+	FlowerHideObject = Cast<AFlowerHideObject>(hit.GetActor());
+	if (!FlowerHideObject) return false;
+
+	const double Dot = FVector::DotProduct(hit.ImpactNormal, FlowerHideObject->GetFlowerHideBoxForward());
+	const double Tolerance = 0.01;
+	if (!FMath::IsNearlyEqual(FMath::Abs(Dot), 1.0, Tolerance)) { return false; }
+
+	return true;
+}
+
+void UPandolFlowerComponent::SetCharacterToFlowerHide(const FHitResult& hit)
+{
+	FRotator NewRotation = FRotator(0.f, UKismetMathLibrary::MakeRotFromX(hit.ImpactNormal).Yaw, 0.f);
+	CharacterOwner->SetActorRotation(NewRotation);
+	//NewRotation = Istantaneus ? NewRotation : UKismetMathLibrary::RInterpTo(CharacterOwner->GetActorRotation(), NewRotation, GetWorld()->GetDeltaSeconds(), 1.5f);
+
+	CharacterOwner->SetActorLocation(hit.ImpactPoint);
+	CharacterOwner->AddActorLocalOffset(FVector(-FlowerHideObject->GetFlowerHideBoxWidthX() / 2, 0.f, 0.f));
+
+	CharacterOwner->GetCharacterMovement()->bOrientRotationToMovement = false;
+	CharacterOwner->GetCharacterMovement()->MaxWalkSpeed = 100.f;
+}
+
+void UPandolFlowerComponent::SetCameraToFlowerHide()
+{
+	if (CameraBoom && FollowCamera) 
+	{
 
 
+		// Blocca la rotazione della telecamera
+		CameraBoom->bUsePawnControlRotation = false; // La telecamera non seguirà la rotazione del controller
+		CameraBoom->bInheritPitch = false;
+		CameraBoom->bInheritYaw = false;
+		CameraBoom->bInheritRoll = false;
+
+		FVector NewLocation = CharacterOwner->GetActorLocation(); /*+CharacterOwner->GetActorRightVector() * 350.f + hit.ImpactNormal * 250.f;*/
+		FRotator NewRotation2(0.f, CharacterOwner->GetActorRotation().Yaw + 180.f + 45.f, 0.f);
+
+
+		CameraBoom->SetWorldLocation(NewLocation);
+		CameraBoom->SetRelativeRotation(NewRotation2);
+
+		CameraBoom->TargetArmLength = 400.f;
+		FollowCamera->SetFieldOfView(130.f);
+	}
 }
 
 void UPandolFlowerComponent::FlowerUnHide()
@@ -712,21 +704,26 @@ void UPandolFlowerComponent::FlowerUnHide()
 		FlowerHideObject = nullptr;
 	}
 
-
 	CharacterOwner->SetActorLocation(CharacterOwner->GetActorLocation() + CharacterOwner->GetActorForwardVector() * 225.f);
-
-
-
 	CharacterOwner->GetCharacterMovement()->MaxWalkSpeed = 500.f;
 
-	/*CameraBoom->TargetArmLength = 400.f;*/
 	PanWolfCharacter->SetIsHiding(false);
 
+	ResetCameraFromFlowerHide();
+	/*NewLocation = Istantaneus ? NewLocation : UKismetMathLibrary::VInterpTo(CharacterOwner->GetActorLocation(), NewLocation, GetWorld()->GetDeltaSeconds(), 1.f);*/
+
+	CharacterOwner->GetCharacterMovement()->bOrientRotationToMovement = true;
+
+	PandolFlowerState = EPandolFlowerState::EPFS_PandolFlower;
+
+}
+
+void UPandolFlowerComponent::ResetCameraFromFlowerHide()
+{
 	if (CameraBoom && FollowCamera)
 	{
 
 		CameraBoom->bUsePawnControlRotation = true;
-		/*CameraBoom->bDoCollisionTest = true;*/
 		CameraBoom->bInheritPitch = true;
 		CameraBoom->bInheritYaw = true;
 		CameraBoom->bInheritRoll = true;
@@ -738,7 +735,6 @@ void UPandolFlowerComponent::FlowerUnHide()
 		CameraBoom->SetWorldRotation(FRotator::ZeroRotator);
 
 		FRotator DesiredCameraRotation = FRotator(-30.f, CharacterOwner->GetActorRotation().Yaw, 0.f);
-		
 
 		APlayerController* PlayerController = Cast<APlayerController>(CharacterOwner->GetController());
 		if (PlayerController)
@@ -746,15 +742,7 @@ void UPandolFlowerComponent::FlowerUnHide()
 			PlayerController->SetControlRotation(DesiredCameraRotation);
 		}
 	}
-
-	/*NewLocation = Istantaneus ? NewLocation : UKismetMathLibrary::VInterpTo(CharacterOwner->GetActorLocation(), NewLocation, GetWorld()->GetDeltaSeconds(), 1.f);*/
-
-	CharacterOwner->GetCharacterMovement()->bOrientRotationToMovement = true;
-
-	PandolFlowerState = EPandolFlowerState::EPFS_PandolFlower;
-
 }
-
 
 #pragma endregion
 

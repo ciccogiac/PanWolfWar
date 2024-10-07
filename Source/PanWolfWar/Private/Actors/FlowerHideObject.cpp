@@ -50,7 +50,6 @@ FVector AFlowerHideObject::GetFlowerHideBoxForward() const
 {
 	if (Collision_Box)
 	{
-		/*return Collision_Box->GetForwardVector();*/
 		return Collision_Box->GetComponentRotation().Vector();  // Ottieni il forward vector dal mondo
 	}
 	

@@ -47,7 +47,6 @@ public:
 	void Jump();
 	void Crouch();
 	void FlowerHide();
-	void FlowerUnHide();
 	void Assassination();
 	void Dodge();
 	void LightAttack();
@@ -73,6 +72,14 @@ private:
 	void PlayMontage(UAnimMontage* MontageToPlay);
 
 	void CheckCanAirAssassin();
+
+	void FlowerHideTrace(FHitResult& hit);
+	bool CheckCanFlowerHide(const FHitResult& hit);
+	void FlowerUnHide();
+	void SetCharacterToFlowerHide(const FHitResult& hit);
+	void SetCameraToFlowerHide();
+	void ResetCameraFromFlowerHide();
+
 
 	#pragma region AnimNotifyFunctions
 
