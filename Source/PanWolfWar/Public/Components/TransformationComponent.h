@@ -13,6 +13,7 @@ class UNiagaraSystem;
 class UPandolFlowerComponent;
 class UInputAction;
 class UPandoUIComponent;
+class UPandolfoComponent;
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnTransformationStateChanged, ETransformationState, NewState);
 
@@ -24,21 +25,22 @@ class PANWOLFWAR_API UTransformationComponent : public UActorComponent
 public:	
 	UTransformationComponent();
 
-	void SelectRightTransformation();
-	void SelectLeftTransformation();
-	void SelectUPTransformation();
-	void ApplyTrasformation();
+	void SelectBirdTransformation();
+	void SelectFlowerTransformation();
+	void SelectWolfTransformation();
+
+	UFUNCTION(BlueprintCallable)
+	void SelectDesiredTransformation(const ETransformationState DesiredTransformationState);
+
 	void AnnulTrasnformation();
 
-	void SetTransformation(ETransformationState NewTransformationState, ETransformationState PreviousTransformationState);
+	void SetTransformation(const ETransformationState NewTransformationState,const ETransformationState PreviousTransformationState);
 
 	void SetCanRegenFlower(bool CanRegenFlower);
 	void SetCanRegenBird(bool CanRegenBird);
 
 	bool AddItemStamina(ETransformationObjectTypes TransformationItemType,float Value);
 
-	UFUNCTION(BlueprintCallable)
-	void SelectDesiredTransformation(int32 TransformationState_ID);
 
 	void InitializeTransformationUI(UPandoUIComponent* _PandoUIComponent);
 
@@ -49,7 +51,7 @@ protected:
 	virtual void BeginPlay() override;
 
 private:
-	bool CanTrasform(const int32 NewTransformation_ID);
+	bool CanTrasform(const ETransformationState NewDesiredTransformationState);
 	void ExecuteTransformation(ETransformationState NewTransformationState );
 	void HandleComponentActivation(ETransformationState NewTransformationState, ETransformationState PreviousTransformationState);
 
@@ -63,6 +65,7 @@ private:
 	bool bFlowerConsuptionStopped = false;
 
 	UPandoUIComponent* PandoUIComponent;
+	UPandolfoComponent* PandolfoComponent;
 
 	// Timer handle
 	FTimerHandle Transformation_TimerHandle;
@@ -73,7 +76,6 @@ private:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Transformation State ", meta = (AllowPrivateAccess = "true"))
 	ETransformationState CurrentTransformationState = ETransformationState::ETS_None;
 
-	int32 DesiredTransformationState_ID = 0;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Transformation State ", meta = (AllowPrivateAccess = "true"))
 	TArray<ETransformationState>  PossibleTransformationState;

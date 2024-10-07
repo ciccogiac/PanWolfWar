@@ -213,7 +213,7 @@ void APanWolfWarCharacter::BeginPlay()
 		}
 	}
 
-	if (TransformationComponent) TransformationComponent->SelectDesiredTransformation(0);
+	if (TransformationComponent) TransformationComponent->SelectDesiredTransformation(ETransformationState::ETS_Pandolfo);
 }
 
 #pragma endregion
@@ -334,9 +334,9 @@ void APanWolfWarCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInpu
 		EnhancedInputComponent->BindAction(PandolfoComponent->GetClimbingComponent()->ClimbDownAction, ETriggerEvent::Completed, PandolfoComponent->GetClimbingComponent(), &UClimbingComponent::ClimbDownDeActivate);
 
 		// Transformation
-		EnhancedInputComponent->BindAction(PandolfoComponent->TransformationSelectUPAction, ETriggerEvent::Started, TransformationComponent, &UTransformationComponent::SelectUPTransformation);
-		EnhancedInputComponent->BindAction(PandolfoComponent->TransformationSelectRightAction, ETriggerEvent::Started, TransformationComponent, &UTransformationComponent::SelectRightTransformation);
-		EnhancedInputComponent->BindAction(PandolfoComponent->TransformationSelectLeftAction, ETriggerEvent::Started, TransformationComponent, &UTransformationComponent::SelectLeftTransformation);
+		EnhancedInputComponent->BindAction(PandolfoComponent->TransformationSelectUPAction, ETriggerEvent::Started, TransformationComponent, &UTransformationComponent::SelectWolfTransformation);
+		EnhancedInputComponent->BindAction(PandolfoComponent->TransformationSelectRightAction, ETriggerEvent::Started, TransformationComponent, &UTransformationComponent::SelectBirdTransformation);
+		EnhancedInputComponent->BindAction(PandolfoComponent->TransformationSelectLeftAction, ETriggerEvent::Started, TransformationComponent, &UTransformationComponent::SelectFlowerTransformation);
 
 		// SneakCover
 		EnhancedInputComponent->BindAction(PandolfoComponent->GetSneakCoverComponent()->SneakCoverMoveAction, ETriggerEvent::Triggered, PandolfoComponent->GetSneakCoverComponent(), &USneakCoverComponent::CoverMove);
@@ -806,7 +806,7 @@ float APanWolfWarCharacter::TakeDamage(float DamageAmount, FDamageEvent const& D
 void APanWolfWarCharacter::Die()
 {
 	Tags.Add(FName("Dead"));
-	TransformationComponent->SelectDesiredTransformation(0);
+	TransformationComponent->SelectDesiredTransformation(ETransformationState::ETS_Pandolfo);
 	PandolfoComponent->ClearAllTimer();
 	GetMesh()->SetSimulatePhysics(true);
 	GetMesh()->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);

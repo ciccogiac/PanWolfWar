@@ -772,7 +772,7 @@ void UPandolFlowerComponent::Assassination()
 			Enemy = PandolfoComponent->GetAssassinableEnemy();
 		}
 
-		TransformationComponent->SelectDesiredTransformation(0);
+		TransformationComponent->SelectDesiredTransformation(ETransformationState::ETS_Pandolfo);
 
 		if(bIsHidingAssassination)
 			PandolfoComponent->AssassinationFromHiding(Enemy);
