@@ -16,26 +16,17 @@
 #include "NiagaraComponent.h"
 
 #include "PanWarFunctionLibrary.h"
-#include "Components/TargetingComponent.h"
 
 #pragma region EngineFunctions
 
 UPanWolfComponent::UPanWolfComponent()
 {
-	PrimaryComponentTick.bCanEverTick = true;
-	PrimaryComponentTick.bStartWithTickEnabled = false;
-	PrimaryComponentTick.SetTickFunctionEnable(false);
-	bAutoActivate = false;
-
-	CharacterOwner = Cast<ACharacter>(GetOwner());
-	PanWolfCharacter = Cast<APanWolfWarCharacter>(CharacterOwner);
 }
 
 void UPanWolfComponent::BeginPlay()
 {
 	Super::BeginPlay();
 
-	CombatComponent = Cast<UPandoCombatComponent>(PanWolfCharacter->GetCombatComponent());
 	TargetingComponent = PanWolfCharacter->GetTargetingComponent();
 }
 
@@ -44,53 +35,32 @@ void UPanWolfComponent::TickComponent(float DeltaTime, ELevelTick TickType, FAct
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 }
 
+#pragma endregion
+
+#pragma region ActivationSection
+
 void UPanWolfComponent::Activate(bool bReset)
 {
-	Super::Activate();
-
-
-
-	
+	Super::Activate();	
 
 	PanWolfState = EPanWolfState::EPWS_PanWolf;
 
-	PanWolfCharacter->SetTransformationCharacter(SkeletalMeshAsset, Anim);
-
-	CharacterOwner->GetCharacterMovement()->JumpZVelocity = 800.f;
-	CharacterOwner->GetCapsuleComponent()->SetCapsuleHalfHeight(110.f);
-	CharacterOwner->GetCapsuleComponent()->SetCapsuleRadius(85.f);
 	CharacterOwner->GetMesh()->AddLocalOffset(FVector(15.f, -20.f, -10.f));
-
-
-	PanWolfCharacter->GetCameraBoom()->TargetArmLength = 400.f;
-	CharacterOwner->GetCharacterMovement()->bWantsToCrouch = false;
-
-	OwningPlayerAnimInstance = CharacterOwner->GetMesh()->GetAnimInstance();
+	MovementComponent->bWantsToCrouch = false;
 
 	if (OwningPlayerAnimInstance)
 	{
 		CombatComponent->SetCombatEnabled(OwningPlayerAnimInstance, ETransformationCombatType::ETCT_PanWolf);
-		OwningPlayerAnimInstance->OnMontageEnded.AddDynamic(this, &UPanWolfComponent::OnMontageEnded);
 	}
-
-	PanWolfCharacter->SetCollisionHandBoxExtent(CombatHandBoxExtent);
 
 	bIsBlocking = false;
 	bIsBlockingReact = false;
 	PanWolfCharacter->SetIsHiding(false);
-
-	PanWolfCharacter->AddMappingContext(PanWolfMappingContext, 1);
 }
 
 void UPanWolfComponent::Deactivate()
 {
 	Super::Deactivate();
-
-	CharacterOwner->GetCharacterMovement()->JumpZVelocity = 500.f;
-	CharacterOwner->GetCapsuleComponent()->SetCapsuleRadius(35.f);
-	CombatComponent->ResetAttack();
-
-	PanWolfCharacter->RemoveMappingContext(PanWolfMappingContext);
 
 	if (PanWolfState == EPanWolfState::EPWS_Dodging)
 		PanWolfCharacter->EndDodge();
@@ -109,8 +79,6 @@ void UPanWolfComponent::Jump()
 
 	CharacterOwner->Jump();
 }
-
-
 
 void UPanWolfComponent::Dodge()
 {
@@ -142,6 +110,10 @@ void UPanWolfComponent::Dodge()
 
 	PanWolfCharacter->StartDodge();
 	OwningPlayerAnimInstance->Montage_Play(PanWolfDodgeMontage);
+
+	FOnMontageEnded DodgeMontageEndedDelegate;
+	DodgeMontageEndedDelegate.BindUObject(this, &UPanWolfComponent::OnDodgeMontageEnded);
+	OwningPlayerAnimInstance->Montage_SetEndDelegate(DodgeMontageEndedDelegate, PanWolfDodgeMontage);
 }
 
 void UPanWolfComponent::LightAttack()
@@ -173,8 +145,6 @@ void UPanWolfComponent::LightAttack()
 		{
 			if (CombatComponent->IsAttacking()) return;
 
-
-
 			if (OwningPlayerAnimInstance->Montage_IsPlaying(PanWolf_BlockMontage))
 			{
 				float CurrentMontagePosition = OwningPlayerAnimInstance->Montage_GetPosition(PanWolf_BlockMontage);
@@ -189,10 +159,7 @@ void UPanWolfComponent::LightAttack()
 			PanWolfState = EPanWolfState::EPWS_PanWolf;
 			CombatComponent->PerformAttack(EAttackType::EAT_LightAttack);
 		}
-
 	}
-		
-
 }
 
 void UPanWolfComponent::HeavyAttack()
@@ -243,7 +210,6 @@ void UPanWolfComponent::HeavyAttack()
 
 }
 
-
 #pragma endregion
 
 #pragma region Block
@@ -265,7 +231,10 @@ void UPanWolfComponent::Block()
 	OwningPlayerAnimInstance->Montage_Play(PanWolf_BlockMontage);
 	OwningPlayerAnimInstance->Montage_JumpToSection(FName("Idle"), PanWolf_BlockMontage);
 
-	/*AddShield();*/
+	FOnMontageEnded BlockMontageEndedDelegate;
+	BlockMontageEndedDelegate.BindUObject(this, &UPanWolfComponent::OnBlockMontageEnded);
+	OwningPlayerAnimInstance->Montage_SetEndDelegate(BlockMontageEndedDelegate, PanWolf_BlockMontage);
+
 }
 
 void UPanWolfComponent::UnBlock()
@@ -280,24 +249,24 @@ void UPanWolfComponent::UnBlock()
 	{
 		PanWolfState = EPanWolfState::EPWS_PanWolf;
 
-
-	/*	Debug::Print(TEXT("Problem"));*/
 	}
-
-	/*RemoveShield();*/
 }
 
 void UPanWolfComponent::InstantBlock()
 {
 	if (!bIsBlocking) return;
 	if (!OwningPlayerAnimInstance) return;
-	/*BlockActivatedTime = UGameplayStatics::GetTimeSeconds(this);*/
+
 	bIsBlockingReact = false;
 
 	PanWolfState = EPanWolfState::EPWS_Blocking;
 
 	OwningPlayerAnimInstance->Montage_Play(PanWolf_BlockMontage);
 	OwningPlayerAnimInstance->Montage_JumpToSection(FName("Idle"), PanWolf_BlockMontage);
+
+	FOnMontageEnded BlockMontageEndedDelegate;
+	BlockMontageEndedDelegate.BindUObject(this, &UPanWolfComponent::OnBlockMontageEnded);
+	OwningPlayerAnimInstance->Montage_SetEndDelegate(BlockMontageEndedDelegate, PanWolf_BlockMontage);
 }
 
 void UPanWolfComponent::LeftBlock()
@@ -342,7 +311,6 @@ void UPanWolfComponent::ReturnToBlockFromAttack()
 
 void UPanWolfComponent::SuccesfulBlock(AActor* Attacker)
 {
-	/*Debug::Print(TEXT("Attacker : ") + Attacker->GetName());*/
 	bIsPerfectBlock = 
 		(
 		Attacker &&
@@ -361,17 +329,13 @@ void UPanWolfComponent::SuccesfulBlock(AActor* Attacker)
 		float AngleInRadians = FMath::Acos(DotProduct);
 		float AngleInDegrees = FMath::RadiansToDegrees(AngleInRadians);
 
-		/*UE_LOG(LogTemp, Warning, TEXT("L'angolo tra i due attori è: %f gradi"), AngleInDegrees);*/
-
 		FVector CrossProduct = FVector::CrossProduct(ForwardVectorOwner, ForwardVectorAttacker);
 		if (CrossProduct.Z < 0 && AngleInDegrees < 135.f)
 		{
-			/*UE_LOG(LogTemp, Warning, TEXT("Attacker è a destra di CharacterOwner"));*/
 			RightBlock();
 		}
 		else
 		{
-			/*UE_LOG(LogTemp, Warning, TEXT("Attacker è a sinistra di CharacterOwner"));*/
 			LeftBlock();
 		}
 
@@ -379,8 +343,6 @@ void UPanWolfComponent::SuccesfulBlock(AActor* Attacker)
 		float PushbackStrength = 350.f;
 		CharacterOwner->LaunchCharacter(PushDirection * PushbackStrength, true, true);
 	}
-
-
 
 	if (Block_Sound)
 	{
@@ -392,10 +354,6 @@ void UPanWolfComponent::SuccesfulBlock(AActor* Attacker)
 
 	if (bIsPerfectBlock)
 	{
-		/*Debug::Print(TEXT("PerfectBlock"));*/
-
-		//const FRotator BlockRotation = UKismetMathLibrary::FindLookAtRotation(CharacterOwner->GetActorLocation(), Attacker->GetActorLocation());
-		//CharacterOwner->SetActorRotation(BlockRotation);
 
 		PanWolfCharacter->SetInvulnerability(true);
 		if (TargetingComponent && TargetingComponent->IsTargeting())
@@ -403,22 +361,16 @@ void UPanWolfComponent::SuccesfulBlock(AActor* Attacker)
 			TargetingComponent->SetSwitchDirectionBlocked(true);
 			TargetingComponent->ChangeTargetActor(Attacker);
 		}
-		
-
-		//JumpToFinisher?
 
 		UNiagaraFunctionLibrary::SpawnSystemAttached(PerfectBlockEffectNiagara, CharacterOwner->GetMesh(), FName("ShieldSocket"), CharacterOwner->GetActorForwardVector() * 30.f, UKismetMathLibrary::MakeRotFromX(CharacterOwner->GetActorForwardVector()), EAttachLocation::KeepRelativeOffset, true);
 
 		UGameplayStatics::SetGlobalTimeDilation(this, 0.2f);
-		/*GetWorld()->GetTimerManager().SetTimer(PerfectBlock_TimerHandle, [this]() {UGameplayStatics::SetGlobalTimeDilation(this, 1.f); }, PerfectBlockTimer, false);*/
 		GetWorld()->GetTimerManager().SetTimer(PerfectBlock_TimerHandle, [this]() {this->ResetPerfectBlock(); }, PerfectBlockTimer, false); 
 
 		ICombatInterface* EnemyCombatInterface = Cast<ICombatInterface>(Attacker);
 		if (EnemyCombatInterface)
 			EnemyCombatInterface->ShortStunned();
 	}
-
-
 
 }
 
@@ -451,57 +403,62 @@ void UPanWolfComponent::RemoveShield()
 
 #pragma endregion
 
+#pragma region MontageSection
+
 UAnimMontage* UPanWolfComponent::GetPanWolfHitReactMontage()
 {
 	bHitted = true;
 	return PanWolf_HitReactMontage;
 }
 
-void UPanWolfComponent::OnMontageEnded(UAnimMontage* Montage, bool bInterrupted)
+void UPanWolfComponent::OnDodgeMontageEnded(UAnimMontage* Montage, bool bInterrupted)
 {
-	if (Montage == PanWolfDodgeMontage)
-	{
-		PanWolfCharacter->EndDodge();
-
-		if (PanWolfState != EPanWolfState::EPWS_Blocking )
-		{
-			PanWolfState = EPanWolfState::EPWS_PanWolf;
-		}
-		
-	}
-
-	else if (Montage == PanWolf_HitReactMontage)
-	{
-
-		/*if (bIsBlocking && PanWolfState == EPanWolfState::EPWS_Blocking)*/
-		if (bIsBlocking )
-			InstantBlock();
-		else
-			PanWolfState = EPanWolfState::EPWS_PanWolf;
+	if (!Montage) return;
 	
-		bHitted = false;
+	PanWolfCharacter->EndDodge();
 
-		if (!CombatComponent->IsAttacking())
-			CombatComponent->ResetAttack();
+	if (PanWolfState != EPanWolfState::EPWS_Blocking)
+	{
+		PanWolfState = EPanWolfState::EPWS_PanWolf;
 	}
 
-	else if (Montage == PanWolf_BlockMontage)
+}
+
+void UPanWolfComponent::OnBlockMontageEnded(UAnimMontage* Montage, bool bInterrupted)
+{
+	if (!Montage) return;
+	
+	if (PanWolfState == EPanWolfState::EPWS_Blocking && bIsBlockingReact)
 	{
-		/**Blocking React*/
+		bIsBlockingReact = false;
 
-		if (PanWolfState == EPanWolfState::EPWS_Blocking && bIsBlockingReact)
+		if (bHitted)
 		{
-			bIsBlockingReact = false;
-
-			if (bHitted)
-			{
-				/*PanWolfState = EPanWolfState::EPWS_PanWolf;*/
-				return;
-			}
-			OwningPlayerAnimInstance->Montage_Play(PanWolf_BlockMontage);
-			OwningPlayerAnimInstance->Montage_JumpToSection(FName("Idle"), PanWolf_BlockMontage);
-
 			return;
 		}
+		OwningPlayerAnimInstance->Montage_Play(PanWolf_BlockMontage);
+		OwningPlayerAnimInstance->Montage_JumpToSection(FName("Idle"), PanWolf_BlockMontage);
+
+		FOnMontageEnded BlockMontageEndedDelegate;
+		BlockMontageEndedDelegate.BindUObject(this, &UPanWolfComponent::OnBlockMontageEnded);
+		OwningPlayerAnimInstance->Montage_SetEndDelegate(BlockMontageEndedDelegate, PanWolf_BlockMontage);
+
+		return;
 	}
+	
 }
+
+void UPanWolfComponent::OnWolfHitReactMontageEnded()
+{
+	if (bIsBlocking)
+		InstantBlock();
+	else
+		PanWolfState = EPanWolfState::EPWS_PanWolf;
+
+	bHitted = false;
+
+	if (!CombatComponent->IsAttacking())
+		CombatComponent->ResetAttack();
+}
+
+#pragma endregion

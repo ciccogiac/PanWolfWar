@@ -3,14 +3,12 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Components/TransformationCharacterComponent.h"
 #include "Components/ActorComponent.h"
 #include "PanWolfComponent.generated.h"
 
-class APanWolfWarCharacter;
-class UInputMappingContext;
 class UInputAction;
 class UAnimMontage;
-class UPandoCombatComponent;
 class UNiagaraSystem;
 class UNiagaraComponent;
 class UTargetingComponent;
@@ -25,7 +23,7 @@ enum class EPanWolfState : uint8
 
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
-class PANWOLFWAR_API UPanWolfComponent : public UActorComponent
+class PANWOLFWAR_API UPanWolfComponent : public UTransformationCharacterComponent
 {
 	GENERATED_BODY()
 
@@ -50,14 +48,13 @@ public:
 	void ReturnToBlockFromAttack();
 
 	UAnimMontage* GetPanWolfHitReactMontage();
+	void OnWolfHitReactMontageEnded();
 
 protected:
 	virtual void BeginPlay() override;
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
 private:
-	UFUNCTION()
-	void OnMontageEnded(UAnimMontage* Montage, bool bInterrupted);
 
 	void AddShield();
 	void RemoveShield();
@@ -67,23 +64,16 @@ private:
 
 	void ResetPerfectBlock();
 
+	UFUNCTION()
+	void OnDodgeMontageEnded(UAnimMontage* Montage, bool bInterrupted);
+
+	UFUNCTION()
+	void OnBlockMontageEnded(UAnimMontage* Montage, bool bInterrupted);
+
 private:
-	APanWolfWarCharacter* PanWolfCharacter;
-	ACharacter* CharacterOwner;
-	UPandoCombatComponent* CombatComponent;
-	UAnimInstance* OwningPlayerAnimInstance;
 	UTargetingComponent* TargetingComponent;
 
 	bool bHitted = false;
-
-	UPROPERTY(Category = Character, EditDefaultsOnly, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
-	TObjectPtr<USkeletalMesh> SkeletalMeshAsset;
-
-	UPROPERTY(Category = Character, EditDefaultsOnly, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
-	TSubclassOf<UAnimInstance> Anim;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
-	UInputMappingContext* PanWolfMappingContext;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Dodge", meta = (AllowPrivateAccess = "true"))
 	UAnimMontage* PanWolfDodgeMontage;
@@ -126,9 +116,6 @@ private:
 
 	FTimerHandle PerfectBlock_TimerHandle;
 
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Combat", meta = (AllowPrivateAccess = "true"))
-	FVector CombatHandBoxExtent;
 
 	bool bIsBlocking = false;
 	bool bIsBlockingReact = false;

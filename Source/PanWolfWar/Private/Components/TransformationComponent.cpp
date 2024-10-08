@@ -38,9 +38,11 @@ void UTransformationComponent::BeginPlay()
 		PandolfoComponent = PanWolfWarCharacter->GetPandolfoComponent();
 	}
 
+
 }
 
 #pragma endregion
+
 
 void UTransformationComponent::InitializeTransformationUI(UPandoUIComponent* _PandoUIComponent)
 {
@@ -58,9 +60,9 @@ void UTransformationComponent::InitializeTransformationUI(UPandoUIComponent* _Pa
 
 #pragma region SelectingTransformation
 
-void UTransformationComponent::SelectBirdTransformation()
+void UTransformationComponent::SelectPandolfoTransformation()
 {
-	SelectDesiredTransformation(ETransformationState::ETS_PanBird);
+	SelectDesiredTransformation(ETransformationState::ETS_Pandolfo);
 }
 
 void UTransformationComponent::SelectFlowerTransformation()
@@ -72,6 +74,11 @@ void UTransformationComponent::SelectFlowerTransformation()
 void UTransformationComponent::SelectWolfTransformation()
 {
 	SelectDesiredTransformation(ETransformationState::ETS_PanWolf);
+}
+
+void UTransformationComponent::SelectBirdTransformation()
+{
+	SelectDesiredTransformation(ETransformationState::ETS_PanBird);
 }
 
 void UTransformationComponent::SelectDesiredTransformation(const ETransformationState DesiredTransformationState)
@@ -104,7 +111,7 @@ void UTransformationComponent::SetTransformation(const ETransformationState NewT
 	switch (NewTransformationState)
 	{
 	case ETransformationState::ETS_Pandolfo:
-
+		GetWorld()->GetTimerManager().ClearTimer(Transformation_TimerHandle);
 		ExecuteTransformation(NewTransformationState);
 		HandleComponentActivation(NewTransformationState, PreviousTransformationState);
 		break;
@@ -181,8 +188,6 @@ void UTransformationComponent::ExecuteTransformation(ETransformationState NewTra
 
 	InteractComponent->ResetOverlappingObject();
 
-	//PanWolfWarCharacter->GetNiagaraTransformationEffect()->Activate(true);
-
 	PanWolfWarCharacter->HandleTransformationChangedState();
 
 }
@@ -240,13 +245,6 @@ void UTransformationComponent::HandleComponentActivation(ETransformationState Ne
 	}
 }
 
-void UTransformationComponent::AnnulTrasnformation()
-{
-	if (CurrentTransformationState == ETransformationState::ETS_Pandolfo || CurrentTransformationState == ETransformationState::ETS_Transforming) return;
-
-	GetWorld()->GetTimerManager().ClearTimer(Transformation_TimerHandle);
-	SelectDesiredTransformation(ETransformationState::ETS_Pandolfo);
-}
 
 #pragma endregion
 

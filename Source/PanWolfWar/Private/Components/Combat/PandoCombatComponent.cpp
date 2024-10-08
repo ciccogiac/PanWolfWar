@@ -16,7 +16,6 @@ void UPandoCombatComponent::SetCombatEnabled(UAnimInstance* PlayerAnimInstance, 
 {
 	OwningPlayerAnimInstance = PlayerAnimInstance;
 	if (!OwningPlayerAnimInstance) return;
-	//OwningPlayerAnimInstance->OnMontageEnded.AddDynamic(this, &UPandoCombatComponent::OnAttackMontageEnded);
 
 	CurrentTransformationCombatType = TransformationCombatType;
 

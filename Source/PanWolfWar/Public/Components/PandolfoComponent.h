@@ -1,23 +1,19 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Components/TransformationCharacterComponent.h"
 #include "Components/ActorComponent.h"
 #include <Components/TimelineComponent.h>
 #include "PandolfoComponent.generated.h"
 
 
-class UInputMappingContext;
-class APanWolfWarCharacter;
 class UClimbingComponent;
 class UInputAction;
-class UCapsuleComponent;
-class USpringArmComponent;
 class UAnimMontage;
 class UKiteComponent;
 class AKiteBoard;
 class USneakCoverComponent;
 class ABaseEnemy;
-class UPandoCombatComponent;
 
 UENUM(BlueprintType)
 enum class EPandolfoState : uint8
@@ -33,7 +29,7 @@ enum class EPandolfoState : uint8
 };
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
-class PANWOLFWAR_API UPandolfoComponent : public UActorComponent
+class PANWOLFWAR_API UPandolfoComponent : public UTransformationCharacterComponent
 {
 	GENERATED_BODY()
 
@@ -74,11 +70,11 @@ public:
 protected:
 	virtual void BeginPlay() override;
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
-	virtual void OnComponentDestroyed(bool bDestroyingHierarchy) override;
 
 private:
+
 	UFUNCTION()
-	void OnMontageEnded(UAnimMontage* Montage, bool bInterrupted);
+	void OnDodgeMontageEnded(UAnimMontage* Montage, bool bInterrupted);
 
 	void DetectAirAssassinableEnemy();
 	
@@ -121,15 +117,6 @@ private:
 	void LoadPredictJump(const FVector ActorLocation);
 
 private:
-	UPROPERTY()
-	UAnimInstance* OwningPlayerAnimInstance;
-
-	ACharacter* CharacterOwner;
-	APanWolfWarCharacter* PanWolfCharacter;
-	UCapsuleComponent* Capsule;
-	USpringArmComponent* CameraBoom;
-	UPandoCombatComponent* CombatComponent;
-
 	ABaseEnemy* AssassinableOverlapped = nullptr;
 	ABaseEnemy* AIR_AssassinableOverlapped = nullptr;
 	FTimerHandle AirAssassination_TimerHandle;
@@ -151,15 +138,6 @@ private:
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Climb Params", meta = (AllowPrivateAccess = "true"))
 	bool ShowDebugTrace = false;
-
-	UPROPERTY(Category = Character, EditDefaultsOnly, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
-	TObjectPtr<USkeletalMesh> SkeletalMeshAsset;
-
-	UPROPERTY(Category = Character, EditDefaultsOnly, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
-	TSubclassOf<UAnimInstance> Anim;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
-	UInputMappingContext* PandolfoMappingContext;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Movement, meta = (AllowPrivateAccess = "true"))
 	UClimbingComponent* ClimbingComponent;
@@ -225,9 +203,6 @@ private:
 	TEnumAsByte<EObjectTypeQuery> PredictJumpObjectTypes;
 
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Combat", meta = (AllowPrivateAccess = "true"))
-	FVector CombatHandBoxExtent;
-
 public:
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Pandolfo State ")
@@ -248,15 +223,6 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
 	UInputAction* Pandolfo_AssassinAction;
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input| Transformation")
-	UInputAction* TransformationSelectRightAction;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input| Transformation")
-	UInputAction* TransformationSelectLeftAction;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input| Transformation")
-	UInputAction* TransformationSelectUPAction;
-
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	UInputAction* DodgeAction;
 
@@ -274,5 +240,7 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category = "Gliding")
 	FORCEINLINE bool IsGliding() const { return PandolfoState == EPandolfoState::EPS_Gliding; }
+
+
 	
 };

@@ -31,122 +31,21 @@
 
 #include "Components/Combat/PandoCombatComponent.h"
 
+#pragma region EngineFunctions
+
 UPandolfoComponent::UPandolfoComponent()
 {
-	PrimaryComponentTick.bCanEverTick = true;
-	PrimaryComponentTick.bStartWithTickEnabled = false;
-	PrimaryComponentTick.SetTickFunctionEnable(false);
-	bAutoActivate = false;
-
-	CharacterOwner = Cast<ACharacter>(GetOwner());
-	PanWolfCharacter = Cast<APanWolfWarCharacter>(CharacterOwner);
-
 	ClimbingComponent = CreateDefaultSubobject<UClimbingComponent>(TEXT("ClimbingComponent"));
 	SneakCoverComponent = CreateDefaultSubobject<USneakCoverComponent>(TEXT("SneakCoverComponent"));
 	KiteComponent = CreateDefaultSubobject<UKiteComponent>(TEXT("KiteComponent"));
-	
+
 	Knife = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Knife"));
 	Knife->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-}
-
-void UPandolfoComponent::Activate(bool bReset)
-{
-	Super::Activate();
-
-	if(!CharacterOwner)
-		CharacterOwner = Cast<ACharacter>(GetOwner());
-	if(!PanWolfCharacter)
-		PanWolfCharacter = Cast<APanWolfWarCharacter>(CharacterOwner);
-
-	PanWolfCharacter->AddMappingContext(PandolfoMappingContext, 1);
-
-	PandolfoState = EPandolfoState::EPS_Pandolfo;
-
-	Capsule->SetCapsuleRadius(35.f);
-	Capsule->SetCapsuleHalfHeight(90.f);
-	CameraBoom->TargetArmLength = 400.f;
-
-	PanWolfCharacter->bUseControllerRotationPitch = false;
-	PanWolfCharacter->bUseControllerRotationYaw = false;
-
-	PanWolfCharacter->SetTransformationCharacter(SkeletalMeshAsset, Anim);
-	PanWolfCharacter->SetMetaHumanVisibility(true);
-
-	OwningPlayerAnimInstance = CharacterOwner->GetMesh()->GetAnimInstance();
-	if (OwningPlayerAnimInstance)
-	{
-		CombatComponent->SetCombatEnabled(OwningPlayerAnimInstance, ETransformationCombatType::ETCT_Pandolfo);
-		OwningPlayerAnimInstance->OnMontageEnded.AddDynamic(this, &UPandolfoComponent::OnMontageEnded);
-	}
-
-	if (PanWolfCharacter->IsHiding())
-	{
-		CharacterOwner->GetMesh()->SetScalarParameterValueOnMaterials(FName("HideFxSwitch"), 10.f);
-		PanWolfCharacter->SetMetaHumanHideFX(10.f);
-	}
-
-
-
-	if(CharacterOwner->GetCharacterMovement()->IsFalling())
-		ClimbingComponent->Activate();
-
-	//PanWolfCharacter->GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Falling);
-	PanWolfCharacter->GetCharacterMovement()->MaxFlySpeed = 0.f;
-
-	ClimbingComponent->SetAnimationBindings();
-
-	PanWolfCharacter->SetCollisionHandBoxExtent(CombatHandBoxExtent);
-
-
-
-	Knife->AttachToComponent(CharacterOwner->GetMesh(),FAttachmentTransformRules::SnapToTargetNotIncludingScale,FName("foot_Knife_Socket"));
-	Knife->SetVisibility(true);
-
-	//KiteComponent->Activate();
-
-	
-	if (!CharacterOwner->GetMovementComponent()->IsMovingOnGround())
-	{
-		bIsGlideTimerActive = true;
-		GetWorld()->GetTimerManager().SetTimer(Glide_TimerHandle, [this]() {this->TryGliding(); }, 0.25f, true);
-	}
-
-	GetWorld()->GetTimerManager().SetTimer(AirAssassination_TimerHandle, [this]() {this->CheckCanAirAssassin(); }, 0.25f, true);
-		
-	if(CharacterOwner->GetCharacterMovement()->IsCrouching())
-		CrouchingTimeline.PlayFromStart();
-	else
-		CrouchingTimeline.Reverse();
-}
-
-void UPandolfoComponent::Deactivate()
-{
-	Super::Deactivate();
-
-	PanWolfCharacter->RemoveMappingContext(PandolfoMappingContext);
-	ClimbingComponent->Deactivate();
-	CombatComponent->ResetAttack();
-
-	Knife->SetVisibility(false);
-
-	GetWorld()->GetTimerManager().ClearTimer(AirAssassination_TimerHandle);
-
-
-	PanWolfCharacter->SetMetaHumanVisibility(false);
-
-	if(PandolfoState == EPandolfoState::EPS_Dodging)
-		PanWolfCharacter->EndDodge();
-
-	PandolfoState = EPandolfoState::EPS_Pandolfo;
 }
 
 void UPandolfoComponent::BeginPlay()
 {
 	Super::BeginPlay();
-
-	Capsule = PanWolfCharacter->GetCapsuleComponent();
-	CameraBoom = PanWolfCharacter->GetCameraBoom();
-	CombatComponent = Cast<UPandoCombatComponent>(PanWolfCharacter->GetCombatComponent());
 
 	if (!CrouchCameraLenght_Curve) return;
 
@@ -154,20 +53,6 @@ void UPandolfoComponent::BeginPlay()
 	ProgressUpdate.BindUFunction(this, FName("CrouchCameraUpdate"));
 	CrouchingTimeline.AddInterpFloat(CrouchCameraLenght_Curve, ProgressUpdate);
 
-}
-
-void UPandolfoComponent::OnComponentDestroyed(bool bDestroyingHierarchy)
-{
-	//Debug::Print(TEXT("OVA"));
-
-	//FTimerHandle AirAssassination_TimerHandle;
-	//FTimerHandle AirAssassinationCamera_TimerHandle;
-	//FTimerHandle Glide_TimerHandle;
-	//FTimerHandle Sliding_TimerHandle;
-	//FTimerHandle PredictJump_TimerHandle;
-
-	//GetWorld()->GetTimerManager().ClearTimer(AirAssassination_TimerHandle);
-	//GetWorld()->GetTimerManager().ClearAllTimersForObject(this);
 }
 
 void UPandolfoComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
@@ -178,10 +63,83 @@ void UPandolfoComponent::TickComponent(float DeltaTime, ELevelTick TickType, FAc
 
 }
 
-const bool UPandolfoComponent::IsClimbing()
+#pragma endregion
+
+#pragma region ActivationSection
+
+void UPandolfoComponent::Activate(bool bReset)
 {
-	return ClimbingComponent->IsClimbing();
+	Super::Activate();
+
+	PandolfoState = EPandolfoState::EPS_Pandolfo;
+
+	PanWolfCharacter->SetMetaHumanVisibility(true);
+
+	if (OwningPlayerAnimInstance)
+	{
+		CombatComponent->SetCombatEnabled(OwningPlayerAnimInstance, ETransformationCombatType::ETCT_Pandolfo);
+	}
+
+	if (PanWolfCharacter->IsHiding())
+	{
+		CharacterOwner->GetMesh()->SetScalarParameterValueOnMaterials(FName("HideFxSwitch"), 10.f);
+		PanWolfCharacter->SetMetaHumanHideFX(10.f);
+	}
+
+
+
+	if (MovementComponent->IsFalling())
+		ClimbingComponent->Activate();
+
+
+	PanWolfCharacter->GetCharacterMovement()->MaxFlySpeed = 0.f;
+
+	ClimbingComponent->SetAnimationBindings();
+
+
+
+	Knife->AttachToComponent(CharacterOwner->GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, FName("foot_Knife_Socket"));
+	Knife->SetVisibility(true);
+
+	//KiteComponent->Activate();
+
+
+	if (!CharacterOwner->GetMovementComponent()->IsMovingOnGround())
+	{
+		bIsGlideTimerActive = true;
+		GetWorld()->GetTimerManager().SetTimer(Glide_TimerHandle, [this]() {this->TryGliding(); }, 0.25f, true);
+	}
+
+	GetWorld()->GetTimerManager().SetTimer(AirAssassination_TimerHandle, [this]() {this->CheckCanAirAssassin(); }, 0.25f, true);
+
+	if (MovementComponent->IsCrouching())
+		CrouchingTimeline.PlayFromStart();
+	else
+		CrouchingTimeline.Reverse();
 }
+
+void UPandolfoComponent::Deactivate()
+{
+	Super::Deactivate();
+
+	ClimbingComponent->Deactivate();
+
+	Knife->SetVisibility(false);
+
+	GetWorld()->GetTimerManager().ClearTimer(AirAssassination_TimerHandle);
+	GetWorld()->GetTimerManager().ClearTimer(Glide_TimerHandle);
+
+	PanWolfCharacter->SetMetaHumanVisibility(false);
+
+	if (PandolfoState == EPandolfoState::EPS_Dodging)
+		PanWolfCharacter->EndDodge();
+
+	PandolfoState = EPandolfoState::EPS_Pandolfo;
+}
+
+#pragma endregion
+
+#pragma region Actions
 
 void UPandolfoComponent::Jump()
 {
@@ -198,9 +156,68 @@ void UPandolfoComponent::Jump()
 	}
 }
 
+void UPandolfoComponent::Dodge()
+{
+	if (!PanWolfCharacter->CanPerformDodge() || PandolfoState != EPandolfoState::EPS_Pandolfo) return;
+	if (!PandolfoDodgeMontage || !OwningPlayerAnimInstance) return;
+
+	PandolfoState = EPandolfoState::EPS_Dodging;
+
+	PanWolfCharacter->StartDodge();
+	OwningPlayerAnimInstance->Montage_Play(PandolfoDodgeMontage);
+
+	FOnMontageEnded DodgeMontageEndedDelegate;
+	DodgeMontageEndedDelegate.BindUObject(this, &UPandolfoComponent::OnDodgeMontageEnded);
+	OwningPlayerAnimInstance->Montage_SetEndDelegate(DodgeMontageEndedDelegate, PandolfoDodgeMontage);
+}
+
+void UPandolfoComponent::Crouch()
+{
+	if (PandolfoState != EPandolfoState::EPS_Pandolfo) return;
+	if (PanWolfCharacter && PanWolfCharacter->IsForcedCrouch()) return;
+
+	const bool IsCrouched = CharacterOwner->bIsCrouched;
+	MovementComponent->bWantsToCrouch = !IsCrouched;
+
+	if (!IsCrouched)
+	{
+		CrouchingTimeline.PlayFromStart();
+
+		if (PanWolfCharacter->IsInsideHideBox())
+		{
+			PanWolfCharacter->SetIsHiding(true);
+		}
+
+	}
+
+	else
+	{
+		CrouchingTimeline.Reverse();
+
+
+		if (PanWolfCharacter->IsInsideHideBox())
+		{
+			PanWolfCharacter->SetIsHiding(false);
+		}
+
+	}
+
+}
+
+void UPandolfoComponent::LightAttack()
+{
+	if (!CombatComponent) return;
+	if (PandolfoState != EPandolfoState::EPS_Pandolfo) return;
+
+	GetWorld()->GetTimerManager().ClearTimer(KnifeEquipped_TimerHandle);
+	TakeKnife(true);
+	GetWorld()->GetTimerManager().SetTimer(KnifeEquipped_TimerHandle, [this]() {this->TakeKnife(false); }, KnifeTime, false);
+
+	CombatComponent->PerformAttack(EAttackType::EAT_LightAttack);
+}
+
 void UPandolfoComponent::HandleFalling()
 {
-	//Debug::Print(TEXT("FAlling"));
 	ClimbingComponent->Activate();
 }
 
@@ -228,53 +245,7 @@ void UPandolfoComponent::HandleLand()
 	if (bIsGlideTimerActive)
 	{
 		bIsGlideTimerActive = false;
-		GetWorld()->GetTimerManager().ClearTimer(Glide_TimerHandle);		
-	}
-		
-}
-
-void UPandolfoComponent::Dodge()
-{
-	if (!PanWolfCharacter->CanPerformDodge() || PandolfoState != EPandolfoState::EPS_Pandolfo) return;
-	if (!PandolfoDodgeMontage || !OwningPlayerAnimInstance) return;
-
-	PandolfoState = EPandolfoState::EPS_Dodging;
-
-	PanWolfCharacter->StartDodge();
-	OwningPlayerAnimInstance->Montage_Play(PandolfoDodgeMontage);
-}
-
-void UPandolfoComponent::Crouch()
-{
-	if (PandolfoState != EPandolfoState::EPS_Pandolfo ) return;
-	if (PanWolfCharacter && PanWolfCharacter->IsForcedCrouch()) return;
-
-	const bool IsCrouched = CharacterOwner->bIsCrouched;
-	CharacterOwner->GetCharacterMovement()->bWantsToCrouch = !IsCrouched;
-
-	if (!IsCrouched)
-	{
-		CrouchingTimeline.PlayFromStart();
-		
-		if (PanWolfCharacter->IsInsideHideBox())
-		{
-			//Debug::Print(TEXT("Try to hide"));
-			PanWolfCharacter->SetIsHiding(true);
-		}
-
-	}
-		
-	else
-	{		
-		CrouchingTimeline.Reverse();
-
-
-		if (PanWolfCharacter->IsInsideHideBox())
-		{
-			//Debug::Print(TEXT("Try to Unhide"));
-			PanWolfCharacter->SetIsHiding(false);
-		}
-
+		GetWorld()->GetTimerManager().ClearTimer(Glide_TimerHandle);
 	}
 
 }
@@ -291,6 +262,12 @@ bool UPandolfoComponent::TryClimbOrMantle()
 	return true;
 }
 
+const bool UPandolfoComponent::IsClimbing()
+{
+	return ClimbingComponent->IsClimbing();
+}
+
+#pragma endregion
 
 #pragma region PredictableJump
 
@@ -352,7 +329,7 @@ void UPandolfoComponent::LoadPredictJump(const FVector ActorLocation)
 	const float NewYaw = UKismetMathLibrary::FindLookAtRotation(ActorLocation, LandPredictLocation).Yaw;
 	const FRotator NewRotation = FRotator(CharacterOwner->GetActorRotation().Pitch, NewYaw, CharacterOwner->GetActorRotation().Roll);
 	CharacterOwner->SetActorRotation(NewRotation);
-	CharacterOwner->GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Flying, 0);
+	MovementComponent->SetMovementMode(EMovementMode::MOVE_Flying, 0);
 
 	OwningPlayerAnimInstance->Montage_Play(PredictJumpMontage);
 
@@ -405,7 +382,7 @@ void UPandolfoComponent::StartPredictJump(FName NotifyName, const FBranchingPoin
 void UPandolfoComponent::StopPredictJump(FName NotifyName, const FBranchingPointNotifyPayload& BranchingPointPayload)
 {
 	if (NotifyName != FName("PredictJump")) return;
-	CharacterOwner->GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Falling, 0);
+	MovementComponent->SetMovementMode(EMovementMode::MOVE_Falling, 0);
 	GetWorld()->GetTimerManager().ClearTimer(PredictJump_TimerHandle);
 }
 
@@ -440,10 +417,9 @@ void UPandolfoComponent::Sliding()
 	if (PandolfoState != EPandolfoState::EPS_Pandolfo) return;
 
 	if (!SlidingMontage) return;
-	//UAnimInstance* OwningPlayerAnimInstance = CharacterOwner->GetMesh()->GetAnimInstance();
 	if (!OwningPlayerAnimInstance) return;
 	if (OwningPlayerAnimInstance->IsAnyMontagePlaying()) return;
-	if (CharacterOwner->GetCharacterMovement()->GetLastInputVector().Length() < 0.5f) return;
+	if (MovementComponent->GetLastInputVector().Length() < 0.5f) return;
 
 	PandolfoState = EPandolfoState::EPS_Sliding;
 	CharacterOwner->DisableInput(CharacterOwner->GetLocalViewingPlayerController());
@@ -452,15 +428,14 @@ void UPandolfoComponent::Sliding()
 
 void UPandolfoComponent::StartSliding()
 {
-	if (CharacterOwner->GetCharacterMovement()->IsCrouching())
+	if (MovementComponent->IsCrouching())
 	{
 		CharacterOwner->GetCapsuleComponent()->SetCapsuleSize(35.f,40.f);
 		CrouchingTimeline.Reverse();
 	}
 		
-
-	CharacterOwner->GetCharacterMovement()->CrouchedHalfHeight = 40.f;
-	CharacterOwner->GetCharacterMovement()->bWantsToCrouch = true;
+	MovementComponent->CrouchedHalfHeight = 40.f;
+	MovementComponent->bWantsToCrouch = true;
 	
 
 	TimeElapsed = 0.f;
@@ -475,8 +450,8 @@ void UPandolfoComponent::StartSliding()
 
 void UPandolfoComponent::EndSliding()
 {
-	CharacterOwner->GetCharacterMovement()->CrouchedHalfHeight = 55.f;
-	CharacterOwner->GetCharacterMovement()->bWantsToCrouch = false;
+	MovementComponent->CrouchedHalfHeight = 55.f;
+	MovementComponent->bWantsToCrouch = false;
 
 	CharacterOwner->EnableInput(CharacterOwner->GetLocalViewingPlayerController());
 	TimeElapsed = 0.35f;
@@ -521,15 +496,15 @@ void UPandolfoComponent::TryGliding()
 	UKismetSystemLibrary::LineTraceSingle(this, Start, End, ETraceTypeQuery::TraceTypeQuery1, false, TArray<AActor*>(), DebugTrace, Hit, true);
 
 	
-	if (!Hit.bBlockingHit && CharacterOwner->GetCharacterMovement()->GetLastUpdateVelocity().Z < -GlidingVelocity)
+	if (!Hit.bBlockingHit && MovementComponent->GetLastUpdateVelocity().Z < -GlidingVelocity)
 	{
 		//Debug::Print(TEXT("Glide"));
 		PandolfoState = EPandolfoState::EPS_Gliding;
 		GetWorld()->GetTimerManager().ClearTimer(Glide_TimerHandle);
 
-		CharacterOwner->GetCharacterMovement()->StopMovementImmediately();
-		CharacterOwner->GetCharacterMovement()->GravityScale = GlidingGravityScale;
-		CharacterOwner->GetCharacterMovement()->AirControl = GlidingAirControl;
+		MovementComponent->StopMovementImmediately();
+		MovementComponent->GravityScale = GlidingGravityScale;
+		MovementComponent->AirControl = GlidingAirControl;
 
 		UmbrellaActor = GetWorld()->SpawnActor<AActor>(UmbrellaActorClass, CharacterOwner->GetActorLocation(), CharacterOwner->GetActorRotation());
 		FAttachmentTransformRules AttachmentRules(EAttachmentRule::SnapToTarget, true);
@@ -547,8 +522,8 @@ void UPandolfoComponent::UnGlide()
 		PandolfoState = EPandolfoState::EPS_Pandolfo;
 
 		UmbrellaActor->Destroy();
-		CharacterOwner->GetCharacterMovement()->GravityScale = 1.75f;
-		CharacterOwner->GetCharacterMovement()->AirControl = 0.35f;
+		MovementComponent->GravityScale = 1.75f;
+		MovementComponent->AirControl = 0.35f;
 	}
 
 }
@@ -584,8 +559,6 @@ void UPandolfoComponent::Assassination()
 		
 	}
 
-	
-	
 }
 
 void UPandolfoComponent::PlayAirAssassination()
@@ -618,12 +591,6 @@ void UPandolfoComponent::PlayAirAssassination()
 void UPandolfoComponent::PlayStealthAssassination()
 {
 	if (!AssassinableOverlapped) return;
-
-	/*int32 MapIndex = FMath::RandRange(0, AssassinationMontage_Map.Num() - 1);
-	TPair<UAnimMontage*, UAnimMontage*> MontageCouple = AssassinationMontage_Map.Get(FSetElementId::FromInteger(MapIndex));
-	if (!MontageCouple.Key) return;
-	if (!MontageCouple.Value) return;*/
-
 	if (AssassinationMontage_Map.Num() == 0) return;
 
 	int32 AssassinationIndex = FMath::RandRange(1, AssassinationMontage_Map.Num());
@@ -756,17 +723,19 @@ void UPandolfoComponent::DetectAirAssassinableEnemy()
 
 #pragma endregion
 
-void UPandolfoComponent::LightAttack()
+#pragma region MontageSection
+
+void UPandolfoComponent::OnDodgeMontageEnded(UAnimMontage* Montage, bool bInterrupted)
 {
-	if (!CombatComponent) return;
-	if (PandolfoState != EPandolfoState::EPS_Pandolfo) return;
+	if (!Montage) return;
 
-	GetWorld()->GetTimerManager().ClearTimer(KnifeEquipped_TimerHandle);
-	TakeKnife(true);
-	GetWorld()->GetTimerManager().SetTimer(KnifeEquipped_TimerHandle, [this]() {this->TakeKnife(false); }, KnifeTime, false);
+	PanWolfCharacter->EndDodge();
+	PandolfoState = EPandolfoState::EPS_Pandolfo;
 
-	CombatComponent->PerformAttack(EAttackType::EAT_LightAttack);
 }
+
+#pragma endregion
+
 
 void UPandolfoComponent::EnterKiteMode(AKiteBoard* KiteBoard)
 {
@@ -788,11 +757,3 @@ void UPandolfoComponent::ClearAllTimer()
 	GetWorld()->GetTimerManager().ClearTimer(Glide_TimerHandle);
 }
 
-void UPandolfoComponent::OnMontageEnded(UAnimMontage* Montage, bool bInterrupted)
-{
-	if (Montage == PandolfoDodgeMontage)
-	{
-		PanWolfCharacter->EndDodge();
-		PandolfoState = EPandolfoState::EPS_Pandolfo;
-	}
-}

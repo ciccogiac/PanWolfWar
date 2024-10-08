@@ -1,23 +1,20 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Components/TransformationCharacterComponent.h"
 #include "Components/ActorComponent.h"
 #include "PandolFlowerComponent.generated.h"
 
 class UInputAction;
-class APanWolfWarCharacter;
 class UCameraComponent;
 class AFlowerCable;
 class UAnimMontage;
-class UInputMappingContext;
 class UNiagaraSystem;
 class AGrapplePoint;
 struct FInputActionValue;
-class USpringArmComponent;
 class AFlowerHideObject;
 class UPandolfoComponent;
 class UTransformationComponent;
-class UPandoCombatComponent;
 
 UENUM(BlueprintType)
 enum class EPandolFlowerState : uint8
@@ -30,7 +27,7 @@ enum class EPandolFlowerState : uint8
 };
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
-class PANWOLFWAR_API UPandolFlowerComponent : public UActorComponent
+class PANWOLFWAR_API UPandolFlowerComponent : public UTransformationCharacterComponent
 {
 	GENERATED_BODY()
 
@@ -56,9 +53,6 @@ protected:
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
 private:
-
-	UFUNCTION()
-	void OnMontageEnded(UAnimMontage* Montage, bool bInterrupted);
 
 	UFUNCTION()
 	void OnDodgeMontageEnded(UAnimMontage* Montage, bool bInterrupted);
@@ -111,9 +105,6 @@ private:
 	public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
-	UInputMappingContext* PandolFlowerMappingContext;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	UInputAction* HookAction;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
@@ -144,16 +135,10 @@ private:
 
 	#pragma region Components
 
-	UPROPERTY()
-	UAnimInstance* OwningPlayerAnimInstance;
 
-	ACharacter* CharacterOwner;
-	APanWolfWarCharacter* PanWolfCharacter;
 	UCameraComponent* FollowCamera;
-	USpringArmComponent* CameraBoom;
 	UPandolfoComponent* PandolfoComponent;
 	UTransformationComponent* TransformationComponent;
-	UPandoCombatComponent* CombatComponent;
 
 	EPandolFlowerState PandolFlowerState = EPandolFlowerState::EPFS_PandolFlower;
 
@@ -164,11 +149,6 @@ private:
 	float LastCoverDirection = 0.f;
 	AFlowerHideObject* FlowerHideObject = nullptr;
 
-	UPROPERTY(Category = Character, EditDefaultsOnly, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
-	TObjectPtr<USkeletalMesh> SkeletalMeshAsset;
-
-	UPROPERTY(Category = Character, EditDefaultsOnly, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
-	TSubclassOf<UAnimInstance> Anim;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Transformation Materials ", meta = (AllowPrivateAccess = "true"))
 	UNiagaraSystem* Pandolflower_Niagara;
@@ -282,9 +262,6 @@ private:
 	UCurveFloat* GroundHeightOffset_Curve;
 
 	#pragma endregion
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Combat", meta = (AllowPrivateAccess = "true"))
-	FVector CombatHandBoxExtent;
 
 #pragma endregion
 

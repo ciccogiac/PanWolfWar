@@ -213,7 +213,15 @@ void APanWolfWarCharacter::BeginPlay()
 		}
 	}
 
-	if (TransformationComponent) TransformationComponent->SelectDesiredTransformation(ETransformationState::ETS_Pandolfo);
+	PandolfoComponent->SetTransformationCharacterData(TransformationDataBase->GetTransformationCharacterData(ETransformationState::ETS_Pandolfo));
+	PandolFlowerComponent->SetTransformationCharacterData(TransformationDataBase->GetTransformationCharacterData(ETransformationState::ETS_PanFlower));
+	PanWolfComponent->SetTransformationCharacterData(TransformationDataBase->GetTransformationCharacterData(ETransformationState::ETS_PanWolf));
+	
+
+	if (TransformationComponent)
+	{
+		TransformationComponent->SelectDesiredTransformation(ETransformationState::ETS_Pandolfo);
+	}
 }
 
 #pragma endregion
@@ -303,8 +311,12 @@ void APanWolfWarCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInpu
 		EnhancedInputComponent->BindAction(InteractComponent->InteractAction, ETriggerEvent::Started, InteractComponent, &UInteractComponent::Interact);
 		EnhancedInputComponent->BindAction(InteractComponent->InteractMoveAction, ETriggerEvent::Triggered, InteractComponent, &UInteractComponent::InteractMove);
 
-		//Transformation
-		EnhancedInputComponent->BindAction(TransformationComponent->AnnulTransformationAction, ETriggerEvent::Started, TransformationComponent, &UTransformationComponent::AnnulTrasnformation);
+		//Transformation	
+		EnhancedInputComponent->BindAction(TransformationComponent->SelectPandolfoTransformationAction, ETriggerEvent::Started, TransformationComponent, &UTransformationComponent::SelectPandolfoTransformation);
+		EnhancedInputComponent->BindAction(TransformationComponent->SelectFlowerTransformationAction, ETriggerEvent::Started, TransformationComponent, &UTransformationComponent::SelectFlowerTransformation);
+		EnhancedInputComponent->BindAction(TransformationComponent->SelectWolfTransformationAction, ETriggerEvent::Started, TransformationComponent, &UTransformationComponent::SelectWolfTransformation);
+		EnhancedInputComponent->BindAction(TransformationComponent->SelectBirdTransformationAction, ETriggerEvent::Started, TransformationComponent, &UTransformationComponent::SelectBirdTransformation);
+
 
 		//Targeting
 		EnhancedInputComponent->BindAction(TargetingComponent->TargetLockAction, ETriggerEvent::Started, TargetingComponent, &UTargetingComponent::ToggleLock);
@@ -332,11 +344,6 @@ void APanWolfWarCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInpu
 		EnhancedInputComponent->BindAction(PandolfoComponent->GetClimbingComponent()->ClimbJumpAction, ETriggerEvent::Started, PandolfoComponent->GetClimbingComponent(), &UClimbingComponent::ClimbJump);
 		EnhancedInputComponent->BindAction(PandolfoComponent->GetClimbingComponent()->ClimbDownAction, ETriggerEvent::Started, PandolfoComponent->GetClimbingComponent(), &UClimbingComponent::ClimbDownActivate);
 		EnhancedInputComponent->BindAction(PandolfoComponent->GetClimbingComponent()->ClimbDownAction, ETriggerEvent::Completed, PandolfoComponent->GetClimbingComponent(), &UClimbingComponent::ClimbDownDeActivate);
-
-		// Transformation
-		EnhancedInputComponent->BindAction(PandolfoComponent->TransformationSelectUPAction, ETriggerEvent::Started, TransformationComponent, &UTransformationComponent::SelectWolfTransformation);
-		EnhancedInputComponent->BindAction(PandolfoComponent->TransformationSelectRightAction, ETriggerEvent::Started, TransformationComponent, &UTransformationComponent::SelectBirdTransformation);
-		EnhancedInputComponent->BindAction(PandolfoComponent->TransformationSelectLeftAction, ETriggerEvent::Started, TransformationComponent, &UTransformationComponent::SelectFlowerTransformation);
 
 		// SneakCover
 		EnhancedInputComponent->BindAction(PandolfoComponent->GetSneakCoverComponent()->SneakCoverMoveAction, ETriggerEvent::Triggered, PandolfoComponent->GetSneakCoverComponent(), &USneakCoverComponent::CoverMove);
@@ -747,6 +754,11 @@ void APanWolfWarCharacter::OnHitReactMontageEnded(UAnimMontage* Montage, bool bI
 		if (PandolfoComponent->IsActive())
 		{
 			SetMetaHumanHitFX(0.f);
+		}
+
+		else if (PanWolfComponent->IsActive())
+		{
+			PanWolfComponent->OnWolfHitReactMontageEnded();
 		}
 	}
 }

@@ -15,6 +15,7 @@ class UInputAction;
 class UPandoUIComponent;
 class UPandolfoComponent;
 
+
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnTransformationStateChanged, ETransformationState, NewState);
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
@@ -25,14 +26,13 @@ class PANWOLFWAR_API UTransformationComponent : public UActorComponent
 public:	
 	UTransformationComponent();
 
-	void SelectBirdTransformation();
+	void SelectPandolfoTransformation();
 	void SelectFlowerTransformation();
 	void SelectWolfTransformation();
+	void SelectBirdTransformation();
 
 	UFUNCTION(BlueprintCallable)
 	void SelectDesiredTransformation(const ETransformationState DesiredTransformationState);
-
-	void AnnulTrasnformation();
 
 	void SetTransformation(const ETransformationState NewTransformationState,const ETransformationState PreviousTransformationState);
 
@@ -43,6 +43,7 @@ public:
 
 
 	void InitializeTransformationUI(UPandoUIComponent* _PandoUIComponent);
+
 
 	UPROPERTY(BlueprintAssignable, Category = "Transformation")
 	FOnTransformationStateChanged OnTransformationStateChanged;
@@ -91,8 +92,17 @@ private:
 
 public:
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
-	UInputAction* AnnulTransformationAction;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input| Transformation")
+	UInputAction* SelectPandolfoTransformationAction;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input| Transformation")
+	UInputAction* SelectFlowerTransformationAction;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input| Transformation")
+	UInputAction* SelectWolfTransformationAction;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input| Transformation")
+	UInputAction* SelectBirdTransformationAction;
 	
 	FORCEINLINE ETransformationState GetCurrentTransformationState() const { return CurrentTransformationState; }
 	FORCEINLINE void SetFlowerConsuptionStopped(bool NewValue)  {  bFlowerConsuptionStopped = NewValue; }

@@ -34,6 +34,8 @@ class UTargetingComponent;
 
 class UPanWarWidgetBase;
 
+class UDataAsset_TransformationDataBase;
+
 DECLARE_LOG_CATEGORY_EXTERN(LogTemplateCharacter, Log, All);
 
 UCLASS(config=Game, Blueprintable)
@@ -138,6 +140,9 @@ private:
 
 	FTimerHandle UnderAttack_TimerHandle;
 	TArray<AActor*> EnemyAware = TArray<AActor*>();
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "TransformationCharacterData", meta = (AllowPrivateAccess = "true"))
+	UDataAsset_TransformationDataBase* TransformationDataBase;
 
 	#pragma region Components
 
