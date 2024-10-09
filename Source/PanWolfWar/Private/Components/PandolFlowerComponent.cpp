@@ -83,6 +83,12 @@ void UPandolFlowerComponent::Activate(bool bReset)
 	if (PanWolfCharacter->IsHiding())
 		CharacterOwner->GetMesh()->SetScalarParameterValueOnMaterials(FName("HideFxSwitch"), 10.f);
 
+	if (PanWolfCharacter->IsInsideHideBox() && PanWolfCharacter->IsForcedCrouch() && !PanWolfCharacter->IsHiding())
+	{
+		MovementComponent->bWantsToCrouch = true;
+		PanWolfCharacter->SetIsHiding(true);
+	}
+
 	FlowerCable = GetWorld()->SpawnActor<AFlowerCable>(BP_FlowerCable, CharacterOwner->GetActorLocation(), CharacterOwner->GetActorRotation());
 	FAttachmentTransformRules AttachmentRules(EAttachmentRule::SnapToTarget, true);
 	FlowerCable->SetCableAttachment(CharacterOwner->GetMesh(), FName("hand_l"));

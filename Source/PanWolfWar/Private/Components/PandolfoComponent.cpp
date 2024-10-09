@@ -86,6 +86,12 @@ void UPandolfoComponent::Activate(bool bReset)
 		PanWolfCharacter->SetMetaHumanHideFX(10.f);
 	}
 
+	if (PanWolfCharacter->IsInsideHideBox() && PanWolfCharacter->IsForcedCrouch() && !PanWolfCharacter->IsHiding())
+	{
+		MovementComponent->bWantsToCrouch = true;
+		PanWolfCharacter->SetIsHiding(true);
+	}
+
 
 
 	if (MovementComponent->IsFalling())

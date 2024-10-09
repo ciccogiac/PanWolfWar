@@ -559,19 +559,18 @@ void APanWolfWarCharacter::SetMotionWarpTarget(const FName& InWarpTargetName, co
 void APanWolfWarCharacter::SetIsInsideHideBox(bool Value, bool ForceCrouch)
 {
 	bIsInsideHideBox = Value;
+	bIsForcedCrouch = Value && ForceCrouch;
 
 	if (ForceCrouch)
 	{
 		if (Value && !PanWolfComponent->IsActive())
 		{
-			bIsForcedCrouch = true;
 			GetCharacterMovement()->bWantsToCrouch = true;
 			SetIsHiding(true);
 		}
 
 		else if (!Value)
 		{
-			bIsForcedCrouch = false;
 			SetIsHiding(false);
 		}
 	}
