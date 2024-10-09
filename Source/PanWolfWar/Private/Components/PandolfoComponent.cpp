@@ -156,6 +156,7 @@ void UPandolfoComponent::Jump()
 		{
 			if (!PredictJump())
 			{
+				if (OwningPlayerAnimInstance->IsAnyMontagePlaying()) return;
 				CharacterOwner->Jump();
 			}
 		}
@@ -428,24 +429,36 @@ void UPandolfoComponent::Sliding()
 	if (MovementComponent->GetLastInputVector().Length() < 0.5f) return;
 
 	PandolfoState = EPandolfoState::EPS_Sliding;
-	CharacterOwner->DisableInput(CharacterOwner->GetLocalViewingPlayerController());
 	OwningPlayerAnimInstance->Montage_Play(SlidingMontage);
+
+	FOnMontageEnded SlidingMontageEndedDelegate;
+	SlidingMontageEndedDelegate.BindUObject(this, &UPandolfoComponent::OnSlidingMontageEnded);
+	OwningPlayerAnimInstance->Montage_SetEndDelegate(SlidingMontageEndedDelegate, SlidingMontage);
+}
+
+void UPandolfoComponent::OnSlidingMontageEnded(UAnimMontage* Montage, bool bInterrupted)
+{
+	if (!Montage) return;
+
+	if (PandolfoState == EPandolfoState::EPS_Sliding)
+	{
+		EndSliding();
+	}
+
 }
 
 void UPandolfoComponent::StartSliding()
 {
 	if (MovementComponent->IsCrouching())
 	{
-		CharacterOwner->GetCapsuleComponent()->SetCapsuleSize(35.f,40.f);
+		Capsule->SetCapsuleSize(35.f,40.f);
 		CrouchingTimeline.Reverse();
 	}
 		
 	MovementComponent->CrouchedHalfHeight = 40.f;
+	Capsule->SetCapsuleRadius(40.f);
 	MovementComponent->bWantsToCrouch = true;
-	
-
-	TimeElapsed = 0.f;
-	GetWorld()->GetTimerManager().SetTimer(Sliding_TimerHandle, [this]() {this->SetSlidingValues(false); }, 0.01f, true);
+	CharacterOwner->GetMesh()->AddLocalOffset(FVector(-15.f, 0.f, 0.f));
 
 	if (PanWolfCharacter->IsInsideHideBox())
 	{
@@ -457,33 +470,16 @@ void UPandolfoComponent::StartSliding()
 void UPandolfoComponent::EndSliding()
 {
 	MovementComponent->CrouchedHalfHeight = 55.f;
+	Capsule->SetCapsuleRadius(TransformationCharacterData.CapsuleRadius);
 	MovementComponent->bWantsToCrouch = false;
-
-	CharacterOwner->EnableInput(CharacterOwner->GetLocalViewingPlayerController());
-	TimeElapsed = 0.35f;
-	GetWorld()->GetTimerManager().SetTimer(Sliding_TimerHandle, [this]() {this->SetSlidingValues(true); }, 0.001f, true);
+	CharacterOwner->GetMesh()->AddLocalOffset(FVector(15.f, 0.f, 0.f));
 
 	PandolfoState = EPandolfoState::EPS_Pandolfo;
-	/*CheckCanHideStandUP();*/
 
 	if (PanWolfCharacter->IsInsideHideBox())
 	{
-		//Debug::Print(TEXT("Try to Unhide"));
 		PanWolfCharacter->SetIsHiding(false);
 	}
-}
-
-void UPandolfoComponent::SetSlidingValues(bool IsReverse)
-{
-	TimeElapsed = TimeElapsed + GetWorld()->GetTimerManager().GetTimerElapsed(Sliding_TimerHandle) * (IsReverse ? -1 : 1);
-	TimeElapsed = UKismetMathLibrary::FClamp(TimeElapsed, 0.00f, 0.35f);
-
-	const float NewCameraHeight = CameraHeight_Curve->GetFloatValue(TimeElapsed);
-
-	CameraBoom->SetRelativeLocation(FVector(CameraBoom->GetRelativeLocation().X, CameraBoom->GetRelativeLocation().Y, NewCameraHeight));
-
-	if ((!IsReverse && TimeElapsed >= 0.35f) || (IsReverse && TimeElapsed <= 0.0f))
-		GetWorld()->GetTimerManager().ClearTimer(Sliding_TimerHandle);
 }
 
 #pragma endregion

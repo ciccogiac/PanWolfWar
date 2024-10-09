@@ -25,7 +25,8 @@ enum class EPandolfoState : uint8
 	EPS_Gliding UMETA(DisplayName = "Gliding"),
 	EPS_Kiting UMETA(DisplayName = "Kiting"),
 	EPS_Dodging UMETA(DisplayName = "Dodging"),
-	EPS_Sliding UMETA(DisplayName = "Sliding")
+	EPS_Sliding UMETA(DisplayName = "Sliding"),
+	EPS_Vaulting UMETA(DisplayName = "Vaulting")
 };
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
@@ -76,11 +77,11 @@ private:
 	UFUNCTION()
 	void OnDodgeMontageEnded(UAnimMontage* Montage, bool bInterrupted);
 
+	UFUNCTION()
+	void OnSlidingMontageEnded(UAnimMontage* Montage, bool bInterrupted);
+
 	void DetectAirAssassinableEnemy();
-	
 
-
-	void SetSlidingValues(bool IsReverse = false);
 
 	UFUNCTION(BlueprintCallable)
 	void StartSliding();
@@ -174,7 +175,6 @@ private:
 
 	FTimeline CrouchingTimeline;
 
-	FTimerHandle Sliding_TimerHandle;
 	FTimerHandle PredictJump_TimerHandle;
 	float TimeElapsed = 0.f;
 

@@ -155,11 +155,16 @@ private:
 
 	void PlayClimbMontage(UAnimMontage* MontageToPlay);
 
+	bool PlayMontage(UAnimMontage* MontageToPlay);
+
 	UFUNCTION()
 	void OnClimbMontageStartedHanging(FName NotifyName, const FBranchingPointNotifyPayload& BranchingPointPayload);
 
 	UFUNCTION()
 	void OnClimbMontageEnded(UAnimMontage* Montage, bool bInterrupted);
+
+	UFUNCTION()
+	void OnVaultMontageEnded(UAnimMontage* Montage, bool bInterrupted);
 
 	#pragma endregion
 

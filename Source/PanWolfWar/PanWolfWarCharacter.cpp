@@ -475,7 +475,8 @@ void APanWolfWarCharacter::StartDodge()
 	}
 
 	OriginalCapsuleRadius = GetCapsuleComponent()->GetScaledCapsuleRadius();
-	float NewCapsuleRadius = OriginalCapsuleRadius * 0.3f;
+	float CapsuleMultiplier = PanWolfComponent->IsActive() ? 0.3f :1.f;
+	float NewCapsuleRadius = OriginalCapsuleRadius * CapsuleMultiplier;
 	GetCapsuleComponent()->SetCapsuleRadius(NewCapsuleRadius);
 }
 
@@ -660,6 +661,7 @@ void APanWolfWarCharacter::RemoveEnemyAware(AActor* Enemy)
 
 void APanWolfWarCharacter::GetHit(const FVector& ImpactPoint, AActor* Hitter)
 {
+	Debug::Print(TEXT("Hitted"));
 	if (!IsAlive() || !Hitter || bIsInvulnerable) return;
 	
 	FName Section = IHitInterface::DirectionalHitReact(Hitter , GetOwner() );
