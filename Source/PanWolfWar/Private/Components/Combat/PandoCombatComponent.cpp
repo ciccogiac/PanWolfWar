@@ -55,7 +55,6 @@ float UPandoCombatComponent::GetDefensePower()
 	return 1.0f;
 }
 
-
 #pragma region AttackPerforming
 
 void UPandoCombatComponent::PerformAttack(EAttackType AttackType)
@@ -233,48 +232,6 @@ void UPandoCombatComponent::ResetHeavyAttackComboCount()
 	CurrentHeavyAttackComboCount = 1;
 	bJumpToFinisher = false;
 }
-
-//void UPandoCombatComponent::OnAttackMontageEnded(UAnimMontage* Montage, bool bInterrupted)
-//{
-//	bool IsLigtAttack = false;
-//	bool IsHeavyAttack = false;
-//
-//	switch (CurrentTransformationCombatType)
-//	{
-//	case ETransformationCombatType::ETCT_Pandolfo:
-//		if (PANDO_LightAttackMontages.FindKey(Montage)) IsLigtAttack = true;
-//		break;
-//	case ETransformationCombatType::ETCT_PandolFlower:
-//		if (FLOWER_LightAttackMontages.FindKey(Montage)) IsLigtAttack = true;
-//		break;
-//	case ETransformationCombatType::ETCT_PanWolf:
-//		if (WOLF_LightAttackMontages.FindKey(Montage)) IsLigtAttack = true;
-//		else if (WOLF_HeavyAttackMontages.FindKey(Montage))  IsHeavyAttack = true;
-//		break;
-//	default:
-//		break;
-//	}
-//
-//	if (IsLigtAttack)
-//	{
-//		AttackState = EAttackState::EAS_Nothing;
-//		if (bInterrupted) { return; }
-//		GetWorld()->GetTimerManager().SetTimer(ComboLightCountReset_TimerHandle, [this]() {this->ResetLightAttackComboCount(); }, 0.025f, false);
-//	}
-//		
-//	else if (IsHeavyAttack)
-//	{
-//		AttackState = EAttackState::EAS_Nothing;
-//		if (bInterrupted) return;
-//		GetWorld()->GetTimerManager().SetTimer(ComboHeavyCountReset_TimerHandle, [this]() {this->ResetHeavyAttackComboCount(); }, 0.025f, false);
-//	}
-//
-//	else if (Montage == WOLF_CounterattackMontage)
-//	{
-//		AttackState = EAttackState::EAS_Nothing;
-//		GetWorld()->GetTimerManager().SetTimer(ComboLightCountReset_TimerHandle, [this]() {this->ResetLightAttackComboCount(); }, 0.025f, false);
-//	}
-//}
 
 float UPandoCombatComponent::CalculateFinalDamage(float BaseDamage, float TargetDefensePower)
 {

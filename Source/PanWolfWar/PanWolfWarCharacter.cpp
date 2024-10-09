@@ -562,7 +562,7 @@ void APanWolfWarCharacter::SetIsInsideHideBox(bool Value, bool ForceCrouch)
 
 	if (ForceCrouch)
 	{
-		if (Value)
+		if (Value && !PanWolfComponent->IsActive())
 		{
 			bIsForcedCrouch = true;
 			GetCharacterMovement()->bWantsToCrouch = true;
@@ -596,6 +596,8 @@ void APanWolfWarCharacter::SetIsInsideHideBox(bool Value, bool ForceCrouch)
 void APanWolfWarCharacter::SetIsHiding(bool Value)
 {
 	if (Value && !EnemyAware.IsEmpty())
+		return;
+	if (Value && PanWolfComponent->IsActive())
 		return;
 
 	bIsHiding = Value;
@@ -921,4 +923,37 @@ void APanWolfWarCharacter::HandleTransformationChangedState()
 {
 	bHitted = false;
 	NiagaraApplyTransformationEffect->Activate(true);
+}
+
+ETransformationState APanWolfWarCharacter::GetCurrentTransformationState()
+{
+	 return TransformationComponent->GetCurrentTransformationState(); 
+}
+
+UTransformationCharacterComponent* APanWolfWarCharacter::GetCurrentTransformationCharacterComponent()
+{
+	ETransformationState TransformationState = TransformationComponent->GetCurrentTransformationState();
+
+	switch (TransformationState)
+	{
+	case ETransformationState::ETS_Pandolfo:
+		return PandolfoComponent;
+		break;
+	case ETransformationState::ETS_Transforming:
+		break;
+	case ETransformationState::ETS_PanWolf:
+		return PanWolfComponent;
+		break;
+	case ETransformationState::ETS_PanFlower:
+		return PandolFlowerComponent;
+		break;
+	case ETransformationState::ETS_PanBird:
+		break;
+	case ETransformationState::ETS_None:
+		break;
+	default:
+		break;
+	}
+
+	return nullptr;
 }

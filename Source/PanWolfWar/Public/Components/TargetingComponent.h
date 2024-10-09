@@ -9,6 +9,8 @@ struct FInputActionValue;
 
 class UPanWarWidgetBase;
 class UInputMappingContext;
+class UCharacterMovementComponent;
+class APanWolfWarCharacter;
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class PANWOLFWAR_API UTargetingComponent : public UActorComponent
@@ -58,6 +60,8 @@ private:
 private:
 
 	ACharacter* CharacterOwner;
+	APanWolfWarCharacter* PanWolfCharacter;
+	UCharacterMovementComponent* MovementComponent;
 
 	bool bIsTargeting = false;
 	bool isDodging = false;
@@ -109,8 +113,8 @@ private:
 	UPROPERTY()
 	FVector2D TargetLockWidgetSize = FVector2D::ZeroVector;
 
-	UPROPERTY()
-	float CachedDefaultMaxWalkSpeed = 0.f;
+	/*UPROPERTY()
+	float CachedDefaultMaxWalkSpeed = 0.f;*/
 
 public:
 

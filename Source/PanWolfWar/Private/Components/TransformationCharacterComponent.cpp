@@ -6,6 +6,7 @@
 #include "Camera/CameraComponent.h"
 #include "Components/Combat/PandoCombatComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
+#include "Components/TargetingComponent.h"
 
 UTransformationCharacterComponent::UTransformationCharacterComponent()
 {
@@ -26,6 +27,9 @@ void UTransformationCharacterComponent::Activate(bool bReset)
 	Capsule->SetCapsuleHalfHeight(TransformationCharacterData.CapsuleHalfHeight);
 	CameraBoom->TargetArmLength = TransformationCharacterData.TargetArmLength;
 	CharacterOwner->GetCharacterMovement()->JumpZVelocity = TransformationCharacterData.JumpZVelocity;
+	MovementComponent->MaxWalkSpeedCrouched = TransformationCharacterData.MaxWalkSpeedCrouched;
+	if (!TargetingComponent->IsTargeting())
+		MovementComponent->MaxWalkSpeed = TransformationCharacterData.MaxWalkSpeed;
 
 	PanWolfCharacter->bUseControllerRotationPitch = false;
 	PanWolfCharacter->bUseControllerRotationYaw = false;
@@ -57,6 +61,7 @@ void UTransformationCharacterComponent::BeginPlay()
 		CameraBoom = PanWolfCharacter->GetCameraBoom();
 		CombatComponent = Cast<UPandoCombatComponent>(PanWolfCharacter->GetCombatComponent());
 		MovementComponent = CharacterOwner->GetCharacterMovement();
+		TargetingComponent = PanWolfCharacter->GetTargetingComponent();
 	}
 
 }

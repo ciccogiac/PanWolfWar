@@ -31,6 +31,7 @@ class UPandolFlowerComponent;
 class UPanBirdComponent;
 
 class UTargetingComponent;
+class UTransformationCharacterComponent;
 
 class UPanWarWidgetBase;
 
@@ -98,6 +99,8 @@ public:
 	ETransformationState GetCurrentTransformationState() const override;
 
 	void HandleTransformationChangedState();
+	ETransformationState GetCurrentTransformationState();
+	UTransformationCharacterComponent* GetCurrentTransformationCharacterComponent();
 
 	#pragma region InputCallback
 
@@ -323,8 +326,6 @@ public:
 
 	FORCEINLINE UNiagaraComponent* GetNiagaraTransformation() { return NiagaraTransformation; }
 	//FORCEINLINE UNiagaraComponent* GetNiagaraTransformationEffect() { return NiagaraApplyTransformationEffect; }
-
-
 
 
 	FORCEINLINE virtual bool IsHiding() const override { return bIsHiding; }

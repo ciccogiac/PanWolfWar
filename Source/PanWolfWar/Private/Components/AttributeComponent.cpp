@@ -12,17 +12,6 @@ UAttributeComponent::UAttributeComponent()
 void UAttributeComponent::BeginPlay()
 {
 	Super::BeginPlay();
-
-
-	/*if (PanwolfwarOverlayClass)
-	{
-		PanwolfwarOverlay->SetBirdStaminaBarPercent(BirdStamina);		
-	}*/
-
-		
-
-	
-
 }
 
 void UAttributeComponent::InitializeAttributeUI(UPandoUIComponent* _PandoUIComponent)

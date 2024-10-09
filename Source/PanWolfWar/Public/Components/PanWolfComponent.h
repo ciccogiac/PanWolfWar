@@ -11,7 +11,7 @@ class UInputAction;
 class UAnimMontage;
 class UNiagaraSystem;
 class UNiagaraComponent;
-class UTargetingComponent;
+
 
 UENUM(BlueprintType)
 enum class EPanWolfState : uint8
@@ -71,7 +71,7 @@ private:
 	void OnBlockMontageEnded(UAnimMontage* Montage, bool bInterrupted);
 
 private:
-	UTargetingComponent* TargetingComponent;
+
 
 	bool bHitted = false;
 

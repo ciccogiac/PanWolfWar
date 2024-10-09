@@ -61,9 +61,13 @@ void UClimbingComponent::BeginPlay()
 {
 	Super::BeginPlay();
 
-	MovementComponent = CharacterOwner->GetCharacterMovement();
-	CapsuleComponent = CharacterOwner->GetCapsuleComponent();
-	PandolfoComponent = PanWolfCharacter->GetPandolfoComponent();
+	if (PanWolfCharacter)
+	{
+		PandolfoComponent = PanWolfCharacter->GetPandolfoComponent();
+		Capsule = PanWolfCharacter->GetCapsuleComponent();
+		CameraBoom = PanWolfCharacter->GetCameraBoom();
+		MovementComponent = CharacterOwner->GetCharacterMovement();
+	}
 	
 }
 
@@ -101,8 +105,8 @@ void UClimbingComponent::StartClimbing()
 	ClimbDirection = 0.f;
 
 	MovementComponent->StopMovementImmediately();
-	CapsuleComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-	CapsuleComponent->SetCapsuleHalfHeight(45);
+	Capsule->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	Capsule->SetCapsuleHalfHeight(45);
 	MovementComponent->MaxFlySpeed = 0.f;
 	MovementComponent->SetMovementMode(EMovementMode::MOVE_Flying, 0);
 
@@ -138,8 +142,8 @@ void UClimbingComponent::StopClimbing()
 	PanWolfCharacter->RemoveMappingContext(ClimbingMappingContext);
 	MovementComponent->bOrientRotationToMovement = true;
 
-	CapsuleComponent->SetCapsuleHalfHeight(90);
-	CapsuleComponent->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+	Capsule->SetCapsuleHalfHeight(PandolfoComponent->GetCapsuleHalfHeight());
+	Capsule->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
 
 	PandolfoComponent->PandolfoState = EPandolfoState::EPS_Pandolfo;
 	Deactivate();
@@ -178,7 +182,7 @@ bool UClimbingComponent::CheckClimbableSpaceCondition(const FHitResult& Climbabl
 bool UClimbingComponent::CheckCapsuleSpaceCondition(const FVector& CLimbablePoint, bool FullHeight, float CapsuleDivisor )
 {
 	float CapsuleHalfHeight = FullHeight ? 90.f : 45.f;
-	float CapsuleRadius = CapsuleComponent->GetScaledCapsuleRadius();
+	float CapsuleRadius = Capsule->GetScaledCapsuleRadius();
 	const FVector Start = CLimbablePoint + FVector(0.f, 0.f, 1.f + CapsuleHalfHeight);
 	return !DoCapsuleTraceSingleForChannel(Start, Start, CapsuleRadius/ CapsuleDivisor, CapsuleHalfHeight).bBlockingHit;
 }
@@ -201,8 +205,8 @@ bool UClimbingComponent::CheckClimbableDownLedgeTrace(const FHitResult& Climbabl
 
 bool UClimbingComponent::CheckCapsuleEndPositionCollision()
 {
-	const float CapsuleHalfHeight = CapsuleComponent->GetScaledCapsuleHalfHeight();
-	const float CapsuleRadius = CapsuleComponent->GetScaledCapsuleRadius();
+	const float CapsuleHalfHeight = Capsule->GetScaledCapsuleHalfHeight();
+	const float CapsuleRadius = Capsule->GetScaledCapsuleRadius();
 	return (!DoCapsuleTraceSingleForChannel(ActorOwner->GetActorLocation(), LedgeLocation, CapsuleRadius, CapsuleHalfHeight).bBlockingHit);
 }
 
@@ -251,7 +255,7 @@ bool UClimbingComponent::FindClimbablePoint(const FHitResult& ClimbableObjectHit
 	{
 			ProcessClimbableSurfaceInfo(ClimbableObjectHit);
 			LedgeLocation = CalculateLedgeLocation(CurrentClimbableSurfaceLocation, outClimbingPointHit.ImpactPoint, ClimbRotation, -1);
-			return CheckCapsuleSpaceCondition(LedgeLocation - FVector(0.f, 0.f, CapsuleComponent->GetScaledCapsuleHalfHeight()));
+			return CheckCapsuleSpaceCondition(LedgeLocation - FVector(0.f, 0.f, Capsule->GetScaledCapsuleHalfHeight()));
 
 	}
 
@@ -401,7 +405,7 @@ bool UClimbingComponent::CanClimbUpon()
 
 		PanWolfCharacter->SetMotionWarpTarget(FName("LedgeClimbUP"),  FirstPoint + CharacterOwner->GetActorForwardVector() * 5.f + CharacterOwner->GetActorUpVector() * 7.5f);
 		PanWolfCharacter->SetMotionWarpTarget(FName("LedgeClimbForward"), SecondPoint + CharacterOwner->GetActorForwardVector()*25.f);
-		CapsuleComponent->SetCapsuleHalfHeight(90);
+		Capsule->SetCapsuleHalfHeight(PandolfoComponent->GetCapsuleHalfHeight());
 		//CapsuleComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 		UAnimMontage* MantleMontage = IsClimbing() ? ClimbToTopMontage : MantleNoClimbMontage;
 		PlayClimbMontage(MantleMontage);
@@ -619,13 +623,13 @@ void UClimbingComponent::MoveToLedgeLocation()
 	LatentInfo.CallbackTarget = this;
 	FRotator Rotator = FRotator(0.f, ClimbRotation.Yaw, 0.f);
 	float OverTime = FVector::Distance(LedgeLocation, ActorOwner->GetActorLocation()) / 250.f;
-	UKismetSystemLibrary::MoveComponentTo(CapsuleComponent, LedgeLocation, Rotator, true, false, OverTime, true, EMoveComponentAction::Move, LatentInfo);
+	UKismetSystemLibrary::MoveComponentTo(Capsule, LedgeLocation, Rotator, true, false, OverTime, true, EMoveComponentAction::Move, LatentInfo);
 }
 
 bool UClimbingComponent::MoveOnLedge(const FVector& ImpactObjectPoint, const FVector& ClimbablePoint, const FRotator& Rotation)
 {
 	FVector Location = CalculateLedgeLocation(ImpactObjectPoint, ClimbablePoint, Rotation, 1);
-	if (!CheckCapsuleSpaceCondition(Location - FVector(0.f, 0.f, CapsuleComponent->GetScaledCapsuleHalfHeight()))) return false;
+	if (!CheckCapsuleSpaceCondition(Location - FVector(0.f, 0.f, Capsule->GetScaledCapsuleHalfHeight()))) return false;
 	FRotator Rotator = FRotator(Rotation.Roll, Rotation.Yaw - 180, Rotation.Roll);
 
 	FVector NewLocation = UKismetMathLibrary::VInterpTo(CharacterOwner->GetActorLocation(), Location, GetWorld()->GetDeltaSeconds(), 2.f);
@@ -751,7 +755,7 @@ const FHitResult UClimbingComponent::DoClimbableDownLedgeTrace()
 	const FVector ComponentForward = ActorOwner->GetActorForwardVector();
 	const FVector DownVector = -ActorOwner->GetActorUpVector();
 
-	const float height = CapsuleComponent->GetScaledCapsuleHalfHeight();
+	const float height = Capsule->GetScaledCapsuleHalfHeight();
 	const FVector ClimbableSurfaceTraceStart = ComponentLocation + FVector(0.f, 0.f, -height - 20.f);
 	const FVector ClimbableSurfaceTraceEnd = ClimbableSurfaceTraceStart + ComponentForward * 80.f;
 
@@ -937,7 +941,7 @@ void UClimbingComponent::PlayClimbMontage(UAnimMontage* MontageToPlay)
 	if (MontageToPlay == TopToClimbMontage)
 	{
 		OwningPlayerAnimInstance->Montage_Play(MontageToPlay);
-		PanWolfCharacter->GetCameraBoom()->bDoCollisionTest = false;
+		CameraBoom->bDoCollisionTest = false;
 	}
 	else if (MontageToPlay == ClimbToTopMontage)
 	{
@@ -967,17 +971,17 @@ void UClimbingComponent::PlayClimbMontage(UAnimMontage* MontageToPlay)
 	}
 	else if (MontageToPlay == VaultMontage)
 	{
-		PanWolfCharacter->GetCameraBoom()->bDoCollisionTest = false;
+		CameraBoom->bDoCollisionTest = false;
 		OwningPlayerAnimInstance->Montage_Play(MontageToPlay);
 	}
 	else
 	{
-		MotionWarpingLocation = (LedgeLocation - FVector(0.f, 0.f, CapsuleComponent->GetScaledCapsuleHalfHeight() * 2));
+		MotionWarpingLocation = (LedgeLocation - FVector(0.f, 0.f, Capsule->GetScaledCapsuleHalfHeight() * 2));
 		MotionWarpingRotator = FRotator(0.f, ClimbRotation.Yaw, 0.f);
-		MotionWarpingLocation -= CurrentClimbableSurfaceNormal.GetSafeNormal() * CapsuleComponent->GetScaledCapsuleRadius();
+		MotionWarpingLocation -= CurrentClimbableSurfaceNormal.GetSafeNormal() * Capsule->GetScaledCapsuleRadius();
 
 		
-		PanWolfCharacter->SetMotionWarpTarget(FName("ClimbStartPoint"), CapsuleComponent->GetComponentLocation(), CapsuleComponent->GetComponentRotation());
+		PanWolfCharacter->SetMotionWarpTarget(FName("ClimbStartPoint"), Capsule->GetComponentLocation(), Capsule->GetComponentRotation());
 		PanWolfCharacter->SetMotionWarpTarget(FName("ClimbLandPoint"), MotionWarpingLocation, MotionWarpingRotator);
 
 		MovementComponent->MaxFlySpeed = 0.f;
@@ -1009,13 +1013,13 @@ void UClimbingComponent::OnClimbMontageEnded(UAnimMontage* Montage, bool bInterr
 {
 	if (Montage == ClimbToTopMontage)
 	{
-		CapsuleComponent->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+		Capsule->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
 
 		StopClimbing();
 
 		MovementComponent->SetMovementMode(MOVE_Walking);
 		MovementComponent->StopMovementImmediately();
-		PanWolfCharacter->GetCameraBoom()->bDoCollisionTest = true;
+		CameraBoom->bDoCollisionTest = true;
 
 		if (bCoveringSaved)
 		{
@@ -1027,21 +1031,21 @@ void UClimbingComponent::OnClimbMontageEnded(UAnimMontage* Montage, bool bInterr
 	{
 		MovementComponent->SetMovementMode(MOVE_Walking);
 		CharacterOwner->SetActorEnableCollision(true);
-		PanWolfCharacter->GetCameraBoom()->bDoCollisionTest = true;
+		CameraBoom->bDoCollisionTest = true;
 	}
 
 	else if (Montage == TopToClimbMontage)
 	{
 		MovementComponent->StopMovementImmediately();
-		PanWolfCharacter->GetCameraBoom()->bDoCollisionTest = true;
+		CameraBoom->bDoCollisionTest = true;
 	}
 
 	else if (Montage == MantleNoClimbMontage)
 	{
-		CapsuleComponent->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+		Capsule->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
 		MovementComponent->SetMovementMode(MOVE_Walking);
 		MovementComponent->StopMovementImmediately();		
-		PanWolfCharacter->GetCameraBoom()->bDoCollisionTest = true;
+		CameraBoom->bDoCollisionTest = true;
 
 		if (bCoveringSaved)
 		{
@@ -1140,8 +1144,8 @@ void UClimbingComponent::ToggleClimbing()
 		PrimaryComponentTick.SetTickFunctionEnable(true);
 		SavedClimbedObject = nullptr;
 		MovementComponent->SetMovementMode(EMovementMode::MOVE_Falling);
-		CapsuleComponent->SetCapsuleHalfHeight(90);
-		CapsuleComponent->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+		Capsule->SetCapsuleHalfHeight(PandolfoComponent->GetCapsuleHalfHeight());
+		Capsule->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
 	}
 }
 

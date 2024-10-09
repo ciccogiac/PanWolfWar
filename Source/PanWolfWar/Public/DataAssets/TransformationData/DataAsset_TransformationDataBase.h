@@ -16,6 +16,10 @@ struct FTransformationCharacterData
 
 public:
 	UPROPERTY(EditDefaultsOnly, Category = "TransformationData")
+	float MaxWalkSpeed;
+	UPROPERTY(EditDefaultsOnly, Category = "TransformationData")
+	float MaxWalkSpeedCrouched;
+	UPROPERTY(EditDefaultsOnly, Category = "TransformationData")
 	float CapsuleRadius;
 	UPROPERTY(EditDefaultsOnly, Category = "TransformationData")
 	float CapsuleHalfHeight;

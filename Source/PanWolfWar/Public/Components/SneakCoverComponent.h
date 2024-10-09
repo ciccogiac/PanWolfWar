@@ -10,6 +10,9 @@ class UInputAction;
 class APanWolfWarCharacter;
 class UPandolfoComponent;
 class UAnimMontage;
+class UCapsuleComponent;
+class USpringArmComponent;
+class UCharacterMovementComponent;
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class PANWOLFWAR_API USneakCoverComponent : public UActorComponent
@@ -68,6 +71,9 @@ public:
 
 private:
 	ACharacter* CharacterOwner;
+	UCharacterMovementComponent* MovementComponent;
+	UCapsuleComponent* Capsule;
+	USpringArmComponent* CameraBoom;
 	APanWolfWarCharacter* PanWolfCharacter;
 	UPandolfoComponent* PandolfoComponent;
 

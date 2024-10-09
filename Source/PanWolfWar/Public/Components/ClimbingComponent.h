@@ -14,6 +14,7 @@ class UInputAction;
 class APanWolfWarCharacter;
 class UInputMappingContext;
 class UPandolfoComponent;
+class USpringArmComponent;
 
 UENUM(BlueprintType)
 enum class EClimbingState : uint8
@@ -176,7 +177,8 @@ private:
 	APanWolfWarCharacter* PanWolfCharacter;
 	UCharacterMovementComponent* MovementComponent;
 	UPandolfoComponent* PandolfoComponent;
-	UCapsuleComponent* CapsuleComponent;
+	UCapsuleComponent* Capsule;
+	USpringArmComponent* CameraBoom;
 
 	UPROPERTY()
 	UAnimInstance* OwningPlayerAnimInstance;

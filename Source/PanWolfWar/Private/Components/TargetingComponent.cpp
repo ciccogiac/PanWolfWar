@@ -14,6 +14,9 @@
 #include "Kismet/GameplayStatics.h"
 #include "GameFramework/Character.h"
 
+#include "PanWolfWar/PanWolfWarCharacter.h"
+#include "Components/TransformationCharacterComponent.h"
+
 #pragma region EngineFunctions
 
 
@@ -26,11 +29,17 @@ UTargetingComponent::UTargetingComponent()
 	bAutoActivate = false;
 
 	CharacterOwner = Cast<ACharacter>(GetOwner());
+	PanWolfCharacter = Cast<APanWolfWarCharacter>(CharacterOwner);
 }
 
 void UTargetingComponent::BeginPlay()
 {
 	Super::BeginPlay();
+
+	if (CharacterOwner)
+	{
+		MovementComponent = CharacterOwner->GetCharacterMovement();
+	}
 	
 }
 
@@ -53,11 +62,6 @@ void UTargetingComponent::TickComponent(float DeltaTime, ELevelTick TickType, FA
 
 
 	SetTargetLockWidgetPosition();
-
-	//const bool bShouldOverrideRotation =
-	//	!UWarriorFunctionLibrary::NativeDoesActorHaveTag(GetHeroCharacterFromActorInfo(), WarriorGameplayTags::Player_Status_Rolling)
-	//	&&
-	//	!UWarriorFunctionLibrary::NativeDoesActorHaveTag(GetHeroCharacterFromActorInfo(), WarriorGameplayTags::Player_Status_Blocking);
 
 
 	const bool bShouldOverrideRotation = !isDodging;
@@ -319,9 +323,7 @@ void UTargetingComponent::SetTargetLockWidgetPosition()
 
 void UTargetingComponent::InitTargetLockMovement()
 {
-	CachedDefaultMaxWalkSpeed = CharacterOwner->GetCharacterMovement()->MaxWalkSpeed;
-
-	CharacterOwner->GetCharacterMovement()->MaxWalkSpeed = TargetLockMaxWalkSpeed;
+	MovementComponent->MaxWalkSpeed = TargetLockMaxWalkSpeed;
 }
 
 void UTargetingComponent::InitTargetLockMappingContext()
@@ -350,15 +352,16 @@ void UTargetingComponent::CleanUp()
 
 	TargetLockWidgetSize = FVector2D::ZeroVector;
 
-	CachedDefaultMaxWalkSpeed = 0.f;
 }
 
 void UTargetingComponent::ResetTargetLockMovement()
 {
-	if (CachedDefaultMaxWalkSpeed > 0.f)
-	{
-		CharacterOwner->GetCharacterMovement()->MaxWalkSpeed = CachedDefaultMaxWalkSpeed;
-	}
+
+	UTransformationCharacterComponent* TransformationCharacterComponent = PanWolfCharacter->GetCurrentTransformationCharacterComponent();
+	if (TransformationCharacterComponent)
+		MovementComponent->MaxWalkSpeed = TransformationCharacterComponent->GetMaxWalkSpeed();
+	else
+		MovementComponent->MaxWalkSpeed = 500.f;
 }
 
 void UTargetingComponent::ResetTargetLockMappingContext()

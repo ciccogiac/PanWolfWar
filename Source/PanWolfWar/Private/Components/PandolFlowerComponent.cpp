@@ -288,7 +288,8 @@ void UPandolFlowerComponent::Hook()
 		{
 			PanWolfCharacter->DetachRootComponentFromParent();
 			CurrentGrapplePoint->ResetLandingZone();
-			MovementComponent->GravityScale = 2.2f;
+			/*MovementComponent->GravityScale = 2.2f;*/
+			MovementComponent->GravityScale = 1.75f;
 			MovementComponent->SetMovementMode(EMovementMode::MOVE_Falling);
 			CharacterOwner->Jump();
 		}
@@ -513,7 +514,8 @@ void UPandolFlowerComponent::ResetMovement()
 	CurrentGrapplePoint = nullptr;
 
 	PandolFlowerState = EPandolFlowerState::EPFS_PandolFlower;
-	MovementComponent->GravityScale = 2.2f;
+	/*MovementComponent->GravityScale = 2.2f;*/
+	MovementComponent->GravityScale = 1.75f;
 
 	CharacterOwner->GetCapsuleComponent()->SetCollisionResponseToChannel(ECollisionChannel::ECC_WorldStatic, ECollisionResponse::ECR_Block);
 
@@ -550,7 +552,7 @@ void UPandolFlowerComponent::StartSwinging()
 	//CharacterOwner->GetMesh()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	MovementComponent->StopMovementImmediately();
 
-	CurrentGrapplePoint->LandingZone_Mesh->SetWorldRotation(FRotator(0.f, PanWolfCharacter->GetCapsuleComponent()->GetComponentRotation().Yaw, 0.f),false,nullptr,ETeleportType::TeleportPhysics);
+	CurrentGrapplePoint->LandingZone_Mesh->SetWorldRotation(FRotator(0.f, Capsule->GetComponentRotation().Yaw, 0.f),false,nullptr,ETeleportType::TeleportPhysics);
 
 	FAttachmentTransformRules AttachmentRules(EAttachmentRule::SnapToTarget, EAttachmentRule::SnapToTarget, EAttachmentRule::KeepWorld, true);
 	PanWolfCharacter->AttachToComponent(CurrentGrapplePoint->LandingZone_Mesh, AttachmentRules);
@@ -674,7 +676,7 @@ void UPandolFlowerComponent::FlowerUnHide()
 	}
 
 	CharacterOwner->SetActorLocation(CharacterOwner->GetActorLocation() + CharacterOwner->GetActorForwardVector() * 225.f);
-	MovementComponent->MaxWalkSpeed = 500.f;
+	MovementComponent->MaxWalkSpeed = TransformationCharacterData.MaxWalkSpeed;
 
 	PanWolfCharacter->SetIsHiding(false);
 

@@ -6,7 +6,7 @@
 #include "Components/Combat/PandoCombatComponent.h"
 
 #include "PanWolfWar/DebugHelper.h"
-#include "Components/TargetingComponent.h"
+
 
 #include "GameFramework/SpringArmComponent.h"
 
@@ -16,6 +16,7 @@
 #include "NiagaraComponent.h"
 
 #include "PanWarFunctionLibrary.h"
+#include "Components/TargetingComponent.h"
 
 #pragma region EngineFunctions
 
@@ -26,8 +27,6 @@ UPanWolfComponent::UPanWolfComponent()
 void UPanWolfComponent::BeginPlay()
 {
 	Super::BeginPlay();
-
-	TargetingComponent = PanWolfCharacter->GetTargetingComponent();
 }
 
 void UPanWolfComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
@@ -55,12 +54,15 @@ void UPanWolfComponent::Activate(bool bReset)
 
 	bIsBlocking = false;
 	bIsBlockingReact = false;
+	bHitted = false;
 	PanWolfCharacter->SetIsHiding(false);
 }
 
 void UPanWolfComponent::Deactivate()
 {
 	Super::Deactivate();
+
+	bHitted = false;
 
 	if (PanWolfState == EPanWolfState::EPWS_Dodging)
 		PanWolfCharacter->EndDodge();

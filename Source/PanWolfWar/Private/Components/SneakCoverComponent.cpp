@@ -43,7 +43,16 @@ void USneakCoverComponent::Deactivate()
 void USneakCoverComponent::BeginPlay()
 {
 	Super::BeginPlay();
-	PandolfoComponent = PanWolfCharacter->GetPandolfoComponent();
+
+	if (PanWolfCharacter)
+	{
+		PandolfoComponent = PanWolfCharacter->GetPandolfoComponent();
+		Capsule = PanWolfCharacter->GetCapsuleComponent();
+		CameraBoom = PanWolfCharacter->GetCameraBoom();
+		MovementComponent = CharacterOwner->GetCharacterMovement();
+	}
+
+
 }
 
 void USneakCoverComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
@@ -59,7 +68,7 @@ void USneakCoverComponent::TickComponent(float DeltaTime, ELevelTick TickType, F
 void USneakCoverComponent::StartNarrow(const FVector StartLocation, const FVector NarrowPosition)
 {
 	//Debug::Print(TEXT("StartNarrow"));
-	if (!bIsNarrowing && !CharacterOwner->GetCharacterMovement()->IsCrouching() && CanEnterCover(StartLocation, true))
+	if (!bIsNarrowing && !MovementComponent->IsCrouching() && CanEnterCover(StartLocation, true))
 	{
 		if (!StartNarrowMontage) return;
 		UAnimInstance* OwningPlayerAnimInstance = CharacterOwner->GetMesh()->GetAnimInstance();
@@ -72,12 +81,12 @@ void USneakCoverComponent::StartNarrow(const FVector StartLocation, const FVecto
 		PanWolfCharacter->SetMotionWarpTarget(FName("StartNarrowPoint"), FVector(SavedAttachPoint.X, SavedAttachPoint.Y, CharacterOwner->GetActorLocation().Z), R);
 
 
-		CharacterOwner->GetCapsuleComponent()->SetCapsuleRadius(22.f);
+		Capsule->SetCapsuleRadius(22.f);
 		CharacterOwner->DisableInput(CharacterOwner->GetLocalViewingPlayerController());
-		PanWolfCharacter->GetCameraBoom()->bUsePawnControlRotation = false;
-		PanWolfCharacter->GetCameraBoom()->SetRelativeRotation(FRotator(-10.f, 90.f, 0.f));
-		PanWolfCharacter->GetCameraBoom()->SetRelativeLocation(FVector(0.f, 0.f, 45.f));
-		PanWolfCharacter->GetCameraBoom()->TargetArmLength = 250.f;
+		CameraBoom->bUsePawnControlRotation = false;
+		CameraBoom->SetRelativeRotation(FRotator(-10.f, 90.f, 0.f));
+		CameraBoom->SetRelativeLocation(FVector(0.f, 0.f, 45.f));
+		CameraBoom->TargetArmLength = 250.f;
 		OwningPlayerAnimInstance->Montage_Play(StartNarrowMontage);
 	}
 }
@@ -96,10 +105,10 @@ void USneakCoverComponent::StopNarrow(const FVector EndLocation, const FVector E
 	FRotator R = UKismetMathLibrary::MakeRotFromX(EndDirection.GetSafeNormal());
 	PanWolfCharacter->SetMotionWarpTarget(FName("EndNarrowPoint"), FVector(EndLocation.X, EndLocation.Y, CharacterOwner->GetActorLocation().Z), R);
 	ExitCover();
-	PanWolfCharacter->GetCameraBoom()->bUsePawnControlRotation = true;
+	CameraBoom->bUsePawnControlRotation = true;
 	//PanWolfCharacter->GetCameraBoom()->SetRelativeRotation(FRotator(0.f, 0.f, 0.f));
-	PanWolfCharacter->GetCameraBoom()->SetRelativeLocation(FVector(0.f, 0.f, 0.f));
-	PanWolfCharacter->GetCameraBoom()->TargetArmLength = 400.f;
+	CameraBoom->SetRelativeLocation(FVector(0.f, 0.f, 0.f));
+	CameraBoom->TargetArmLength = PandolfoComponent->GetTargetArmLength();
 	OwningPlayerAnimInstance->Montage_Play(ExitNarrowMontage);
 }
 
@@ -110,7 +119,7 @@ void USneakCoverComponent::EnterNarrow()
 
 void USneakCoverComponent::ExitNarrow()
 {
-	CharacterOwner->GetCapsuleComponent()->SetCapsuleRadius(35.f);
+	Capsule->SetCapsuleRadius(PandolfoComponent->GetCapsuleRadius());
 	bIsNarrowing = false;
 }
 
@@ -184,46 +193,12 @@ void USneakCoverComponent::CoverMove(const FInputActionValue& Value)
 		FHitResult Crouchhit;
 		EDrawDebugTrace::Type DebugTrace = ShowDebugTrace ? EDrawDebugTrace::ForOneFrame : EDrawDebugTrace::None;
 		const FVector FloorStart = CrouchStart + CharacterOwner->GetActorRightVector() * CoverDirection * 30.f ;
-		const FVector FloorEnd = FloorStart - CharacterOwner->GetActorUpVector() * (CharacterOwner->GetCapsuleComponent()->GetScaledCapsuleHalfHeight() + 25.f);
+		const FVector FloorEnd = FloorStart - CharacterOwner->GetActorUpVector() * (Capsule->GetScaledCapsuleHalfHeight() + 25.f);
 		UKismetSystemLibrary::SphereTraceSingle(this, FloorStart, FloorEnd,15.f, ETraceTypeQuery::TraceTypeQuery1, false, TArray<AActor*>(), DebugTrace, Crouchhit, true);
 		if (!Crouchhit.bBlockingHit)
 			return;
 
 
-		/** Auto EXIT*/
-
-		//int N_SpaceIterarion = 6;
-		////Find Space To exit cover
-		//for (size_t i = 0; i < N_SpaceIterarion; i++)
-		//{
-		//	FVector SpaceStart = CrouchStart  - CharacterOwner->GetActorForwardVector() * 20.f * i;
-		//	bool isSpace = true;
-		//	for (size_t t = 0; t < 6; t++)
-		//	{
-		//		FVector CapsuleSpaceStart = SpaceStart  + MoveDirection * CoverDirection * 40.f * t;
-		//		FVector CapsuleSpaceEnd = CapsuleSpaceStart - CharacterOwner->GetActorUpVector() * (CharacterOwner->GetCapsuleComponent()->GetScaledCapsuleHalfHeight() + 25.f);
-		//		FHitResult CapsuleSpaceHit;
-		//		UKismetSystemLibrary::LineTraceSingle(this, CapsuleSpaceStart, CapsuleSpaceEnd, ETraceTypeQuery::TraceTypeQuery1, false, TArray<AActor*>(), EDrawDebugTrace::ForOneFrame, CapsuleSpaceHit, true);
-		//		if (!CapsuleSpaceHit.bBlockingHit || CapsuleSpaceHit.bStartPenetrating)
-		//		{
-		//			isSpace = false;
-		//			break;
-		//		}
-		//			
-		//	}
-
-		//	if (!isSpace)
-		//		break;
-		//	
-		//	if ( i == N_SpaceIterarion - 1)
-		//	{
-		//		
-		//				StopCover();
-		//				CharacterOwner->GetMovementComponent()->StopMovementImmediately();
-		//				return;								
-
-		//	}
-		//}
 
 		if (!CheckCrouchHeight(CoverDirection))
 			return;
@@ -251,9 +226,9 @@ void USneakCoverComponent::StartCover()
 	SetCharRotation(hit.ImpactNormal,true);
 	SetCharLocation(hit.ImpactPoint, hit.ImpactNormal, true);
 
-	CharacterOwner->GetCharacterMovement()->bOrientRotationToMovement = false;
-	CharacterOwner->GetCharacterMovement()->MaxWalkSpeed = 100.f;
-	CharacterOwner->GetCharacterMovement()->MaxWalkSpeedCrouched = 100.f;
+	MovementComponent->bOrientRotationToMovement = false;
+	MovementComponent->MaxWalkSpeed = 100.f;
+	MovementComponent->MaxWalkSpeedCrouched = 100.f;
 
 	IsCovering = true;
 	PanWolfCharacter->AddMappingContext(SneakCoverMappingContext, 2);
@@ -265,9 +240,9 @@ void USneakCoverComponent::StartCover()
 
 void USneakCoverComponent::EnterCover(const bool SetLocRot)
 {
-	CharacterOwner->GetCharacterMovement()->bOrientRotationToMovement = false;
-	CharacterOwner->GetCharacterMovement()->MaxWalkSpeed = 100.f;
-	CharacterOwner->GetCharacterMovement()->MaxWalkSpeedCrouched = 100.f;
+	MovementComponent->bOrientRotationToMovement = false;
+	MovementComponent->MaxWalkSpeed = 100.f;
+	MovementComponent->MaxWalkSpeedCrouched = 100.f;
 
 	IsCovering = true;
 	PanWolfCharacter->AddMappingContext(SneakCoverMappingContext, 2);
@@ -327,7 +302,7 @@ void USneakCoverComponent::StopCover()
 			for (size_t t = 0; t < 5; t++)
 			{
 				FVector CapsuleSpaceStart = SpaceStart - CharacterOwner->GetActorRightVector() * 30.f * 2  + CharacterOwner->GetActorRightVector() * 30.f * t;
-				FVector CapsuleSpaceEnd = CapsuleSpaceStart - CharacterOwner->GetActorUpVector() * (CharacterOwner->GetCapsuleComponent()->GetScaledCapsuleHalfHeight() + 25.f);
+				FVector CapsuleSpaceEnd = CapsuleSpaceStart - CharacterOwner->GetActorUpVector() * (Capsule->GetScaledCapsuleHalfHeight() + 25.f);
 				FHitResult CapsuleSpaceHit;
 				UKismetSystemLibrary::LineTraceSingle(this, CapsuleSpaceStart, CapsuleSpaceEnd, ETraceTypeQuery::TraceTypeQuery1, false, TArray<AActor*>(), DebugTrace, CapsuleSpaceHit, true);
 				if (!CapsuleSpaceHit.bBlockingHit || CapsuleSpaceHit.bStartPenetrating)
@@ -365,9 +340,9 @@ void USneakCoverComponent::ExitCover()
 	IsCovering = false;
 	PanWolfCharacter->RemoveMappingContext(SneakCoverMappingContext);
 
-	CharacterOwner->GetCharacterMovement()->bOrientRotationToMovement = true;
-	CharacterOwner->GetCharacterMovement()->MaxWalkSpeed = 500.f;
-	CharacterOwner->GetCharacterMovement()->MaxWalkSpeedCrouched = 250.f;
+	MovementComponent->bOrientRotationToMovement = true;
+	MovementComponent->MaxWalkSpeed = PandolfoComponent->GetMaxWalkSpeed();
+	MovementComponent->MaxWalkSpeedCrouched = PandolfoComponent->GetMaxWalkSpeedCrouched();
 
 	PandolfoComponent->PandolfoState = EPandolfoState::EPS_Pandolfo;
 }
@@ -408,7 +383,7 @@ bool USneakCoverComponent::CheckCrouchHeight(const float Direction)
 		return false;
 	}
 
-	if (!CharacterOwner->GetCharacterMovement()->IsCrouching() && !CharacterOwner->GetCharacterMovement()->bWantsToCrouch)
+	if (!MovementComponent->IsCrouching() && !MovementComponent->bWantsToCrouch)
 	{
 		FVector loc; FRotator Rot;
 		CharacterOwner->GetActorEyesViewPoint(loc,Rot);
@@ -420,16 +395,16 @@ bool USneakCoverComponent::CheckCrouchHeight(const float Direction)
 
 		if (hit.bBlockingHit)
 		{
-			CharacterOwner->GetCharacterMovement()->bWantsToCrouch = true;
+			MovementComponent->bWantsToCrouch = true;
 			return true;			
 		}
 			
 	}
 
-	else if (CharacterOwner->GetCharacterMovement()->IsCrouching() && CharacterOwner->GetCharacterMovement()->bWantsToCrouch)
+	else if (MovementComponent->IsCrouching() && MovementComponent->bWantsToCrouch)
 	{
 		//Debug::Print(TEXT("TryUnCrouch"));
-		CharacterOwner->GetCharacterMovement()->bWantsToCrouch = false;
+		MovementComponent->bWantsToCrouch = false;
 		return true;
 	}
 
@@ -455,7 +430,7 @@ void USneakCoverComponent::SetCharLocation(const FVector HitLocation, const FVec
 void USneakCoverComponent::JumpCover()
 {
 	//Debug::Print(TEXT("JumpCover"));
-	if (!CharacterOwner->GetCharacterMovement()->IsCrouching() && PandolfoComponent->TryClimbOrMantle())
+	if (!MovementComponent->IsCrouching() && PandolfoComponent->TryClimbOrMantle())
 	{
 		ExitCover();
 	}

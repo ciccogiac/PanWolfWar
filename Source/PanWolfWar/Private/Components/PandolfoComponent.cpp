@@ -252,7 +252,7 @@ void UPandolfoComponent::HandleLand()
 
 void UPandolfoComponent::CrouchCameraUpdate(float Alpha)
 {
-	CameraBoom->TargetArmLength = UKismetMathLibrary::Lerp(400.f, 550.f, Alpha);
+	CameraBoom->TargetArmLength = UKismetMathLibrary::Lerp(TransformationCharacterData.TargetArmLength, 550.f, Alpha);
 }
 
 bool UPandolfoComponent::TryClimbOrMantle()
