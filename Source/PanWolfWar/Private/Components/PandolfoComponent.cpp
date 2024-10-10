@@ -154,11 +154,14 @@ void UPandolfoComponent::Jump()
 	{
 		if (!TryClimbOrMantle() && !ClimbingComponent->TryVault())
 		{
-			if (!PredictJump())
+			if (OwningPlayerAnimInstance->IsAnyMontagePlaying()) return;
+			CharacterOwner->Jump();
+
+			/*if (!PredictJump())
 			{
 				if (OwningPlayerAnimInstance->IsAnyMontagePlaying()) return;
-				CharacterOwner->Jump();
-			}
+				CharacterOwner->Jump(); 
+			}*/
 		}
 	}
 }
@@ -488,6 +491,7 @@ void UPandolfoComponent::TryGliding()
 
 	
 	if (!Hit.bBlockingHit && MovementComponent->GetLastUpdateVelocity().Z < -GlidingVelocity)
+	if (!Hit.bBlockingHit )
 	{
 		//Debug::Print(TEXT("Glide"));
 		PandolfoState = EPandolfoState::EPS_Gliding;
@@ -507,14 +511,16 @@ void UPandolfoComponent::TryGliding()
 
 void UPandolfoComponent::UnGlide()
 {
+
+	UmbrellaActor->Destroy();
+	MovementComponent->GravityScale = 1.75f;
+	MovementComponent->AirControl = 0.35f;
+
 	if(PandolfoState == EPandolfoState::EPS_Gliding)
 	{
 		//Debug::Print(TEXT("UnGlide"));
 		PandolfoState = EPandolfoState::EPS_Pandolfo;
 
-		UmbrellaActor->Destroy();
-		MovementComponent->GravityScale = 1.75f;
-		MovementComponent->AirControl = 0.35f;
 	}
 
 }

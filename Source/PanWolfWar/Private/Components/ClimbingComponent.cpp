@@ -1089,11 +1089,11 @@ void UClimbingComponent::PlayMantleMontage(UAnimMontage* MontageToPlay)
 		CharacterOwner->DisableInput(CharacterOwner->GetLocalViewingPlayerController());
 	}
 
-	if (PandolfoComponent->IsGliding())
+	/*if (PandolfoComponent->IsGliding())
 	{
 		Debug::Print(TEXT("MantleFromGliding"));
 		PandolfoComponent->UnGlide();
-	}
+	}*/
 
 }
 
