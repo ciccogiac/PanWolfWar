@@ -436,17 +436,6 @@ void UPandolfoComponent::Sliding()
 	OwningPlayerAnimInstance->Montage_SetEndDelegate(SlidingMontageEndedDelegate, SlidingMontage);
 }
 
-void UPandolfoComponent::OnSlidingMontageEnded(UAnimMontage* Montage, bool bInterrupted)
-{
-	if (!Montage) return;
-
-	if (PandolfoState == EPandolfoState::EPS_Sliding)
-	{
-		EndSliding();
-	}
-
-}
-
 void UPandolfoComponent::StartSliding()
 {
 	if (MovementComponent->IsCrouching())
@@ -733,6 +722,17 @@ void UPandolfoComponent::OnDodgeMontageEnded(UAnimMontage* Montage, bool bInterr
 
 	PanWolfCharacter->EndDodge();
 	PandolfoState = EPandolfoState::EPS_Pandolfo;
+
+}
+
+void UPandolfoComponent::OnSlidingMontageEnded(UAnimMontage* Montage, bool bInterrupted)
+{
+	if (!Montage) return;
+
+	if (PandolfoState == EPandolfoState::EPS_Sliding)
+	{
+		EndSliding();
+	}
 
 }
 

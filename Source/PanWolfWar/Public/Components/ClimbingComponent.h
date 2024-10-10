@@ -154,7 +154,7 @@ private:
 	#pragma region MontageSection
 
 	void PlayClimbMontage(UAnimMontage* MontageToPlay);
-
+	void PlayMantleMontage(UAnimMontage* MontageToPlay);
 	bool PlayMontage(UAnimMontage* MontageToPlay);
 
 	UFUNCTION()
@@ -162,6 +162,9 @@ private:
 
 	UFUNCTION()
 	void OnClimbMontageEnded(UAnimMontage* Montage, bool bInterrupted);
+
+	UFUNCTION()
+	void OnMantleMontageEnded(UAnimMontage* Montage, bool bInterrupted);
 
 	UFUNCTION()
 	void OnVaultMontageEnded(UAnimMontage* Montage, bool bInterrupted);
@@ -367,7 +370,11 @@ private:
 	UAnimMontage* TopToClimbMontage;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Climb Montages", meta = (AllowPrivateAccess = "true"))
-	UAnimMontage* MantleNoClimbMontage;
+	UAnimMontage* NormalMantleMontage;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Climb Montages", meta = (AllowPrivateAccess = "true"))
+	UAnimMontage* SmallMantleMontage;
+
 
 
 	/** Corner */
