@@ -412,7 +412,11 @@ bool UClimbingComponent::CanClimbUpon()
 		{
 			PanWolfCharacter->SetMotionWarpTarget(FName("LedgeClimbUP"), FirstPoint + CharacterOwner->GetActorForwardVector() * 5.f + CharacterOwner->GetActorUpVector() * 7.5f);
 			PanWolfCharacter->SetMotionWarpTarget(FName("LedgeClimbForward"), SecondPoint + CharacterOwner->GetActorForwardVector() * 25.f);
-			PlayClimbMontage(ClimbToTopMontage);
+
+			if(bCoveringSaved)
+				PlayCoverFromClimbMontage(CoverFromClimbMontage);
+			else
+				PlayMantleFromClimbMontage(MantleFromClimbMontage);
 		}
 
 		else
@@ -431,19 +435,14 @@ bool UClimbingComponent::CanClimbUpon()
 
 			if (WallHeightZ <= SmallMantleHeightZ)
 			{
-				//DoSmallMantle
-				//Debug::Print(TEXT("SmallMantle"));
 				PlayMantleMontage(SmallMantleMontage);
 			}
 
 			else
 			{
-				//DoNormalMantle
-				//Debug::Print(TEXT("NormalMantle"));
 				PlayMantleMontage(NormalMantleMontage);
 			}
-
-			
+		
 			
 		}
 
@@ -973,6 +972,81 @@ bool UClimbingComponent::PlayMontage(UAnimMontage* MontageToPlay)
 	return true;
 }
 
+void UClimbingComponent::PlayCoverFromClimbMontage(UAnimMontage* MontageToPlay)
+{
+	if (!MontageToPlay) return;
+
+
+	PandolfoComponent->PandolfoState = EPandolfoState::EPS_Covering;
+	ClimbingState = EClimbingState::ECS_NOTClimbing;
+	Capsule->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+	OwningPlayerAnimInstance->Montage_Play(MontageToPlay);
+	//PanWolfCharacter->GetCameraBoom()->bDoCollisionTest = false;
+
+	FOnMontageEnded CoverFromClimbMontageEndedDelegate;
+	CoverFromClimbMontageEndedDelegate.BindUObject(this, &UClimbingComponent::OnCoverFromClimbMontageEnded);
+	OwningPlayerAnimInstance->Montage_SetEndDelegate(CoverFromClimbMontageEndedDelegate, MontageToPlay);
+
+
+
+	CharacterOwner->DisableInput(CharacterOwner->GetLocalViewingPlayerController());
+	
+}
+
+void UClimbingComponent::OnCoverFromClimbMontageEnded(UAnimMontage* Montage, bool bInterrupted)
+{
+	if (!Montage) return;
+
+	//StopClimbing();
+
+	ClimbedObject = nullptr;
+	SavedClimbedObject = nullptr;
+
+	//CharacterOwner->GetMesh()->AddLocalOffset(FVector(0., 8.f, 0.f));
+
+	PanWolfCharacter->RemoveMappingContext(ClimbingMappingContext);
+
+	Capsule->SetCapsuleHalfHeight(PandolfoComponent->GetCapsuleHalfHeight());
+
+
+	Deactivate();
+
+	MovementComponent->SetMovementMode(MOVE_Walking);
+	MovementComponent->StopMovementImmediately();
+	CameraBoom->bDoCollisionTest = true;
+
+
+	PandolfoComponent->GetSneakCoverComponent()->EnterCover();
+	
+}
+
+void UClimbingComponent::PlayMantleFromClimbMontage(UAnimMontage* MontageToPlay)
+{
+	if (!MontageToPlay) return;
+		
+	OwningPlayerAnimInstance->Montage_Play(MontageToPlay);
+	//PanWolfCharacter->GetCameraBoom()->bDoCollisionTest = false;
+
+	FOnMontageEnded MantleFromClimbMontageEndedDelegate;
+	MantleFromClimbMontageEndedDelegate.BindUObject(this, &UClimbingComponent::OnMantleFromClimbMontageEnded);
+	OwningPlayerAnimInstance->Montage_SetEndDelegate(MantleFromClimbMontageEndedDelegate, MontageToPlay);
+	
+}
+
+void UClimbingComponent::OnMantleFromClimbMontageEnded(UAnimMontage* Montage, bool bInterrupted)
+{
+	if (!Montage) return;
+
+	Capsule->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+
+	StopClimbing();
+
+	MovementComponent->SetMovementMode(MOVE_Walking);
+	MovementComponent->StopMovementImmediately();
+	CameraBoom->bDoCollisionTest = true;
+	
+}
+
 void UClimbingComponent::PlayClimbMontage(UAnimMontage* MontageToPlay)
 {
 	if (!MontageToPlay || !OwningPlayerAnimInstance || OwningPlayerAnimInstance->IsAnyMontagePlaying()) return;
@@ -981,16 +1055,6 @@ void UClimbingComponent::PlayClimbMontage(UAnimMontage* MontageToPlay)
 	{
 		OwningPlayerAnimInstance->Montage_Play(MontageToPlay);
 		CameraBoom->bDoCollisionTest = false;
-	}
-	else if (MontageToPlay == ClimbToTopMontage)
-	{
-		OwningPlayerAnimInstance->Montage_Play(MontageToPlay);
-		//PanWolfCharacter->GetCameraBoom()->bDoCollisionTest = false;
-
-		if (bCoveringSaved)
-		{
-			CharacterOwner->DisableInput(CharacterOwner->GetLocalViewingPlayerController());
-		}
 	}
 
 	else
@@ -1030,23 +1094,8 @@ void UClimbingComponent::OnClimbMontageStartedHanging(FName NotifyName, const FB
 
 void UClimbingComponent::OnClimbMontageEnded(UAnimMontage* Montage, bool bInterrupted)
 {
-	if (Montage == ClimbToTopMontage)
-	{
-		Capsule->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
 
-		StopClimbing();
-
-		MovementComponent->SetMovementMode(MOVE_Walking);
-		MovementComponent->StopMovementImmediately();
-		CameraBoom->bDoCollisionTest = true;
-
-		if (bCoveringSaved)
-		{
-			PandolfoComponent->GetSneakCoverComponent()->EnterCover();
-		}
-	}
-
-	else if (Montage == TopToClimbMontage)
+	if (Montage == TopToClimbMontage)
 	{
 		MovementComponent->StopMovementImmediately();
 		CameraBoom->bDoCollisionTest = true;
@@ -1083,11 +1132,11 @@ void UClimbingComponent::PlayMantleMontage(UAnimMontage* MontageToPlay)
 
 	Deactivate();
 
-	if (bCoveringSaved)
+	/*if (bCoveringSaved)
 	{
 		Debug::Print(TEXT("MantleFromCovering"));
 		CharacterOwner->DisableInput(CharacterOwner->GetLocalViewingPlayerController());
-	}
+	}*/
 
 	/*if (PandolfoComponent->IsGliding())
 	{
@@ -1103,10 +1152,10 @@ void UClimbingComponent::OnMantleMontageEnded(UAnimMontage* Montage, bool bInter
 	
 	MovementComponent->SetMovementMode(MOVE_Walking);
 
-	if (bCoveringSaved)
+	/*if (bCoveringSaved)
 	{
 		PandolfoComponent->GetSneakCoverComponent()->EnterCover();
-	}
+	}*/
 
 	PandolfoComponent->PandolfoState = EPandolfoState::EPS_Pandolfo;
 	

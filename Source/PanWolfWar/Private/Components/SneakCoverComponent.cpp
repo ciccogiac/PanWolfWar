@@ -76,6 +76,8 @@ void USneakCoverComponent::StartNarrow(const FVector StartLocation, const FVecto
 		if (OwningPlayerAnimInstance->IsAnyMontagePlaying()) return;
 
 		bIsNarrowing = true;
+		PandolfoComponent->PandolfoState = EPandolfoState::EPS_Covering;
+
 		FRotator R = UKismetMathLibrary::MakeRotFromX(-SavedAttachNormal);
 		PanWolfCharacter->SetMotionWarpTarget(FName("PositionNarrowPoint"), FVector(NarrowPosition.X, NarrowPosition.Y, CharacterOwner->GetActorLocation().Z), R);
 		PanWolfCharacter->SetMotionWarpTarget(FName("StartNarrowPoint"), FVector(SavedAttachPoint.X, SavedAttachPoint.Y, CharacterOwner->GetActorLocation().Z), R);
@@ -84,10 +86,19 @@ void USneakCoverComponent::StartNarrow(const FVector StartLocation, const FVecto
 		Capsule->SetCapsuleRadius(22.f);
 		CharacterOwner->DisableInput(CharacterOwner->GetLocalViewingPlayerController());
 		CameraBoom->bUsePawnControlRotation = false;
-		CameraBoom->SetRelativeRotation(FRotator(-10.f, 90.f, 0.f));
-		CameraBoom->SetRelativeLocation(FVector(0.f, 0.f, 45.f));
-		CameraBoom->TargetArmLength = 250.f;
+		/*CameraBoom->SetRelativeRotation(FRotator(-10.f, 90.f, 0.f));
+		CameraBoom->SetRelativeLocation(FVector(0.f, 0.f, 45.f));*/
+
+		FLatentActionInfo LatentInfo;
+		LatentInfo.CallbackTarget = this;
+		UKismetSystemLibrary::MoveComponentTo(CameraBoom, FVector(0.f, -45.f, 45.f), FRotator(-10.f, 90.f, 0.f), true, true, 1.5f, true, EMoveComponentAction::Move, LatentInfo);
+
+		CameraBoom->TargetArmLength = 200.f;
 		OwningPlayerAnimInstance->Montage_Play(StartNarrowMontage);
+
+		FOnMontageEnded StartNarrowMontageEndedDelegate;
+		StartNarrowMontageEndedDelegate.BindUObject(this, &USneakCoverComponent::OnStartNarrowMontageEnded);
+		OwningPlayerAnimInstance->Montage_SetEndDelegate(StartNarrowMontageEndedDelegate, StartNarrowMontage);
 	}
 }
 
@@ -104,28 +115,38 @@ void USneakCoverComponent::StopNarrow(const FVector EndLocation, const FVector E
 	if (OwningPlayerAnimInstance->IsAnyMontagePlaying()) return;
 	FRotator R = UKismetMathLibrary::MakeRotFromX(EndDirection.GetSafeNormal());
 	PanWolfCharacter->SetMotionWarpTarget(FName("EndNarrowPoint"), FVector(EndLocation.X, EndLocation.Y, CharacterOwner->GetActorLocation().Z), R);
-	ExitCover();
+
 	CameraBoom->bUsePawnControlRotation = true;
 	//PanWolfCharacter->GetCameraBoom()->SetRelativeRotation(FRotator(0.f, 0.f, 0.f));
-	CameraBoom->SetRelativeLocation(FVector(0.f, 0.f, 0.f));
+	//CameraBoom->SetRelativeLocation(FVector(0.f, 0.f, 0.f));
+
+	FLatentActionInfo LatentInfo;
+	LatentInfo.CallbackTarget = this;
+	UKismetSystemLibrary::MoveComponentTo(CameraBoom, FVector::ZeroVector, CameraBoom->GetComponentRotation(), true, true, 1.5f, true, EMoveComponentAction::Move, LatentInfo);
+
 	CameraBoom->TargetArmLength = PandolfoComponent->GetTargetArmLength();
 	OwningPlayerAnimInstance->Montage_Play(ExitNarrowMontage);
+
+	FOnMontageEnded StartNarrowMontageEndedDelegate;
+	StartNarrowMontageEndedDelegate.BindUObject(this, &USneakCoverComponent::OnExitNarrowMontageEnded);
+	OwningPlayerAnimInstance->Montage_SetEndDelegate(StartNarrowMontageEndedDelegate, ExitNarrowMontage);
 }
 
-void USneakCoverComponent::EnterNarrow()
+void USneakCoverComponent::OnStartNarrowMontageEnded(UAnimMontage* Montage, bool bInterrupted)
 {
 	EnterCover(false);
 }
 
-void USneakCoverComponent::ExitNarrow()
+void USneakCoverComponent::OnExitNarrowMontageEnded(UAnimMontage* Montage, bool bInterrupted)
 {
 	Capsule->SetCapsuleRadius(PandolfoComponent->GetCapsuleRadius());
 	bIsNarrowing = false;
+	ExitCover();
 }
 
 #pragma endregion
 
-
+#pragma region Cover
 
 void USneakCoverComponent::ActivateWallSearch()
 {
@@ -241,8 +262,8 @@ void USneakCoverComponent::StartCover()
 void USneakCoverComponent::EnterCover(const bool SetLocRot)
 {
 	MovementComponent->bOrientRotationToMovement = false;
-	MovementComponent->MaxWalkSpeed = 100.f;
-	MovementComponent->MaxWalkSpeedCrouched = 100.f;
+	MovementComponent->MaxWalkSpeed = 90.f;
+	MovementComponent->MaxWalkSpeedCrouched = 80.f;
 
 	IsCovering = true;
 	PanWolfCharacter->AddMappingContext(SneakCoverMappingContext, 2);
@@ -436,3 +457,4 @@ void USneakCoverComponent::JumpCover()
 	}
 }
 
+#pragma endregion

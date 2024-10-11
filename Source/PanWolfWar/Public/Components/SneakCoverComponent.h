@@ -36,12 +36,6 @@ public:
 	void StartNarrow(const FVector StartLocation, const FVector NarrowPosition);
 	void StopNarrow(const FVector EndLocation, const FVector EndDirection);
 
-	UFUNCTION(BlueprintCallable)
-	void EnterNarrow();
-
-	UFUNCTION(BlueprintCallable)
-	void ExitNarrow();
-
 	void ActivateWallSearch();
 	void DeactivateWallSearch();
 
@@ -56,6 +50,13 @@ private:
 	void SetCharLocation(const FVector HitLocation, const FVector HitNormal, bool Istantaneus = false);
 	bool CheckCrouchHeight(const float Direction);
 	bool CheckCanTurn(const FVector TurnPoint);
+
+	UFUNCTION()
+	void OnStartNarrowMontageEnded(UAnimMontage* Montage, bool bInterrupted);
+
+	UFUNCTION()
+	void OnExitNarrowMontageEnded(UAnimMontage* Montage, bool bInterrupted);
+
 
 #pragma region InputActions
 

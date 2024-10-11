@@ -17,7 +17,6 @@ ACoverPassage::ACoverPassage()
 	BoxComponent->SetupAttachment(GetRootComponent());
 	BoxComponent->bHiddenInGame = true;
 	BoxComponent->SetLineThickness(4.f);
-	BoxComponent->SetCollisionObjectType(ECollisionChannel::ECC_Pawn);
 
 	ArrowComponent = CreateDefaultSubobject<UArrowComponent>(TEXT("ArrowComponent"));
 	ArrowComponent->SetupAttachment(BoxComponent);
