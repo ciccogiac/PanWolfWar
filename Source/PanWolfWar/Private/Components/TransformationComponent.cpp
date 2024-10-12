@@ -36,6 +36,7 @@ void UTransformationComponent::BeginPlay()
 		Attributes = PanWolfWarCharacter->GetAttributeComponent();
 		InteractComponent = PanWolfWarCharacter->GetInteractComponent();
 		PandolfoComponent = PanWolfWarCharacter->GetPandolfoComponent();
+		PanWolfComponent = PanWolfWarCharacter->GetPanWolfComponent();
 	}
 
 
@@ -121,7 +122,7 @@ void UTransformationComponent::SetTransformation(const ETransformationState NewT
 
 	case ETransformationState::ETS_PanWolf:
 
-		if (!Attributes->ConsumeBeer()) { CurrentTransformationState = PreviousTransformationState; break; }
+		if (!Attributes->ConsumeBeer() || !PanWolfComponent->CheckCapsuleSpace()) { CurrentTransformationState = PreviousTransformationState; break; }
 		ExecuteTransformation(NewTransformationState);
 		HandleComponentActivation(NewTransformationState, PreviousTransformationState);
 		GetWorld()->GetTimerManager().SetTimer(Transformation_TimerHandle, [this, NewTransformationState]() {this->ConsumingTransformation(NewTransformationState); }, 0.05f, true);

@@ -22,6 +22,7 @@
 
 UPanWolfComponent::UPanWolfComponent()
 {
+	bCanCrouch = false;
 }
 
 void UPanWolfComponent::BeginPlay()
@@ -45,7 +46,6 @@ void UPanWolfComponent::Activate(bool bReset)
 	PanWolfState = EPanWolfState::EPWS_PanWolf;
 
 	CharacterOwner->GetMesh()->AddLocalOffset(FVector(15.f, -20.f, -10.f));
-	MovementComponent->bWantsToCrouch = false;
 
 	if (OwningPlayerAnimInstance)
 	{

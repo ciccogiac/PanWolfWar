@@ -23,6 +23,8 @@ public:
 	virtual void Activate(bool bReset = false) override;
 	virtual void Deactivate() override;
 
+	bool CheckCapsuleSpace();
+
 protected:
 	virtual void BeginPlay() override;
 
@@ -38,6 +40,8 @@ protected:
 	UTargetingComponent* TargetingComponent;
 
 	UAnimInstance* OwningPlayerAnimInstance;
+
+	bool bCanCrouch = true;
 
 
 public:

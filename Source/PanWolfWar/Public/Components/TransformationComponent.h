@@ -14,7 +14,7 @@ class UPandolFlowerComponent;
 class UInputAction;
 class UPandoUIComponent;
 class UPandolfoComponent;
-
+class UPanWolfComponent;
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnTransformationStateChanged, ETransformationState, NewState);
 
@@ -67,7 +67,7 @@ private:
 
 	UPandoUIComponent* PandoUIComponent;
 	UPandolfoComponent* PandolfoComponent;
-
+	UPanWolfComponent* PanWolfComponent;
 	// Timer handle
 	FTimerHandle Transformation_TimerHandle;
 	FTimerHandle RegenFlower_TimerHandle;
