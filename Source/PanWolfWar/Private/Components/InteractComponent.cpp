@@ -12,6 +12,12 @@
 #include "Components/CapsuleComponent.h"
 #include "InputActionValue.h"
 #include <PanWolfWar/PanWolfWarCharacter.h>
+#include "Components/PandolfoComponent.h"
+#include "Components/PanWolfComponent.h"
+#include "Components/PandolFlowerComponent.h"
+#include "Components/PanBirdComponent.h"
+
+#include "Actors/MovableObject.h"
 
 #include "PanWolfWar/DebugHelper.h"
 
@@ -28,6 +34,11 @@ UInteractComponent::UInteractComponent()
 void UInteractComponent::BeginPlay()
 {
 	Super::BeginPlay();
+
+	if (PanWolfCharacter)
+	{
+		PandolfoComponent = PanWolfCharacter->GetPandolfoComponent();
+	}
 }
 
 #pragma endregion
@@ -41,6 +52,7 @@ void UInteractComponent::SetInteractState()
 		if (OverlappingObject->ActorHasTag(FName("Movable_Object")))
 		{
 			InteractState = EInteractState::EIS_MovingObject;
+			PandolfoComponent->PandolfoState = EPandolfoState::EPS_Interacting; 
 			PanWolfCharacter->AddMappingContext(MovableObjectMappingContext, 2);
 		}
 			
@@ -53,7 +65,15 @@ void UInteractComponent::Interact()
 {
 	if (OverlappingObject)
 	{
+		ETransformationObjectTypes TransformationObjectType = OverlappingObject->GetTransformationObjectType();
+		if (TransformationObjectType == ETransformationObjectTypes::ETOT_Pandolfo_Object && !PandolfoComponent->IsActive()) return;
+		if (TransformationObjectType == ETransformationObjectTypes::ETOT_PanWolf_Object && !PanWolfCharacter->GetPanWolfComponent()->IsActive()) return;
+		if (TransformationObjectType == ETransformationObjectTypes::ETOT_PandolFlower_Object && !PanWolfCharacter->GetPandolFlowerComponent()->IsActive()) return;
+		if (TransformationObjectType == ETransformationObjectTypes::ETOT_PanBird_Object && !PanWolfCharacter->GetPanBirdComponent()->IsActive()) return;
+
 		InteractState = EInteractState::EIS_Interacting;
+
+		if (OverlappingObject->ActorHasTag(FName("Movable_Object"))) { CurrentMovableObject = Cast<AMovableObject>(OverlappingObject); }
 
 		if (OverlappingObject->Interact(CharacterOwner))
 		{
@@ -64,11 +84,27 @@ void UInteractComponent::Interact()
 		else
 		{
 			InteractState = EInteractState::EIS_NOTinteracting;
+			PandolfoComponent->PandolfoState = EPandolfoState::EPS_Pandolfo;
 			//OnExitInteractStateDelegate.ExecuteIfBound();
-			if (OverlappingObject->ActorHasTag(FName("Movable_Object")))
+			if (OverlappingObject->ActorHasTag(FName("Movable_Object"))) 
 				PanWolfCharacter->RemoveMappingContext(MovableObjectMappingContext);
 		}
 
+	}
+
+	else if(InteractState != EInteractState::EIS_NOTinteracting)
+	{
+		InteractState = EInteractState::EIS_NOTinteracting;
+		PandolfoComponent->PandolfoState = EPandolfoState::EPS_Pandolfo;
+		//OnExitInteractStateDelegate.ExecuteIfBound();
+		//PanWolfCharacter->RemoveMappingContext(MovableObjectMappingContext);
+
+		if (CurrentMovableObject)
+		{
+			PanWolfCharacter->RemoveMappingContext(MovableObjectMappingContext);
+			CurrentMovableObject->SetMovingState(false, 500.f, 10000.f);
+			CurrentMovableObject = nullptr;
+		}
 	}
 
 }
@@ -84,54 +120,58 @@ void UInteractComponent::InteractMove(const FInputActionValue& Value)
 
 #pragma region OverlappingSection
 
-bool UInteractComponent::SetOverlappingObject(AInteractableObject* InteractableObject, bool bEnter)
+void UInteractComponent::SetOverlappingObject(AInteractableObject* InteractableObject, bool bEnter)
 {
-	//Sto uscendo da oggetto overlappato prima e ho interazioni
-	if (InteractableObject && InteractableObject == OverlappingObject && InteractState != EInteractState::EIS_NOTinteracting)
-	{
+	if (InteractableObject && OverlappingObject && (InteractableObject != OverlappingObject) ) return; // Stai entrando o uscendo da oggetto diverso da quello overlappato
 
-		OverlappingObject->Interact(nullptr);
-		InteractState = EInteractState::EIS_NOTinteracting;
-		//OnExitInteractStateDelegate.ExecuteIfBound();
-		if (OverlappingObject->ActorHasTag(FName("Movable_Object")))
+	//Stai uscendo da oggetto
+	if (!bEnter) 
+	{
+		if (OverlappingObject && OverlappingObject->ActorHasTag(FName("Movable_Object")))
+		{
+			CurrentMovableObject = Cast<AMovableObject>(OverlappingObject);
+			InteractState = EInteractState::EIS_NOTinteracting;
+			PandolfoComponent->PandolfoState = EPandolfoState::EPS_Pandolfo;
 			PanWolfCharacter->RemoveMappingContext(MovableObjectMappingContext);
+			if (CurrentMovableObject)
+				CurrentMovableObject->SetMovingState(false, 500.f, 10000.f);
+			CurrentMovableObject = nullptr;
+		}
 		OverlappingObject = nullptr;
-		return true;
+		return;
 	}
-	//Sto entrando in un oggetto  e non ho iterazioni
-	else if (bEnter && InteractableObject && OverlappingObject != InteractableObject && InteractState == EInteractState::EIS_NOTinteracting)
+
+	OverlappingObject = InteractableObject;
+
+	if (OverlappingObject && bEnter)
 	{
-		if (OverlappingObject) { OverlappingObject->SetInteractWidgetVisibility(false); }
-		OverlappingObject = InteractableObject;
-		return true;
+		ETransformationObjectTypes TransformationObjectType = OverlappingObject->GetTransformationObjectType();
+		if (TransformationObjectType == ETransformationObjectTypes::ETOT_Pandolfo_Object && !PandolfoComponent->IsActive()) return;
+		if (TransformationObjectType == ETransformationObjectTypes::ETOT_PanWolf_Object && !PanWolfCharacter->GetPanWolfComponent()->IsActive()) return;
+		if (TransformationObjectType == ETransformationObjectTypes::ETOT_PandolFlower_Object && !PanWolfCharacter->GetPandolFlowerComponent()->IsActive()) return;
+		if (TransformationObjectType == ETransformationObjectTypes::ETOT_PanBird_Object && !PanWolfCharacter->GetPanBirdComponent()->IsActive()) return;
+
+		OverlappingObject->SetInteractWidgetVisibility(true);
 	}
-
-	//Sto uscendo da un oggetto  e non ho iterazioni
-	else if (!bEnter && InteractableObject && OverlappingObject == InteractableObject && InteractState == EInteractState::EIS_NOTinteracting)
-	{
-		OverlappingObject = nullptr;
-		return true;
-	}
-
-
-	return false;
 
 }
 
 void UInteractComponent::ResetOverlappingObject()
 {
+
 	if (OverlappingObject) {
-		OverlappingObject->Interact(nullptr);
+
 		InteractState = EInteractState::EIS_NOTinteracting;
-		//OnExitInteractStateDelegate.ExecuteIfBound();
 		if (OverlappingObject->ActorHasTag(FName("Movable_Object")))
 			PanWolfCharacter->RemoveMappingContext(MovableObjectMappingContext);
 
 		OverlappingObject->SetInteractWidgetVisibility(false);
-		OverlappingObject->ResetBox();
+		SetOverlappingObject(OverlappingObject,true);
 	}
-	OverlappingObject = nullptr;
+
+
 }
+
 
 #pragma endregion
 

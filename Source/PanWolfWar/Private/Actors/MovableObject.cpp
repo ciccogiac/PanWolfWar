@@ -42,6 +42,7 @@ AMovableObject::AMovableObject()
 	N_InteractBox = 4;
 	InitializeBoxComponents();
 
+
 }
 
 void AMovableObject::BeginPlay()
@@ -49,6 +50,7 @@ void AMovableObject::BeginPlay()
 	Super::BeginPlay();
 
 	StaticMesh->SetMassOverrideInKg(NAME_None, 10000.f);
+
 }
 
 bool AMovableObject::Interact(ACharacter* _CharacterOwner  )
@@ -61,6 +63,7 @@ bool AMovableObject::Interact(ACharacter* _CharacterOwner  )
 	}
 
 	Super::Interact(_CharacterOwner);
+
 
 	if (!bIsMovingObject && CharacterOwner)
 	{
@@ -80,9 +83,36 @@ bool AMovableObject::Interact(ACharacter* _CharacterOwner  )
 void AMovableObject::SetMovingState(const bool state, const float WalkSpeed, const float Mass)
 {
 	bIsMovingObject = state;
-	CharacterOwner->GetCharacterMovement()->MaxWalkSpeed = WalkSpeed;
-	CharacterOwner->GetCharacterMovement()->bOrientRotationToMovement = !state;
 	StaticMesh->SetMassOverrideInKg(NAME_None, Mass);
+
+	if (!CharacterOwner) {
+		APlayerController* PlayerController = GetWorld()->GetFirstPlayerController();
+
+		if (PlayerController)
+		{
+			// Ottieni il Pawn associato al controller (potrebbe essere un ACharacter se il personaggio è un Character)
+			APawn* ControlledPawn = PlayerController->GetPawn();
+
+			// Se il Pawn è un Character, esegui il cast
+			if (ControlledPawn)
+			{
+				ACharacter* MainCharacter = Cast<ACharacter>(ControlledPawn);
+				if (MainCharacter)
+				{
+					// Restituisce il personaggio principale
+					MainCharacter->GetCharacterMovement()->MaxWalkSpeed = WalkSpeed;
+					MainCharacter->GetCharacterMovement()->bOrientRotationToMovement = !state;
+				}
+			}
+		}
+	}
+	else
+	{
+		CharacterOwner->GetCharacterMovement()->MaxWalkSpeed = WalkSpeed;
+		CharacterOwner->GetCharacterMovement()->bOrientRotationToMovement = !state;
+	}
+
+
 }
 
 void AMovableObject::Move(const FInputActionValue& Value)
@@ -174,7 +204,8 @@ void AMovableObject::SetCharacterPosition()
 		FVector NewLocation = GetBoxPosition() - GetBoxForward() * FWD_Offset_Character;
 		NewLocation.Z = CharacterOwner->GetActorLocation().Z;
 
-		CharacterOwner->GetCapsuleComponent()->SetRelativeLocationAndRotation(NewLocation, Rotator, true);
+		//CharacterOwner->GetCapsuleComponent()->SetRelativeLocationAndRotation(NewLocation, Rotator, true);
+		CharacterOwner->SetActorLocationAndRotation(NewLocation, Rotator, true);
 	}
 
 }

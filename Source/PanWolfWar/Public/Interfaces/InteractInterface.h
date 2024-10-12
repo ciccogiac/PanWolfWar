@@ -38,7 +38,7 @@ class PANWOLFWAR_API IInteractInterface
 	GENERATED_BODY()
 
 public:
-	virtual bool SetOverlappingObject(class AInteractableObject* InteractableObject, bool bEnter=true) = 0;
+	virtual void SetOverlappingObject(class AInteractableObject* InteractableObject, bool bEnter=true) = 0;
 
 	static FName GetSelectedFName(ETransformationObjectTypes TransformationObjectType);
 

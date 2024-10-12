@@ -186,8 +186,6 @@ void UTransformationComponent::ExecuteTransformation(ETransformationState NewTra
 
 	OnTransformationStateChanged.Broadcast(NewTransformationState);
 
-	InteractComponent->ResetOverlappingObject();
-
 	PanWolfWarCharacter->HandleTransformationChangedState();
 
 }
@@ -243,6 +241,8 @@ void UTransformationComponent::HandleComponentActivation(ETransformationState Ne
 	default:
 		break;
 	}
+
+	InteractComponent->ResetOverlappingObject();
 }
 
 

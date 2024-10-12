@@ -513,14 +513,9 @@ ETransformationState APanWolfWarCharacter::GetCurrentTransformationState() const
 	return ETransformationState::ETS_None;
 }
 
-bool APanWolfWarCharacter::SetOverlappingObject(AInteractableObject* InteractableObject, bool bEnter)
+void APanWolfWarCharacter::SetOverlappingObject(AInteractableObject* InteractableObject, bool bEnter)
 {
-	if (InteractableObject->ActorHasTag(FName("Pandolfo_Object")) && !PandolfoComponent->IsActive()) return false;
-	if (InteractableObject->ActorHasTag(FName("PanWolf_Object")) && !PanWolfComponent->IsActive()) return false;
-	if (InteractableObject->ActorHasTag(FName("PandolFlower_Object")) && !PandolFlowerComponent->IsActive()) return false;
-	if (InteractableObject->ActorHasTag(FName("PanBird_Object")) && !PanBirdComponent->IsActive()) return false;
-
-	return InteractComponent->SetOverlappingObject(InteractableObject, bEnter);
+	InteractComponent->SetOverlappingObject(InteractableObject, bEnter);
 }
 
 void APanWolfWarCharacter::ConsumeStone(float StoneValue, EStoneTypes StoneType)

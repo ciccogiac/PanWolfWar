@@ -39,7 +39,7 @@ void AInteractableObject::InitializeBoxComponents()
 			BoxComponentArray[i]->SetupAttachment(StaticMesh);
 			BoxComponentArray[i]->bHiddenInGame = true;
 			//BoxComponentArray[i]->SetLineThickness(2.f);
-			BoxComponentArray[i]->SetCollisionObjectType(ECollisionChannel::ECC_Pawn);
+			//BoxComponentArray[i]->SetCollisionObjectType(ECollisionChannel::ECC_Pawn);
 
 			ArrowComponentArray[i] = CreateDefaultSubobject<UArrowComponent>(*FString::Printf(TEXT("ArrowComponent%d"), i));
 			if (ArrowComponentArray[i])
@@ -147,30 +147,47 @@ void AInteractableObject::Move(const FInputActionValue& Value)
 
 void AInteractableObject::BoxCollisionEnter(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
+
 	if (OtherActor->Implements<UInteractInterface>())
 	{
 		InteractInterface = Cast<IInteractInterface>(OtherActor);
-		if (InteractInterface && InteractInterface->SetOverlappingObject(this))
+		if (InteractInterface)
 		{
 			BoxComponent = Cast<UBoxComponent>(OverlappedComponent);
 			SetInteractWidget(BoxComponent->GetChildComponent(1));
-			SetInteractWidgetVisibility(true);				
+			InteractInterface->SetOverlappingObject(this);			
 		}
 	}
 }
 
 void AInteractableObject::BoxCollisionExit(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
 {
-	SetInteractWidgetVisibility(false);
-
-	if (InteractInterface && InteractInterface->SetOverlappingObject(this, false))
+	/*SetInteractWidgetVisibility(false);
+	if (InteractInterface)
 	{
+
 		SetInteractWidget(nullptr);
 		BoxComponent = nullptr;
-
+		InteractInterface->SetOverlappingObject(this, false);
 	}
 
-	InteractInterface = nullptr;
+	InteractInterface = nullptr;*/
+
+	if (OtherActor->Implements<UInteractInterface>())
+	{
+		InteractInterface = Cast<IInteractInterface>(OtherActor);
+		if (InteractInterface)
+		{
+			SetInteractWidgetVisibility(false);
+
+			SetInteractWidget(nullptr);
+			BoxComponent = nullptr;
+			InteractInterface->SetOverlappingObject(this, false);
+			
+
+			/*InteractInterface = nullptr;*/
+		}
+	}
 
 }
 

@@ -102,6 +102,9 @@ public:
 	ETransformationState GetCurrentTransformationState();
 	UTransformationCharacterComponent* GetCurrentTransformationCharacterComponent();
 
+
+	virtual void SetOverlappingObject(AInteractableObject* InteractableObject, bool bEnter = true) override;
+
 	#pragma region InputCallback
 
 	void Move(const FInputActionValue& Value);
@@ -300,7 +303,7 @@ private:
 
 	//Interfaces
 
-	virtual bool SetOverlappingObject(AInteractableObject* InteractableObject, bool bEnter = true) override;
+
 	virtual void ConsumeStone(float StoneValue, EStoneTypes StoneType) override;
 
 

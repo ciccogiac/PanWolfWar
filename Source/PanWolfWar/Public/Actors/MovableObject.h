@@ -33,7 +33,6 @@ private:
 	void SetObjectlocation(bool bForwardDirection, float DirectionSpeed, bool bRotate = false);
 	void SetCharacterPosition();
 
-
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Object Movement", meta = (AllowPrivateAccess = "true"))
 	class UPhysicsConstraintComponent* PhysicsConstraintComponent;
 

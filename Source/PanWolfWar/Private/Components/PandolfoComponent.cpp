@@ -150,7 +150,7 @@ void UPandolfoComponent::Deactivate()
 void UPandolfoComponent::Jump()
 {
 
-	if (PandolfoState != EPandolfoState::EPS_Gliding)
+	if (PandolfoState != EPandolfoState::EPS_Gliding && PandolfoState != EPandolfoState::EPS_Interacting)
 	{
 		if (!TryClimbOrMantle() && !ClimbingComponent->TryVault())
 		{

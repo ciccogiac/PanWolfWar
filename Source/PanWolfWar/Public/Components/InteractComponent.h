@@ -14,6 +14,8 @@ class UInputAction;
 class AMovableObject;
 class APanWolfWarCharacter;
 class UInputMappingContext;
+class UPandolfoComponent;
+class AMovableObject;
 
 UENUM(BlueprintType)
 enum class EInteractState : uint8
@@ -34,7 +36,7 @@ public:
 	
 	void Interact();
 	void InteractMove(const FInputActionValue& Value);
-	bool SetOverlappingObject(AInteractableObject* _InteractableObject, bool bEnter );
+	void SetOverlappingObject(AInteractableObject* _InteractableObject, bool bEnter );
 	void ResetOverlappingObject();
 
 		
@@ -48,6 +50,9 @@ private:
 
 	ACharacter* CharacterOwner;
 	APanWolfWarCharacter* PanWolfCharacter;
+	UPandolfoComponent* PandolfoComponent;
+
+	AMovableObject* CurrentMovableObject;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Interact State ", meta = (AllowPrivateAccess = "true"))
 	EInteractState InteractState = EInteractState::EIS_NOTinteracting;

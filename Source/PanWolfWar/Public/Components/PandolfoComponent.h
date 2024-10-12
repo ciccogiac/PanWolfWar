@@ -26,7 +26,8 @@ enum class EPandolfoState : uint8
 	EPS_Kiting UMETA(DisplayName = "Kiting"),
 	EPS_Dodging UMETA(DisplayName = "Dodging"),
 	EPS_Sliding UMETA(DisplayName = "Sliding"),
-	EPS_Vaulting UMETA(DisplayName = "Vaulting")
+	EPS_Vaulting UMETA(DisplayName = "Vaulting"),
+	EPS_Interacting UMETA(DisplayName = "Interacting")
 };
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
