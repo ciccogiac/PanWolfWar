@@ -37,6 +37,9 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Interact Params", meta = (AllowPrivateAccess = "true"))
 	ETransformationObjectTypes TransformationObjectType = ETransformationObjectTypes::ETOT_Pandolfo_Object;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Interact Params", meta = (AllowPrivateAccess = "true"))
+	EInteractableObjectTypes InteractableObjectType = EInteractableObjectTypes::EIOT_DefaultInteraction;
+
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
 	UStaticMeshComponent* StaticMesh;
 
@@ -68,5 +71,7 @@ public:
 	FORCEINLINE void SetInteractWidgetVisibility(bool bVisibility) { if(InteractWidget) InteractWidget->SetVisibility(bVisibility); };
 	FORCEINLINE void ResetBox() { BoxComponent = nullptr; };
 	FORCEINLINE ETransformationObjectTypes GetTransformationObjectType() const { return TransformationObjectType; };
+	FORCEINLINE EInteractableObjectTypes GetInteractableObjectType() const { return InteractableObjectType; };
+	
 	
 };

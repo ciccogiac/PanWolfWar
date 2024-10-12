@@ -45,11 +45,38 @@ void UInteractComponent::BeginPlay()
 
 #pragma region InteractSection
 
+bool UInteractComponent::IsTransformedInObjectTypes()
+{
+	ETransformationObjectTypes TransformationObjectType = OverlappingObject->GetTransformationObjectType();
+
+	switch (TransformationObjectType)
+	{
+	case ETransformationObjectTypes::ETOT_Pandolfo_Object:
+		if (!PandolfoComponent->IsActive()) return false;
+		break;
+	case ETransformationObjectTypes::ETOT_PanWolf_Object:
+		if (!PanWolfCharacter->GetPanWolfComponent()->IsActive()) return false;
+		break;
+	case ETransformationObjectTypes::ETOT_PandolFlower_Object:
+		if (!PanWolfCharacter->GetPandolFlowerComponent()->IsActive()) return false;
+		break;
+	case ETransformationObjectTypes::ETOT_PanBird_Object:
+		if (!PanWolfCharacter->GetPanBirdComponent()->IsActive()) return false;
+		break;
+	default:
+		break;
+	}
+
+	return true;
+}
+
 void UInteractComponent::SetInteractState()
 {
 	if (OverlappingObject)
 	{
-		if (OverlappingObject->ActorHasTag(FName("Movable_Object")))
+		EInteractableObjectTypes InteractableObjectTypes = OverlappingObject->GetInteractableObjectType();
+
+		if (InteractableObjectTypes == EInteractableObjectTypes::EIOT_MovableObject)
 		{
 			InteractState = EInteractState::EIS_MovingObject;
 			PandolfoComponent->PandolfoState = EPandolfoState::EPS_Interacting; 
@@ -65,28 +92,24 @@ void UInteractComponent::Interact()
 {
 	if (OverlappingObject)
 	{
-		ETransformationObjectTypes TransformationObjectType = OverlappingObject->GetTransformationObjectType();
-		if (TransformationObjectType == ETransformationObjectTypes::ETOT_Pandolfo_Object && !PandolfoComponent->IsActive()) return;
-		if (TransformationObjectType == ETransformationObjectTypes::ETOT_PanWolf_Object && !PanWolfCharacter->GetPanWolfComponent()->IsActive()) return;
-		if (TransformationObjectType == ETransformationObjectTypes::ETOT_PandolFlower_Object && !PanWolfCharacter->GetPandolFlowerComponent()->IsActive()) return;
-		if (TransformationObjectType == ETransformationObjectTypes::ETOT_PanBird_Object && !PanWolfCharacter->GetPanBirdComponent()->IsActive()) return;
 
+		if (!IsTransformedInObjectTypes()) return;
+
+		EInteractableObjectTypes InteractableObjectTypes = OverlappingObject->GetInteractableObjectType();
 		InteractState = EInteractState::EIS_Interacting;
 
-		if (OverlappingObject->ActorHasTag(FName("Movable_Object"))) { CurrentMovableObject = Cast<AMovableObject>(OverlappingObject); }
-
+		if (InteractableObjectTypes == EInteractableObjectTypes::EIOT_MovableObject) { CurrentMovableObject = Cast<AMovableObject>(OverlappingObject); }
 		if (OverlappingObject->Interact(CharacterOwner))
 		{
-			SetInteractState();
-				
+			SetInteractState();			
 		}
 
 		else
 		{
 			InteractState = EInteractState::EIS_NOTinteracting;
 			PandolfoComponent->PandolfoState = EPandolfoState::EPS_Pandolfo;
-			//OnExitInteractStateDelegate.ExecuteIfBound();
-			if (OverlappingObject->ActorHasTag(FName("Movable_Object"))) 
+
+			if (InteractableObjectTypes == EInteractableObjectTypes::EIOT_MovableObject)
 				PanWolfCharacter->RemoveMappingContext(MovableObjectMappingContext);
 		}
 
@@ -96,8 +119,6 @@ void UInteractComponent::Interact()
 	{
 		InteractState = EInteractState::EIS_NOTinteracting;
 		PandolfoComponent->PandolfoState = EPandolfoState::EPS_Pandolfo;
-		//OnExitInteractStateDelegate.ExecuteIfBound();
-		//PanWolfCharacter->RemoveMappingContext(MovableObjectMappingContext);
 
 		if (CurrentMovableObject)
 		{
@@ -127,7 +148,7 @@ void UInteractComponent::SetOverlappingObject(AInteractableObject* InteractableO
 	//Stai uscendo da oggetto
 	if (!bEnter) 
 	{
-		if (OverlappingObject && OverlappingObject->ActorHasTag(FName("Movable_Object")))
+		if (OverlappingObject &&  (OverlappingObject->GetInteractableObjectType() == EInteractableObjectTypes::EIOT_MovableObject))
 		{
 			CurrentMovableObject = Cast<AMovableObject>(OverlappingObject);
 			InteractState = EInteractState::EIS_NOTinteracting;
@@ -145,11 +166,7 @@ void UInteractComponent::SetOverlappingObject(AInteractableObject* InteractableO
 
 	if (OverlappingObject && bEnter)
 	{
-		ETransformationObjectTypes TransformationObjectType = OverlappingObject->GetTransformationObjectType();
-		if (TransformationObjectType == ETransformationObjectTypes::ETOT_Pandolfo_Object && !PandolfoComponent->IsActive()) return;
-		if (TransformationObjectType == ETransformationObjectTypes::ETOT_PanWolf_Object && !PanWolfCharacter->GetPanWolfComponent()->IsActive()) return;
-		if (TransformationObjectType == ETransformationObjectTypes::ETOT_PandolFlower_Object && !PanWolfCharacter->GetPandolFlowerComponent()->IsActive()) return;
-		if (TransformationObjectType == ETransformationObjectTypes::ETOT_PanBird_Object && !PanWolfCharacter->GetPanBirdComponent()->IsActive()) return;
+		if (!IsTransformedInObjectTypes()) return;
 
 		OverlappingObject->SetInteractWidgetVisibility(true);
 	}
@@ -162,13 +179,13 @@ void UInteractComponent::ResetOverlappingObject()
 	if (OverlappingObject) {
 
 		InteractState = EInteractState::EIS_NOTinteracting;
-		if (OverlappingObject->ActorHasTag(FName("Movable_Object")))
+		EInteractableObjectTypes InteractableObjectTypes = OverlappingObject->GetInteractableObjectType();
+		if (InteractableObjectTypes == EInteractableObjectTypes::EIOT_MovableObject)
 			PanWolfCharacter->RemoveMappingContext(MovableObjectMappingContext);
 
 		OverlappingObject->SetInteractWidgetVisibility(false);
 		SetOverlappingObject(OverlappingObject,true);
 	}
-
 
 }
 

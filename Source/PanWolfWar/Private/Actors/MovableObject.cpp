@@ -37,12 +37,11 @@ AMovableObject::AMovableObject()
 	StaticMesh->SetSimulatePhysics(true);
 	//StaticMesh->SetMassOverrideInKg(NAME_None, 10000.f);
 
-	Tags.Add(FName("Movable_Object"));
 
 	N_InteractBox = 4;
 	InitializeBoxComponents();
 
-
+	InteractableObjectType = EInteractableObjectTypes::EIOT_MovableObject;
 }
 
 void AMovableObject::BeginPlay()

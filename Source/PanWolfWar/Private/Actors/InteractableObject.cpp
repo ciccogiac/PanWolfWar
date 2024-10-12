@@ -162,16 +162,7 @@ void AInteractableObject::BoxCollisionEnter(UPrimitiveComponent* OverlappedCompo
 
 void AInteractableObject::BoxCollisionExit(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
 {
-	/*SetInteractWidgetVisibility(false);
-	if (InteractInterface)
-	{
 
-		SetInteractWidget(nullptr);
-		BoxComponent = nullptr;
-		InteractInterface->SetOverlappingObject(this, false);
-	}
-
-	InteractInterface = nullptr;*/
 
 	if (OtherActor->Implements<UInteractInterface>())
 	{
@@ -184,8 +175,6 @@ void AInteractableObject::BoxCollisionExit(UPrimitiveComponent* OverlappedCompon
 			BoxComponent = nullptr;
 			InteractInterface->SetOverlappingObject(this, false);
 			
-
-			/*InteractInterface = nullptr;*/
 		}
 	}
 

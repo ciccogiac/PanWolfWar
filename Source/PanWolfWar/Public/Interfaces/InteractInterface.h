@@ -16,6 +16,13 @@ enum class ETransformationObjectTypes : uint8
 };
 
 UENUM(BlueprintType)
+enum class EInteractableObjectTypes : uint8
+{
+	EIOT_DefaultInteraction UMETA(DisplayName = "DefaultInteraction"),
+	EIOT_MovableObject UMETA(DisplayName = "MovableObject")
+};
+
+UENUM(BlueprintType)
 enum class EStoneTypes : uint8
 {
 	EST_HealingStone UMETA(DisplayName = "HealingStone"),

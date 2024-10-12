@@ -46,7 +46,7 @@ protected:
 private:
 
 	void SetInteractState();
-
+	bool IsTransformedInObjectTypes();
 
 	ACharacter* CharacterOwner;
 	APanWolfWarCharacter* PanWolfCharacter;
