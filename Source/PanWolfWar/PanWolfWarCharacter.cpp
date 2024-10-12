@@ -656,7 +656,6 @@ void APanWolfWarCharacter::RemoveEnemyAware(AActor* Enemy)
 
 void APanWolfWarCharacter::GetHit(const FVector& ImpactPoint, AActor* Hitter)
 {
-	Debug::Print(TEXT("Hitted"));
 	if (!IsAlive() || !Hitter || bIsInvulnerable) return;
 	
 	FName Section = IHitInterface::DirectionalHitReact(Hitter , GetOwner() );
@@ -701,6 +700,9 @@ void APanWolfWarCharacter::PlayHitReactMontage(const FName& SectionName)
 
 	GetCharacterMovement()->StopMovementImmediately();
 
+	if (PandolfoComponent->IsActive() && PandolfoComponent->IsClimbing())
+		PandolfoComponent->GetClimbingComponent()->StopClimbing();
+
 	AnimInstance->Montage_Play(ReactMontage);
 	AnimInstance->Montage_JumpToSection(SectionName, ReactMontage);
 
@@ -715,6 +717,7 @@ void APanWolfWarCharacter::PlayHitReactMontage(const FName& SectionName)
 	if (PandolfoComponent->IsActive())
 	{
 		SetMetaHumanHitFX(1.f);
+
 	}
 
 	PandoCombatComponent->ResetAttack();
@@ -752,6 +755,7 @@ void APanWolfWarCharacter::OnHitReactMontageEnded(UAnimMontage* Montage, bool bI
 		if (PandolfoComponent->IsActive())
 		{
 			SetMetaHumanHitFX(0.f);
+
 		}
 
 		else if (PanWolfComponent->IsActive())
@@ -952,4 +956,9 @@ UTransformationCharacterComponent* APanWolfWarCharacter::GetCurrentTransformatio
 	}
 
 	return nullptr;
+}
+
+void APanWolfWarCharacter::Interact()
+{
+	InteractComponent->Interact();
 }

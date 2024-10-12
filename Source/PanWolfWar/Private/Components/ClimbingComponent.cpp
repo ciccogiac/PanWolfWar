@@ -96,7 +96,7 @@ void UClimbingComponent::StartClimbing()
 	ClimbDirection = 0.f;
 
 	MovementComponent->StopMovementImmediately();
-	Capsule->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	//Capsule->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	Capsule->SetCapsuleHalfHeight(45);
 	MovementComponent->MaxFlySpeed = 0.f;
 	MovementComponent->SetMovementMode(EMovementMode::MOVE_Flying, 0);
@@ -134,7 +134,7 @@ void UClimbingComponent::StopClimbing()
 	MovementComponent->bOrientRotationToMovement = true;
 
 	Capsule->SetCapsuleHalfHeight(PandolfoComponent->GetCapsuleHalfHeight());
-	Capsule->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+	//Capsule->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
 
 	PandolfoComponent->PandolfoState = EPandolfoState::EPS_Pandolfo;
 	Deactivate();
@@ -974,7 +974,7 @@ void UClimbingComponent::PlayCoverFromClimbMontage(UAnimMontage* MontageToPlay)
 
 	PandolfoComponent->PandolfoState = EPandolfoState::EPS_Covering;
 	ClimbingState = EClimbingState::ECS_NOTClimbing;
-	Capsule->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+	//Capsule->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
 	OwningPlayerAnimInstance->Montage_Play(MontageToPlay);
 	//PanWolfCharacter->GetCameraBoom()->bDoCollisionTest = false;
 
@@ -1032,7 +1032,7 @@ void UClimbingComponent::OnMantleFromClimbMontageEnded(UAnimMontage* Montage, bo
 {
 	if (!Montage) return;
 
-	Capsule->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+	//Capsule->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
 
 	StopClimbing();
 
@@ -1107,36 +1107,36 @@ FVector2D UClimbingComponent::Get8DirectionVector(const FVector2D& InputVector)
 	// Convertire l'angolo in gradi
 	float AngleDegrees = FMath::RadiansToDegrees(Angle);
 
-	//// Determinare la direzione in base all'angolo
-	if (AngleDegrees <= 30.f || AngleDegrees > 330.f)
+	// Determinare la direzione in base all'angolo con maggiore tolleranza
+	if (AngleDegrees > 337.5f || AngleDegrees <= 22.5f)
 	{
 		return FVector2D(1.0f, 0.0f);  // Right
 	}
-	else if (AngleDegrees <= 80.f)
+	else if (AngleDegrees <= 67.5f)
 	{
 		return FVector2D(1.0f, 1.0f);  // Up-Right
 	}
-	else if (AngleDegrees <= 100.f)
+	else if (AngleDegrees <= 112.5f)
 	{
 		return FVector2D(0.0f, 1.0f);  // Up
 	}
-	else if (AngleDegrees <= 150.f)
+	else if (AngleDegrees <= 157.5f)
 	{
 		return FVector2D(-1.0f, 1.0f); // Up-Left
 	}
-	else if (AngleDegrees <= 210.f)
+	else if (AngleDegrees <= 202.5f)
 	{
 		return FVector2D(-1.0f, 0.0f); // Left
 	}
-	else if (AngleDegrees <= 250.f)
+	else if (AngleDegrees <= 247.5f)
 	{
 		return FVector2D(-1.0f, -1.0f); // Down-Left
 	}
-	else if (AngleDegrees <= 290.f)
+	else if (AngleDegrees <= 292.5f)
 	{
 		return FVector2D(0.0f, -1.0f); // Down
 	}
-	else if (AngleDegrees <= 330.f)
+	else if (AngleDegrees <= 337.5f)
 	{
 		return FVector2D(1.0f, -1.0f); // Down-Right
 	}
@@ -1164,6 +1164,7 @@ void UClimbingComponent::Landed()
 
 void UClimbingComponent::ToggleClimbing()
 {
+
 	if (OwningPlayerAnimInstance->IsAnyMontagePlaying()) return;
 
 	if (ClimbingState == EClimbingState::ECS_Climbing) {
@@ -1172,7 +1173,6 @@ void UClimbingComponent::ToggleClimbing()
 		SavedClimbedObject = nullptr;
 		MovementComponent->SetMovementMode(EMovementMode::MOVE_Falling);
 		Capsule->SetCapsuleHalfHeight(PandolfoComponent->GetCapsuleHalfHeight());
-		Capsule->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
 	}
 }
 

@@ -112,6 +112,8 @@ public:
 
 	#pragma endregion
 
+	void Interact();
+
 #pragma endregion
 
 #pragma region ProtectedFunctions

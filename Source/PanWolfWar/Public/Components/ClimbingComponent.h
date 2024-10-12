@@ -41,7 +41,7 @@ public:
 	virtual void Deactivate() override;
 
 	bool TryClimbing();
-
+	void StopClimbing();
 
 	UFUNCTION(BlueprintCallable)
 	void StartHanging();
@@ -99,7 +99,7 @@ private:
 	#pragma region SetClimbState
 
 	void StartClimbing();
-	void StopClimbing();
+
 
 	#pragma endregion
 

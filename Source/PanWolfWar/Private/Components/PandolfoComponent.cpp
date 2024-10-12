@@ -537,8 +537,9 @@ void UPandolfoComponent::AssassinationFromHiding(ABaseEnemy* HidingAssassinatedE
 
 void UPandolfoComponent::Assassination()
 {
+	if (PandolfoState == EPandolfoState::EPS_Interacting) { PanWolfCharacter->Interact(); return; }
 	if (PandolfoState != EPandolfoState::EPS_Pandolfo) return;
-	if (!AssassinableOverlapped && !AIR_AssassinableOverlapped) return;
+	if (!AssassinableOverlapped && !AIR_AssassinableOverlapped) { PanWolfCharacter->Interact(); return; }
 	if (AIR_AssassinableOverlapped) AssassinableOverlapped = AIR_AssassinableOverlapped;
 
 	//UAnimInstance* OwningPlayerAnimInstance = CharacterOwner->GetMesh()->GetAnimInstance();
