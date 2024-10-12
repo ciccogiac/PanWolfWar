@@ -42,9 +42,15 @@ public:
 
 	bool TryClimbing();
 
+
+	UFUNCTION(BlueprintCallable)
+	void StartHanging();
+
+	UFUNCTION(BlueprintCallable)
+	void StopHanging();
+
 	#pragma region InputCallback
 
-	bool ActivateJumpTrace();
 	void ToggleClimbing();
 	void ClimbMove(const FInputActionValue& Value);
 	void ClimbMoveEnd(const FInputActionValue& Value);
@@ -157,13 +163,17 @@ private:
 	void PlayMantleFromClimbMontage(UAnimMontage* MontageToPlay);
 	void PlayCoverFromClimbMontage(UAnimMontage* MontageToPlay);
 	void PlayMantleMontage(UAnimMontage* MontageToPlay);
-	bool PlayMontage(UAnimMontage* MontageToPlay);
+	void PlayStartClimbFromTopMontage(UAnimMontage* MontageToPlay);
+	
 
-	UFUNCTION()
-	void OnClimbMontageStartedHanging(FName NotifyName, const FBranchingPointNotifyPayload& BranchingPointPayload);
+	//UFUNCTION()
+	//void OnClimbMontageStartedHanging(FName NotifyName, const FBranchingPointNotifyPayload& BranchingPointPayload);
 
 	UFUNCTION()
 	void OnClimbMontageEnded(UAnimMontage* Montage, bool bInterrupted);
+
+	UFUNCTION()
+	void OnStartClimbFromTopMontageEnded(UAnimMontage* Montage, bool bInterrupted);
 
 	UFUNCTION()
 	void OnMantleFromClimbMontageEnded(UAnimMontage* Montage, bool bInterrupted);
@@ -378,7 +388,7 @@ private:
 	UAnimMontage* CoverFromClimbMontage;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Climb Montages", meta = (AllowPrivateAccess = "true"))
-	UAnimMontage* TopToClimbMontage;
+	UAnimMontage* StartClimbFromTopMontage;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Climb Montages", meta = (AllowPrivateAccess = "true"))
 	UAnimMontage* NormalMantleMontage;
