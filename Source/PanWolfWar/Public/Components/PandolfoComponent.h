@@ -27,7 +27,8 @@ enum class EPandolfoState : uint8
 	EPS_Dodging UMETA(DisplayName = "Dodging"),
 	EPS_Sliding UMETA(DisplayName = "Sliding"),
 	EPS_Vaulting UMETA(DisplayName = "Vaulting"),
-	EPS_Interacting UMETA(DisplayName = "Interacting")
+	EPS_Interacting UMETA(DisplayName = "Interacting"),
+	EPS_Assassinating UMETA(DisplayName = "Assassinating")
 };
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
@@ -64,16 +65,28 @@ public:
 	void ExitKiteMode();
 
 	void TryGliding();
+	bool Glide();
 	void UnGlide();
 
 	void HandleLand();
 	void HandleFalling();
 
+	virtual void PlayHardLandMontage() override;
+
+
+
 protected:
 	virtual void BeginPlay() override;
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
+	virtual void OnHardLandMontageEnded(UAnimMontage* Montage, bool bInterrupted) override;
+
 private:
+
+	void PlayAssassinationMontage(UAnimMontage* Montage);
+
+	UFUNCTION()
+	void OnAssassinationMontageEnded(UAnimMontage* Montage, bool bInterrupted);
 
 	UFUNCTION()
 	void OnDodgeMontageEnded(UAnimMontage* Montage, bool bInterrupted);
@@ -238,6 +251,8 @@ public:
 	FORCEINLINE void SetAssassinableAirEnemy(ABaseEnemy* Enemy) { AIR_AssassinableOverlapped = Enemy; }
 	FORCEINLINE bool IsAssassinableEnemy() { return (AssassinableOverlapped!= nullptr || AIR_AssassinableOverlapped != nullptr); }
 	FORCEINLINE ABaseEnemy* GetAssassinableEnemy() const { return AssassinableOverlapped; }
+	FORCEINLINE bool IsAssassinating()  const { return PandolfoState == EPandolfoState::EPS_Assassinating ; }
+	
 
 	UFUNCTION(BlueprintCallable, Category = "Gliding")
 	FORCEINLINE bool IsGliding() const { return PandolfoState == EPandolfoState::EPS_Gliding; }

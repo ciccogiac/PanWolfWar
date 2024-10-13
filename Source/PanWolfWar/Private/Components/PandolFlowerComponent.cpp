@@ -63,6 +63,16 @@ void UPandolFlowerComponent::TickComponent(float DeltaTime, ELevelTick TickType,
 
 }
 
+void UPandolFlowerComponent::OnHardLandMontageEnded(UAnimMontage* Montage, bool bInterrupted)
+{
+	Super::OnHardLandMontageEnded(Montage, bInterrupted);
+
+	if (PandolFlowerState == EPandolFlowerState::EPFS_Hooking)
+	{
+		PandolFlowerState = EPandolFlowerState::EPFS_PandolFlower;
+	}
+}
+
 #pragma endregion
 
 #pragma region ActivationSection
@@ -274,7 +284,7 @@ void UPandolFlowerComponent::Crouch()
 
 void UPandolFlowerComponent::Hook()
 {
-
+	if (bIsHardLanding) return;
 	if (!GrapplePointRef) return;
 	if (PandolFlowerState == EPandolFlowerState::EPFS_Dodging || PandolFlowerState == EPandolFlowerState::EPFS_Hooking) return;
 	if (TransformationComponent && PandolfoComponent && PandolfoComponent->IsAssassinableEnemy()) return;
@@ -339,6 +349,10 @@ void UPandolFlowerComponent::Hook()
 			GrappleMontage = GrappleAir_Swing_Montage;
 
 			PlayMontage(GrappleMontage);
+
+			FOnMontageEnded HookMontageEndedDelegate;
+			HookMontageEndedDelegate.BindUObject(this, &UPandolFlowerComponent::OnHookMontageEnded);
+			OwningPlayerAnimInstance->Montage_SetEndDelegate(HookMontageEndedDelegate, GrappleMontage);
 		}
 
 
@@ -566,6 +580,7 @@ void UPandolFlowerComponent::StartSwinging()
 	CurrentGrapplePoint->LandingZone_Mesh->SetSimulatePhysics(true);
 	CurrentGrapplePoint->LandingZone_Mesh->AddImpulse(CurrentGrapplePoint->LandingZone_Mesh->GetForwardVector() * SwingForce *1.75);
 }
+
 	#pragma endregion
 
 #pragma endregion
@@ -789,7 +804,7 @@ void UPandolFlowerComponent::OnHookMontageEnded(UAnimMontage* Montage, bool bInt
 {
 	if (!Montage) return;
 
-	if (bInterrupted && PanWolfCharacter->IsHitted())
+	if (bInterrupted && (PanWolfCharacter->IsHitted() || bIsHardLanding))
 	{
 		RopeVisibility(false);
 		ResetMovement();

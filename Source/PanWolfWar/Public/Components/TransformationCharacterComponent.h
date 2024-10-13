@@ -25,8 +25,14 @@ public:
 
 	bool CheckCapsuleSpace();
 
+	virtual void PlayHardLandMontage();
+
 protected:
 	virtual void BeginPlay() override;
+
+
+	UFUNCTION()
+	virtual void OnHardLandMontageEnded(UAnimMontage* Montage, bool bInterrupted);
 
 protected:
 	FTransformationCharacterData TransformationCharacterData;
@@ -41,8 +47,12 @@ protected:
 
 	UAnimInstance* OwningPlayerAnimInstance;
 
+	UPROPERTY(EditDefaultsOnly, Category = Combat)
+	UAnimMontage* HardLandMontage;
+
 	bool bCanCrouch = true;
 
+	bool bIsHardLanding = false;
 
 public:
 	FORCEINLINE void SetTransformationCharacterData(FTransformationCharacterData _TransformationCharacterData) { TransformationCharacterData = _TransformationCharacterData; }
@@ -52,5 +62,6 @@ public:
 	FORCEINLINE float GetCapsuleHalfHeight() const { return TransformationCharacterData.CapsuleHalfHeight; }
 	FORCEINLINE float GetMaxWalkSpeed() const { return TransformationCharacterData.MaxWalkSpeed; }
 	FORCEINLINE float GetMaxWalkSpeedCrouched() const { return TransformationCharacterData.MaxWalkSpeedCrouched; }
+	FORCEINLINE float GetFallDamageDivisor() const { return TransformationCharacterData.FallDamageDivisor; }
 
 };

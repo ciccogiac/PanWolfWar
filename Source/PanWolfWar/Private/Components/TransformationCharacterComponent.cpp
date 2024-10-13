@@ -157,3 +157,24 @@ void UTransformationCharacterComponent::BeginPlay()
 	}
 
 }
+
+void UTransformationCharacterComponent::PlayHardLandMontage()
+{
+	bIsHardLanding = true;
+
+	OwningPlayerAnimInstance->Montage_Play(HardLandMontage);
+
+	FOnMontageEnded HardLandMontageEndedDelegate;
+	HardLandMontageEndedDelegate.BindUObject(this, &UTransformationCharacterComponent::OnHardLandMontageEnded);
+	OwningPlayerAnimInstance->Montage_SetEndDelegate(HardLandMontageEndedDelegate, HardLandMontage);
+
+	CharacterOwner->GetMesh()->SetScalarParameterValueOnMaterials(FName("HitFxSwitch"), 1.f);
+}
+
+void UTransformationCharacterComponent::OnHardLandMontageEnded(UAnimMontage* Montage, bool bInterrupted)
+{
+	if (!Montage) return;
+
+	bIsHardLanding = false;
+	CharacterOwner->GetMesh()->SetScalarParameterValueOnMaterials(FName("HitFxSwitch"), 0.f);
+}

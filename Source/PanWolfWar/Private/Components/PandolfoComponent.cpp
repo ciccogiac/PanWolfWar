@@ -63,6 +63,7 @@ void UPandolfoComponent::TickComponent(float DeltaTime, ELevelTick TickType, FAc
 
 }
 
+
 #pragma endregion
 
 #pragma region ActivationSection
@@ -230,6 +231,21 @@ void UPandolfoComponent::HandleFalling()
 {
 	ClimbingComponent->Activate();
 }
+
+void UPandolfoComponent::PlayHardLandMontage()
+{
+	Super::PlayHardLandMontage();
+
+	PanWolfCharacter->SetMetaHumanHitFX(1.f);
+}
+
+void UPandolfoComponent::OnHardLandMontageEnded(UAnimMontage* Montage, bool bInterrupted)
+{
+	Super::OnHardLandMontageEnded(Montage, bInterrupted);
+
+	PanWolfCharacter->SetMetaHumanHitFX(0.f);
+}
+
 
 void UPandolfoComponent::HandleLand()
 {
@@ -480,19 +496,26 @@ void UPandolfoComponent::EndSliding()
 
 void UPandolfoComponent::TryGliding()
 {
+	if (PandolfoState != EPandolfoState::EPS_Pandolfo ) return ;
+	if (CharacterOwner->GetMovementComponent()->IsMovingOnGround()) return ;
 
-	if (PandolfoState != EPandolfoState::EPS_Pandolfo && !(PandolfoState == EPandolfoState::EPS_Climbing && ClimbingComponent->GetClimbingState() == EClimbingState::ECS_Falling)) return;
-	if (CharacterOwner->GetMovementComponent()->IsMovingOnGround()) return;
+	Glide();
+}
 
-	const FVector Start = CharacterOwner->GetActorLocation() ;
+bool UPandolfoComponent::Glide()
+{
+	//if (PandolfoState != EPandolfoState::EPS_Pandolfo && !(PandolfoState == EPandolfoState::EPS_Climbing && ClimbingComponent->GetClimbingState() == EClimbingState::ECS_Falling)) return false;
+	if (CharacterOwner->GetMovementComponent()->IsMovingOnGround()) return false;
+
+	const FVector Start = CharacterOwner->GetActorLocation();
 	const FVector End = Start - CharacterOwner->GetActorUpVector() * GlidingHeight;
 	EDrawDebugTrace::Type DebugTrace = ShowDebugTrace ? EDrawDebugTrace::ForDuration : EDrawDebugTrace::None;
 	FHitResult Hit;
 	UKismetSystemLibrary::LineTraceSingle(this, Start, End, ETraceTypeQuery::TraceTypeQuery1, false, TArray<AActor*>(), DebugTrace, Hit, true);
 
-	
+
 	if (!Hit.bBlockingHit && MovementComponent->GetLastUpdateVelocity().Z < -GlidingVelocity)
-	if (!Hit.bBlockingHit )
+		//if (!Hit.bBlockingHit )
 	{
 		//Debug::Print(TEXT("Glide"));
 		PandolfoState = EPandolfoState::EPS_Gliding;
@@ -502,14 +525,14 @@ void UPandolfoComponent::TryGliding()
 		MovementComponent->GravityScale = GlidingGravityScale;
 		MovementComponent->AirControl = GlidingAirControl;
 
-		ClimbingComponent->Deactivate();
-
 		UmbrellaActor = GetWorld()->SpawnActor<AActor>(UmbrellaActorClass, CharacterOwner->GetActorLocation(), CharacterOwner->GetActorRotation());
 		FAttachmentTransformRules AttachmentRules(EAttachmentRule::SnapToTarget, true);
 		UmbrellaActor->AttachToComponent(CharacterOwner->GetMesh(), AttachmentRules, FName("hand_l_Umbrella"));
 
-
+		return true;
 	}
+
+	return false;
 }
 
 void UPandolfoComponent::UnGlide()
@@ -531,6 +554,30 @@ void UPandolfoComponent::UnGlide()
 #pragma endregion
 
 #pragma region Assassination
+
+void UPandolfoComponent::PlayAssassinationMontage(UAnimMontage* Montage)
+{
+	PandolfoState = EPandolfoState::EPS_Assassinating;
+	PanWolfCharacter->SetInvulnerability(true);
+	OwningPlayerAnimInstance->Montage_Play(Montage);
+
+	FOnMontageEnded AssassinationEndedDelegate;
+	AssassinationEndedDelegate.BindUObject(this, &UPandolfoComponent::OnAssassinationMontageEnded);
+	OwningPlayerAnimInstance->Montage_SetEndDelegate(AssassinationEndedDelegate, Montage);
+}
+
+void UPandolfoComponent::OnAssassinationMontageEnded(UAnimMontage* Montage, bool bInterrupted)
+{
+	if (!Montage) return;
+
+	PanWolfCharacter->SetInvulnerability(false);
+
+	if (PandolfoState == EPandolfoState::EPS_Assassinating)
+	{
+		PandolfoState = EPandolfoState::EPS_Pandolfo;
+	}
+
+}
 
 void UPandolfoComponent::AssassinationFromHiding(ABaseEnemy* HidingAssassinatedEnemy)
 {
@@ -586,7 +633,8 @@ void UPandolfoComponent::PlayAirAssassination()
 	PanWolfCharacter->SetMotionWarpTarget(FName("AssasinationWarp"), WarpLocation, WarpRotator);
 
 	AssassinableOverlapped->SetCollisionBoxAssassination(ECollisionEnabled::NoCollision);
-	OwningPlayerAnimInstance->Montage_Play(AirAssassinMontage);
+	//OwningPlayerAnimInstance->Montage_Play(AirAssassinMontage);
+	PlayAssassinationMontage(AirAssassinMontage);
 }
 
 void UPandolfoComponent::PlayStealthAssassination()
@@ -603,7 +651,8 @@ void UPandolfoComponent::PlayStealthAssassination()
 	const FVector WarpLocation = AssassinTransform.GetLocation();
 	const FRotator WarpRotator = AssassinTransform.Rotator() + FRotator(0.f, 90.f, 0.f);
 	PanWolfCharacter->SetMotionWarpTarget(FName("AssasinationWarp"), WarpLocation, WarpRotator);
-	OwningPlayerAnimInstance->Montage_Play(AssassinationMontage);
+	//OwningPlayerAnimInstance->Montage_Play(AssassinationMontage);
+	PlayAssassinationMontage(AssassinationMontage);
 	AssassinableOverlapped->GetAssassinableComponent()->Assassinated(AssassinationIndex, this);
 }
 

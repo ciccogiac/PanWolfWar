@@ -1202,7 +1202,14 @@ void UClimbingComponent::ClimbJump()
 {
 	if (ClimbingState == EClimbingState::ECS_Falling)
 	{
-		PandolfoComponent->TryGliding();
+		if (PandolfoComponent->Glide())
+		{
+			ClimbedObject = nullptr;
+			PanWolfCharacter->RemoveMappingContext(ClimbingMappingContext);
+			MovementComponent->bOrientRotationToMovement = true;
+			Deactivate();
+		}
+		
 		return;
 	}
 

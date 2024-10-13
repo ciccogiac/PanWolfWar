@@ -52,6 +52,8 @@ protected:
 	virtual void BeginPlay() override;
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
+	virtual void OnHardLandMontageEnded(UAnimMontage* Montage, bool bInterrupted) override;
+
 private:
 
 	UFUNCTION()

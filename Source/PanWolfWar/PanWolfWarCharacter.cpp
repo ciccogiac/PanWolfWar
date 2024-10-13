@@ -448,16 +448,33 @@ void APanWolfWarCharacter::FallDamage()
 {
 	if (!Attributes) return;
 	if (!GetCharacterMovement()->IsFalling()) return;
-	if (PandolfoComponent->IsActive() && PandolfoComponent->IsGliding()) return;
+	if (PandolfoComponent->IsActive() && (PandolfoComponent->IsGliding() || PandolfoComponent->IsAssassinating()) ) return;
 
 	const float ZVelocity = GetVelocity().Z * -1;
-	float FallDamage = ZVelocity > 2000.f ? 30.f : ZVelocity > 1500.f ? 15.f : ZVelocity > 1000.f ? 5.f : 0.f;
 
-	Debug::Print(TEXT("TakeDamage: ") + FString::SanitizeFloat(FallDamage));
+	float FallDamage =
+		ZVelocity > 2200.f ? 100.f :
+		ZVelocity > 2100.f ? 75.f :
+		ZVelocity > 2000.f ? 50.f :
+		ZVelocity > 1750.f ? 30.f :
+		ZVelocity > 1450.f ? 15.f :
+		ZVelocity > 1300.f ? 5.f :
+		0.f;
+
+	if (FallDamage == 0.f) return;
+
+	UTransformationCharacterComponent* CurrentTransformationComponent = GetCurrentTransformationCharacterComponent();
+	FallDamage /= CurrentTransformationComponent->GetFallDamageDivisor();
+
+	Debug::Print(TEXT("ZVelocity : ") + FString::SanitizeFloat(ZVelocity));
 
 	Attributes->ReceiveDamage(FallDamage);
 	if (!Attributes->IsAlive())
 		Die();
+	else
+	{
+		CurrentTransformationComponent->PlayHardLandMontage();
+	}
 }
 
 void APanWolfWarCharacter::Falling()
@@ -761,28 +778,28 @@ void APanWolfWarCharacter::SetMetaHumanHideFX(float bVisible)
 
 void APanWolfWarCharacter::OnHitReactMontageEnded(UAnimMontage* Montage, bool bInterrupted)
 {
-	if (Montage)
+	if (!Montage) return;
+	
+	bHitted = false;
+
+	/*Debug::Print(TEXT("HitReact Ended"));*/
+	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+	if (!AnimInstance) return;
+	AnimInstance->SetRootMotionMode(ERootMotionMode::RootMotionFromMontagesOnly);
+
+	GetMesh()->SetScalarParameterValueOnMaterials(FName("HitFxSwitch"), 0.f);
+
+	if (PandolfoComponent->IsActive())
 	{
-		bHitted = false;
+		SetMetaHumanHitFX(0.f);
 
-		/*Debug::Print(TEXT("HitReact Ended"));*/
-		UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
-		if (!AnimInstance) return;
-		AnimInstance->SetRootMotionMode(ERootMotionMode::RootMotionFromMontagesOnly);
-
-		GetMesh()->SetScalarParameterValueOnMaterials(FName("HitFxSwitch"), 0.f);
-
-		if (PandolfoComponent->IsActive())
-		{
-			SetMetaHumanHitFX(0.f);
-
-		}
-
-		else if (PanWolfComponent->IsActive())
-		{
-			PanWolfComponent->OnWolfHitReactMontageEnded();
-		}
 	}
+
+	else if (PanWolfComponent->IsActive())
+	{
+		PanWolfComponent->OnWolfHitReactMontageEnded();
+	}
+	
 }
 
 void APanWolfWarCharacter::GetHitReactMontage(UAnimMontage*& ReactMontage)
@@ -835,7 +852,6 @@ float APanWolfWarCharacter::TakeDamage(float DamageAmount, FDamageEvent const& D
 
 	return DamageAmount;
 }
-
 
 void APanWolfWarCharacter::Die()
 {
