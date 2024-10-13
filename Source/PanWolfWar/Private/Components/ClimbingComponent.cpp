@@ -47,6 +47,8 @@ void UClimbingComponent::SetAnimationBindings()
 void UClimbingComponent::Deactivate()
 {
 	Super::Deactivate();
+
+	ClimbingState = EClimbingState::ECS_NOTClimbing;
 }
 
 void UClimbingComponent::BeginPlay()
@@ -1198,6 +1200,12 @@ void UClimbingComponent::ClimbMoveEnd(const FInputActionValue& Value)
 
 void UClimbingComponent::ClimbJump()
 {
+	if (ClimbingState == EClimbingState::ECS_Falling)
+	{
+		PandolfoComponent->TryGliding();
+		return;
+	}
+
 	if (GetJumpSaved())
 	{
 		TryDirectionalJumping();

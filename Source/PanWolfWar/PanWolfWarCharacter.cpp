@@ -434,10 +434,30 @@ void APanWolfWarCharacter::Landed(const FHitResult& Hit)
 {
 	Super::Landed(Hit);
 
+	FallDamage();
+
 	if (PandolfoComponent->IsActive())
 	{		
 		PandolfoComponent->HandleLand();
 	}
+
+
+}
+
+void APanWolfWarCharacter::FallDamage()
+{
+	if (!Attributes) return;
+	if (!GetCharacterMovement()->IsFalling()) return;
+	if (PandolfoComponent->IsActive() && PandolfoComponent->IsGliding()) return;
+
+	const float ZVelocity = GetVelocity().Z * -1;
+	float FallDamage = ZVelocity > 2000.f ? 30.f : ZVelocity > 1500.f ? 15.f : ZVelocity > 1000.f ? 5.f : 0.f;
+
+	Debug::Print(TEXT("TakeDamage: ") + FString::SanitizeFloat(FallDamage));
+
+	Attributes->ReceiveDamage(FallDamage);
+	if (!Attributes->IsAlive())
+		Die();
 }
 
 void APanWolfWarCharacter::Falling()

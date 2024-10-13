@@ -308,6 +308,7 @@ private:
 
 	virtual void ConsumeStone(float StoneValue, EStoneTypes StoneType) override;
 
+	void FallDamage();
 
 #pragma endregion
 

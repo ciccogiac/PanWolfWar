@@ -480,7 +480,8 @@ void UPandolfoComponent::EndSliding()
 
 void UPandolfoComponent::TryGliding()
 {
-	if (PandolfoState != EPandolfoState::EPS_Pandolfo) return;
+
+	if (PandolfoState != EPandolfoState::EPS_Pandolfo && !(PandolfoState == EPandolfoState::EPS_Climbing && ClimbingComponent->GetClimbingState() == EClimbingState::ECS_Falling)) return;
 	if (CharacterOwner->GetMovementComponent()->IsMovingOnGround()) return;
 
 	const FVector Start = CharacterOwner->GetActorLocation() ;
@@ -501,11 +502,13 @@ void UPandolfoComponent::TryGliding()
 		MovementComponent->GravityScale = GlidingGravityScale;
 		MovementComponent->AirControl = GlidingAirControl;
 
+		ClimbingComponent->Deactivate();
+
 		UmbrellaActor = GetWorld()->SpawnActor<AActor>(UmbrellaActorClass, CharacterOwner->GetActorLocation(), CharacterOwner->GetActorRotation());
 		FAttachmentTransformRules AttachmentRules(EAttachmentRule::SnapToTarget, true);
 		UmbrellaActor->AttachToComponent(CharacterOwner->GetMesh(), AttachmentRules, FName("hand_l_Umbrella"));
 
-		
+
 	}
 }
 

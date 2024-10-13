@@ -476,6 +476,9 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Climbing")
 	FORCEINLINE FVector2D GetLastMovementVector() const { return LastClimb_MovementVector; }
 
+	UFUNCTION(BlueprintCallable, Category = "Climbing")
+	FORCEINLINE EClimbingState GetClimbingState() const { return ClimbingState ; }
+
 	#pragma endregion
 
 #pragma endregion

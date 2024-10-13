@@ -115,17 +115,17 @@ bool UTransformationCharacterComponent::CheckCapsuleSpace()
 		QueryParams                 // Parametri di query per la collisione
 	);
 
-	// Disegna la capsula virtuale per vedere dove sarebbe posizionata
-	DrawDebugCapsule(
-		GetWorld(),
-		SimulatedCapsuleLocation,   // Posizione simulata della capsula
-		TargetCapsuleHalfHeight,    // Altezza della nuova capsula
-		TargetCapsuleRadius,        // Raggio della nuova capsula
-		CapsuleRotation,            // Rotazione
-		bHasSpace ? FColor::Green : FColor::Red, // Verde se c'è spazio, rosso se no
-		false,                      // Persistente (falso per disegnarla temporaneamente)
-		5.0f                        // Durata del debug (5 secondi)
-	);
+	//// Disegna la capsula virtuale per vedere dove sarebbe posizionata
+	//DrawDebugCapsule(
+	//	GetWorld(),
+	//	SimulatedCapsuleLocation,   // Posizione simulata della capsula
+	//	TargetCapsuleHalfHeight,    // Altezza della nuova capsula
+	//	TargetCapsuleRadius,        // Raggio della nuova capsula
+	//	CapsuleRotation,            // Rotazione
+	//	bHasSpace ? FColor::Green : FColor::Red, // Verde se c'è spazio, rosso se no
+	//	false,                      // Persistente (falso per disegnarla temporaneamente)
+	//	5.0f                        // Durata del debug (5 secondi)
+	//);
 
 	// Debug output
 	if (bHasSpace)
