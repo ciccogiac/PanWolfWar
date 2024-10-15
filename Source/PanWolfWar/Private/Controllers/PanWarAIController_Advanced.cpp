@@ -82,9 +82,11 @@ void APanWarAIController_Advanced::OnEnemyPerceptionUpdated(AActor* Actor, FAISt
 		if (Stimulus.Type.Name == "Default__AISense_Sight")
 		{
 			/*UE_LOG(LogTemp, Warning, TEXT("AI perceived sight from: %s"), *Actor->GetName());*/
+			if (Awareness >= 1) return;
 
 			if (CharacterInterface->IsHiding())
 			{
+			//	Debug::Print(TEXT("cHARACTER IsHiding"));
 				GetWorld()->GetTimerManager().ClearTimer(FoundTarget_TimerHandle);
 				EnemyPerceptionComponent->ForgetAll();
 				return;
@@ -102,6 +104,7 @@ void APanWarAIController_Advanced::OnEnemyPerceptionUpdated(AActor* Actor, FAISt
 		// DamageSense
 		if (Stimulus.Type.Name == "Default__AISense_Damage")
 		{
+			if (Awareness >= 1) return;
 			/*UE_LOG(LogTemp, Warning, TEXT("AI perceived damage from: %s"), *Actor->GetName());*/
 			SetNewTargetActor(Actor);
 		} 
@@ -110,7 +113,12 @@ void APanWarAIController_Advanced::OnEnemyPerceptionUpdated(AActor* Actor, FAISt
 		if (Stimulus.Type.Name == "Default__AISense_Hearing")
 		{
 			/*UE_LOG(LogTemp, Warning, TEXT("AI perceived hear from: %s"), *Actor->GetName());*/
-			SetNewTargetActor(Actor);
+			/*SetNewTargetActor(Actor);*/
+			if (Awareness >= 1) return;
+
+			GetWorld()->GetTimerManager().ClearTimer(LostTarget_TimerHandle);
+			IncrementAwareness(Actor);
+			GetWorld()->GetTimerManager().SetTimer(LostTarget_TimerHandle, [this]() {this->DecrementAwareness(); }, 1.5f, true, 1.f);
 		}
 
 	
@@ -133,6 +141,7 @@ void APanWarAIController_Advanced::OnEnemyPerceptionUpdated(AActor* Actor, FAISt
 				SetBlackboardTargetActor(nullptr);
 				CharacterInterface->RemoveEnemyAware(GetPawn());
 				OwnerBaseEnemy->SetEnemyAware(false);
+				Awareness = 0.5f;
 			}
 			else
 			{
@@ -148,6 +157,15 @@ void APanWarAIController_Advanced::OnEnemyPerceptionUpdated(AActor* Actor, FAISt
 void APanWarAIController_Advanced::IncrementAwareness(AActor* DetectedActor)
 {
 	if (!DetectedActor || !OwnerBaseEnemy) return;
+	if (Awareness >= 1) return;
+
+	if (CharacterInterface->IsHiding())
+	{
+		GetWorld()->GetTimerManager().ClearTimer(FoundTarget_TimerHandle);
+		EnemyPerceptionComponent->ForgetAll();
+		GetWorld()->GetTimerManager().SetTimer(LostTarget_TimerHandle, [this]() {this->DecrementAwareness(); }, LostTarget_TimerLoop, true);
+		return;
+	}
 
 	float Distance = FVector::Dist(OwnerBaseEnemy->GetActorLocation(), DetectedActor->GetActorLocation());
 	float DistanceFactor = FMath::Clamp(1.0f - (Distance / MaxAwarenessDistance), 0.0f, 1.0f);
@@ -155,11 +173,9 @@ void APanWarAIController_Advanced::IncrementAwareness(AActor* DetectedActor)
 	Awareness = FMath::Clamp(Awareness, 0.0f, 1.0f); // Limita il valore tra 0 e 1
 	
 
-	/*Awareness = FMath::Clamp(Awareness + AwarenessIncrementRate, 0.f, 1.f);*/
 	OwnerBaseEnemy->UpdateCurrentEnemyAwareness(Awareness);
 	if (Awareness >= 1)
 	{
-		GetWorld()->GetTimerManager().ClearTimer(FoundTarget_TimerHandle);
 		SetNewTargetActor(DetectedActor);
 	}
 }
@@ -170,6 +186,7 @@ void APanWarAIController_Advanced::DecrementAwareness()
 	//float DistanceFactor = FMath::Clamp(1.0f - (Distance / MaxAwarenessDistance), 0.0f, 1.0f);
 	//Awareness -= AwarenessDecrementRate * (1.0f - DistanceFactor) * GetWorld()->GetDeltaSeconds();
 	//Awareness = FMath::Clamp(Awareness, 0.0f, 1.0f); // Limita il valore tra 0 e 1
+	if (Awareness >= 1) return;
 
 	Awareness = FMath::Clamp(Awareness - AwarenessDecrementRate, 0.f, 1.f);
 	OwnerBaseEnemy->UpdateCurrentEnemyAwareness(Awareness);

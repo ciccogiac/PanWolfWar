@@ -44,6 +44,7 @@ private:
 private:
 	ACharacter* CharacterOwner;
 	ABaseEnemy* EnemyOwner;
+	UPandolfoComponent* PandolfoComponent;
 
 	bool bCanBeAssassinated = false;
 	bool bIsMarked = false;
@@ -62,4 +63,7 @@ private:
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Assassination", meta = (AllowPrivateAccess = "true"))
 	UAnimMontage* AirAssassinDeathMontage;
+
+public:
+	FORCEINLINE bool CanBeAssassinated() const { return bCanBeAssassinated; }
 };

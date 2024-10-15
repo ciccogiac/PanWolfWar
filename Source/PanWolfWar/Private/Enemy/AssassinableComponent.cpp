@@ -28,7 +28,6 @@ void UAssassinableComponent::BeginPlay()
 void UAssassinableComponent::BoxCollisionEnter(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
 	
-	/*if(CharacterOwner->ActorHasTag(FName("Dead"))) return;*/
 	if (!EnemyOwner || !EnemyOwner->IsCombatActorAlive() || EnemyOwner->IsEnemyAware()) return;
 
 	if (OtherActor->Implements<UCharacterInterface>())
@@ -36,25 +35,30 @@ void UAssassinableComponent::BoxCollisionEnter(UPrimitiveComponent* OverlappedCo
 		ICharacterInterface* CharacterInterface = Cast<ICharacterInterface>(OtherActor);
 		if (!CharacterInterface) return;
 
-		UPandolfoComponent* PandolfoComponent = CharacterInterface->GetPandolfoComponent();
-		/*UPandolFlowerComponent* PandolFlowerComponent = CharacterInterface->GetPandolFlowerComponent();*/
-
-		/*if (!PandolfoComponent || (!PandolfoComponent->IsActive() && !PandolFlowerComponent->IsActive())) return;*/
-
-		//PandolfoComponent->SetAssassinableEnemy(EnemyOwner);
-		//EnemyOwner->SetAssassinationWidgetVisibility(true);
-		//MarkAsTarget(true);
-		//bCanBeAssassinated = true;
-
+		PandolfoComponent = CharacterInterface->GetPandolfoComponent();
 		if (!PandolfoComponent) return;
+
 		bCanBeAssassinated = true;
+
+		////NEW
+		//PandolfoComponent->AddOverlappedAssassinableEnemy(EnemyOwner);
+
+		//ABaseEnemy* CurrenntAssassinableEnemy = PandolfoComponent->GetAssassinableEnemy();
+		//if (CurrenntAssassinableEnemy && CurrenntAssassinableEnemy != EnemyOwner)
+		//{
+		//	CurrenntAssassinableEnemy->SetAssassinationWidgetVisibility(false);
+		//	CurrenntAssassinableEnemy->GetAssassinableComponent()->MarkAsTarget(false);
+		//}
+		////EndNew
+
 		PandolfoComponent->SetAssassinableEnemy(EnemyOwner);
+
 
 		ETransformationState TransformationState = CharacterInterface->GetCurrentTransformationState();
 		if (!(TransformationState==ETransformationState::ETS_Pandolfo || TransformationState == ETransformationState::ETS_PanFlower)) return;
 
 
-		EnemyOwner->SetAssassinationWidgetVisibility(true);
+		//EnemyOwner->SetAssassinationWidgetVisibility(true);
 		MarkAsTarget(true);
 
 	}
@@ -62,7 +66,6 @@ void UAssassinableComponent::BoxCollisionEnter(UPrimitiveComponent* OverlappedCo
 
 void UAssassinableComponent::BoxCollisionExit(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
 {
-	/*if (CharacterOwner->ActorHasTag(FName("Dead"))) return;*/
 	if (!EnemyOwner || !EnemyOwner->IsCombatActorAlive()) return;
 
 	if (OtherActor->Implements<UCharacterInterface>())
@@ -70,18 +73,30 @@ void UAssassinableComponent::BoxCollisionExit(UPrimitiveComponent* OverlappedCom
 		ICharacterInterface* CharacterInterface = Cast<ICharacterInterface>(OtherActor);
 		if (!CharacterInterface) return;
 
-		UPandolfoComponent* PandolfoComponent = CharacterInterface->GetPandolfoComponent();
-		/*UPandolFlowerComponent* PandolFlowerComponent = CharacterInterface->GetPandolFlowerComponent();
-
-		if (!PandolfoComponent || (!PandolfoComponent->IsActive() && !PandolFlowerComponent->IsActive())) return;*/
+		if(!PandolfoComponent)
+			PandolfoComponent = CharacterInterface->GetPandolfoComponent();
 
 		if (!PandolfoComponent) return;
 
 		PandolfoComponent->SetAssassinableEnemy(nullptr);
-		EnemyOwner->SetAssassinationWidgetVisibility(false);
+		//EnemyOwner->SetAssassinationWidgetVisibility(false);
 		MarkAsTarget(false);
 		bCanBeAssassinated = false;
 
+		////NEW
+		//PandolfoComponent->RemoveOverlappedAssassinableEnemy(EnemyOwner);
+		//ABaseEnemy* CurrentAssassinableEnemy = PandolfoComponent->GetFirstOverlappedAssassinableEnemy();
+		//if (CurrentAssassinableEnemy && CurrentAssassinableEnemy->GetAssassinableComponent()->CanBeAssassinated())
+		//{
+		//	PandolfoComponent->SetAssassinableEnemy(CurrentAssassinableEnemy);
+
+		//	ETransformationState TransformationState = CharacterInterface->GetCurrentTransformationState();
+		//	if (!(TransformationState == ETransformationState::ETS_Pandolfo || TransformationState == ETransformationState::ETS_PanFlower)) return;
+
+
+		//	CurrentAssassinableEnemy->SetAssassinationWidgetVisibility(true);
+		//	CurrentAssassinableEnemy->GetAssassinableComponent()->MarkAsTarget(true);
+		//}
 	}
 }
 
@@ -89,13 +104,13 @@ void UAssassinableComponent::OnPlayerTransformationStateChanged(ETransformationS
 {
 	if (bCanBeAssassinated && NewTransformationState == ETransformationState::ETS_PanWolf)
 	{
-		EnemyOwner->SetAssassinationWidgetVisibility(false);
+		//EnemyOwner->SetAssassinationWidgetVisibility(false);
 		MarkAsTarget(false);
 	}
 
-	else if (bCanBeAssassinated && !bIsMarked && (NewTransformationState == ETransformationState::ETS_Pandolfo || NewTransformationState == ETransformationState::ETS_PanFlower))
+	else if (EnemyOwner && EnemyOwner->IsCombatActorAlive() && PandolfoComponent && PandolfoComponent->GetAssassinableEnemy() == EnemyOwner  && bCanBeAssassinated && !bIsMarked && (NewTransformationState == ETransformationState::ETS_Pandolfo || NewTransformationState == ETransformationState::ETS_PanFlower))
 	{
-		EnemyOwner->SetAssassinationWidgetVisibility(true);
+		//EnemyOwner->SetAssassinationWidgetVisibility(true);
 		MarkAsTarget(true);
 	}
 }
@@ -105,6 +120,7 @@ void UAssassinableComponent::MarkAsTarget(bool IsMarked)
 	bIsMarked = IsMarked;
 	const float EmissiveMultiplier = UKismetMathLibrary::SelectFloat(1.0, 0.f, IsMarked);
 	CharacterOwner->GetMesh()->SetScalarParameterValueOnMaterials(FName("HitFxSwitch"), EmissiveMultiplier);
+	EnemyOwner->SetAssassinationWidgetVisibility(IsMarked);
 }
 
 void UAssassinableComponent::Assassinated(int32 AssassinationIndex, UPandolfoComponent* _PandolfoComponent, bool AirAssassination)

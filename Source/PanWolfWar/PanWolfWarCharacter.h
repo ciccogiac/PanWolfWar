@@ -69,6 +69,9 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void EndDodge();
 
+	UFUNCTION(BlueprintCallable)
+	void FootStepEvent();
+
 	//Combat Interface
 	virtual UPawnCombatComponent* GetCombatComponent() const override;
 	virtual void SetInvulnerability(bool NewInvulnerability) override;

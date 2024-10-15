@@ -104,7 +104,7 @@ void UPandolFlowerComponent::Activate(bool bReset)
 	FlowerCable->SetCableAttachment(CharacterOwner->GetMesh(), FName("hand_l"));
 
 
-	GetWorld()->GetTimerManager().SetTimer(AirAssassination_TimerHandle, [this]() {this->CheckCanAirAssassin(); }, 0.25f, true);
+	GetWorld()->GetTimerManager().SetTimer(Flower_AirAssassination_TimerHandle, [this]() {this->CheckCanAirAssassin(); }, 0.2f, true);
 }
 
 void UPandolFlowerComponent::Deactivate()
@@ -139,7 +139,7 @@ void UPandolFlowerComponent::Deactivate()
 
 
 
-	GetWorld()->GetTimerManager().ClearTimer(AirAssassination_TimerHandle);
+	GetWorld()->GetTimerManager().ClearTimer(Flower_AirAssassination_TimerHandle);
 
 	
 		
@@ -756,7 +756,7 @@ void UPandolFlowerComponent::Assassination()
 		TransformationComponent->SelectDesiredTransformation(ETransformationState::ETS_Pandolfo);
 
 		if(bIsHidingAssassination)
-			PandolfoComponent->AssassinationFromHiding(Enemy);
+			PandolfoComponent->AssassinationFromFlowerHiding(Enemy);
 		else
 			PandolfoComponent->Assassination();
 	}
@@ -768,6 +768,7 @@ void UPandolFlowerComponent::CheckCanAirAssassin()
 	//Debug::Print(TEXT("CheckCanAirAssassin"));
 	if (PandolfoComponent)
 		PandolfoComponent->CheckCanAirAssassin();
+
 }
 
 void UPandolFlowerComponent::LightAttack()

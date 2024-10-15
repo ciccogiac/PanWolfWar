@@ -1106,41 +1106,77 @@ FVector2D UClimbingComponent::Get8DirectionVector(const FVector2D& InputVector)
 		Angle += 2.0f * PI;
 	}
 
+	//WithBackDirection
+	//// Convertire l'angolo in gradi
+	//float AngleDegrees = FMath::RadiansToDegrees(Angle);
+
+	//// Determinare la direzione in base all'angolo con maggiore tolleranza
+	//if (AngleDegrees > 337.5f || AngleDegrees <= 22.5f)
+	//{
+	//	return FVector2D(1.0f, 0.0f);  // Right
+	//}
+	//else if (AngleDegrees <= 67.5f)
+	//{
+	//	return FVector2D(1.0f, 1.0f);  // Up-Right
+	//}
+	//else if (AngleDegrees <= 112.5f)
+	//{
+	//	return FVector2D(0.0f, 1.0f);  // Up
+	//}
+	//else if (AngleDegrees <= 157.5f)
+	//{
+	//	return FVector2D(-1.0f, 1.0f); // Up-Left
+	//}
+	//else if (AngleDegrees <= 202.5f)
+	//{
+	//	return FVector2D(-1.0f, 0.0f); // Left
+	//}
+	//else if (AngleDegrees <= 247.5f)
+	//{
+	//	return FVector2D(-1.0f, -1.0f); // Down-Left
+	//}
+	//else if (AngleDegrees <= 292.5f)
+	//{
+	//	return FVector2D(0.0f, -1.0f); // Down
+	//}
+	//else if (AngleDegrees <= 337.5f)
+	//{
+	//	return FVector2D(1.0f, -1.0f); // Down-Right
+	//}
+
+	//return FVector2D(0.0f, 0.0f);  // Default, should not be reached
+
 	// Convertire l'angolo in gradi
 	float AngleDegrees = FMath::RadiansToDegrees(Angle);
 
-	// Determinare la direzione in base all'angolo con maggiore tolleranza
-	if (AngleDegrees > 337.5f || AngleDegrees <= 22.5f)
+	// Determinare la direzione in base all'angolo con maggiore tolleranza, rimuovendo "Down"
+	if (AngleDegrees > 330.0f || AngleDegrees <= 30.0f)
 	{
 		return FVector2D(1.0f, 0.0f);  // Right
 	}
-	else if (AngleDegrees <= 67.5f)
+	else if (AngleDegrees <= 75.0f)
 	{
 		return FVector2D(1.0f, 1.0f);  // Up-Right
 	}
-	else if (AngleDegrees <= 112.5f)
+	else if (AngleDegrees <= 105.0f)
 	{
 		return FVector2D(0.0f, 1.0f);  // Up
 	}
-	else if (AngleDegrees <= 157.5f)
+	else if (AngleDegrees <= 150.0f)
 	{
 		return FVector2D(-1.0f, 1.0f); // Up-Left
 	}
-	else if (AngleDegrees <= 202.5f)
+	else if (AngleDegrees <= 210.0f)
 	{
 		return FVector2D(-1.0f, 0.0f); // Left
 	}
-	else if (AngleDegrees <= 247.5f)
+	else if (AngleDegrees < 270.0f)
 	{
-		return FVector2D(-1.0f, -1.0f); // Down-Left
+		return FVector2D(-1.0f, -1.0f); // Down-Left (che diventa ora diagonale tra Destra e Sinistra)
 	}
-	else if (AngleDegrees <= 292.5f)
+	else if (AngleDegrees <=330.0f)
 	{
-		return FVector2D(0.0f, -1.0f); // Down
-	}
-	else if (AngleDegrees <= 337.5f)
-	{
-		return FVector2D(1.0f, -1.0f); // Down-Right
+		return FVector2D(1.0f, -1.0f); // Down-Right (che diventa ora diagonale tra Destra e Sinistra)
 	}
 
 	return FVector2D(0.0f, 0.0f);  // Default, should not be reached

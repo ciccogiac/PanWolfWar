@@ -144,7 +144,7 @@ private:
 
 	EPandolFlowerState PandolFlowerState = EPandolFlowerState::EPFS_PandolFlower;
 
-	FTimerHandle AirAssassination_TimerHandle;
+	FTimerHandle Flower_AirAssassination_TimerHandle;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Cover State ", meta = (AllowPrivateAccess = "true"))
 	float CoverDirection = 0.f;

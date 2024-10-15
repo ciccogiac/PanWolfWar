@@ -29,6 +29,11 @@ public:
 	float JumpZVelocity;
 	UPROPERTY(EditDefaultsOnly, Category = "TransformationData")
 	float FallDamageDivisor ;
+	UPROPERTY(EditDefaultsOnly, Category = "TransformationData")
+	float FootStepLoudness;
+	UPROPERTY(EditDefaultsOnly, Category = "TransformationData")
+	float FootStepMaxRange;
+
 	FVector CombatHandBoxExtent;
 
 	

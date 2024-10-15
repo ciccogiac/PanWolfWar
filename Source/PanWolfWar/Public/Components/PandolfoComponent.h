@@ -49,7 +49,7 @@ public:
 	void Sliding();
 	void Crouch();
 	void Assassination();
-	void AssassinationFromHiding(ABaseEnemy* HidingAssassinatedEnemy = nullptr);
+	void AssassinationFromFlowerHiding(ABaseEnemy* HidingAssassinatedEnemy = nullptr);
 	void CheckCanAirAssassin();
 	void Dodge();
 	void LightAttack();
@@ -73,6 +73,7 @@ public:
 
 	virtual void PlayHardLandMontage() override;
 
+	//ABaseEnemy* GetFirstOverlappedAssassinableEnemy();
 
 
 protected:
@@ -105,7 +106,6 @@ private:
 
 	bool PredictJump();
 
-	UFUNCTION(BlueprintCallable)
 	void TakeKnife(bool Take, bool IsReverseSocket = false);
 
 	UFUNCTION()
@@ -118,10 +118,6 @@ private:
 	UFUNCTION()
 	void CrouchCameraUpdate(float Alpha);
 
-	UFUNCTION(BlueprintCallable)
-	void AirKill();
-
-	UFUNCTION(BlueprintCallable)
 	void RiattachCamera();
 
 	void DoPredictJump();
@@ -134,6 +130,8 @@ private:
 private:
 	ABaseEnemy* AssassinableOverlapped = nullptr;
 	ABaseEnemy* AIR_AssassinableOverlapped = nullptr;
+	TSet<ABaseEnemy*> OverlappedAssassinableEnemies;
+
 	FTimerHandle AirAssassination_TimerHandle;
 	FTimerHandle AirAssassinationCamera_TimerHandle;
 
@@ -184,10 +182,10 @@ private:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Sliding", meta = (AllowPrivateAccess = "true"))
 	UCurveFloat* PredictJump_Curve;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Crouching", meta = (AllowPrivateAccess = "true"))
-	UCurveFloat* CrouchCameraLenght_Curve;
+	//UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Crouching", meta = (AllowPrivateAccess = "true"))
+	//UCurveFloat* CrouchCameraLenght_Curve;
 
-	FTimeline CrouchingTimeline;
+	//FTimeline CrouchingTimeline;
 
 	FTimerHandle PredictJump_TimerHandle;
 	float TimeElapsed = 0.f;
@@ -252,6 +250,10 @@ public:
 	FORCEINLINE bool IsAssassinableEnemy() { return (AssassinableOverlapped!= nullptr || AIR_AssassinableOverlapped != nullptr); }
 	FORCEINLINE ABaseEnemy* GetAssassinableEnemy() const { return AssassinableOverlapped; }
 	FORCEINLINE bool IsAssassinating()  const { return PandolfoState == EPandolfoState::EPS_Assassinating ; }
+	
+	/*FORCEINLINE void AddOverlappedAssassinableEnemy(ABaseEnemy* Enemy) { OverlappedAssassinableEnemies.Add(Enemy); }
+	FORCEINLINE void RemoveOverlappedAssassinableEnemy(ABaseEnemy* Enemy) { OverlappedAssassinableEnemies.Remove(Enemy); }
+	FORCEINLINE bool ContainsOverlappedAssassinableEnemy(ABaseEnemy* Enemy) const { return OverlappedAssassinableEnemies.Contains(Enemy); }*/
 	
 
 	UFUNCTION(BlueprintCallable, Category = "Gliding")

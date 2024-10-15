@@ -49,6 +49,8 @@
 #include "Components/UI/PandoUIComponent.h"
 #include "Widgets/PanWarWidgetBase.h"
 
+#include "Perception/AISense_Hearing.h"
+
 DEFINE_LOG_CATEGORY(LogTemplateCharacter);
 
 //////////////////////////////////////////////////////////////////////////
@@ -997,4 +999,15 @@ UTransformationCharacterComponent* APanWolfWarCharacter::GetCurrentTransformatio
 void APanWolfWarCharacter::Interact()
 {
 	InteractComponent->Interact();
+}
+
+void APanWolfWarCharacter::FootStepEvent()
+{
+	UTransformationCharacterComponent* CurrentTransformationCharacter = GetCurrentTransformationCharacterComponent();
+	// Assicurati che il mondo sia valido
+	if (GetWorld() && CurrentTransformationCharacter)
+	{
+		// Segnala l'evento di rumore al sistema AI
+		UAISense_Hearing::ReportNoiseEvent(GetWorld(), GetActorLocation(), CurrentTransformationCharacter->GetFootStepLoudness(), this, CurrentTransformationCharacter->GetFootStepMaxRange());
+	}
 }

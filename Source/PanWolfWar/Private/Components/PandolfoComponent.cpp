@@ -47,11 +47,11 @@ void UPandolfoComponent::BeginPlay()
 {
 	Super::BeginPlay();
 
-	if (!CrouchCameraLenght_Curve) return;
+	/*if (!CrouchCameraLenght_Curve) return;
 
 	FOnTimelineFloat ProgressUpdate;
 	ProgressUpdate.BindUFunction(this, FName("CrouchCameraUpdate"));
-	CrouchingTimeline.AddInterpFloat(CrouchCameraLenght_Curve, ProgressUpdate);
+	CrouchingTimeline.AddInterpFloat(CrouchCameraLenght_Curve, ProgressUpdate);*/
 
 }
 
@@ -59,7 +59,7 @@ void UPandolfoComponent::TickComponent(float DeltaTime, ELevelTick TickType, FAc
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
-	CrouchingTimeline.TickTimeline(DeltaTime);
+	/*CrouchingTimeline.TickTimeline(DeltaTime);*/
 
 }
 
@@ -117,12 +117,12 @@ void UPandolfoComponent::Activate(bool bReset)
 		GetWorld()->GetTimerManager().SetTimer(Glide_TimerHandle, [this]() {this->TryGliding(); }, 0.25f, true);
 	}
 
-	GetWorld()->GetTimerManager().SetTimer(AirAssassination_TimerHandle, [this]() {this->CheckCanAirAssassin(); }, 0.25f, true);
+	GetWorld()->GetTimerManager().SetTimer(AirAssassination_TimerHandle, [this]() {this->CheckCanAirAssassin(); }, 0.2f, true);
 
-	if (MovementComponent->IsCrouching())
-		CrouchingTimeline.PlayFromStart();
-	else
-		CrouchingTimeline.Reverse();
+	//if (MovementComponent->IsCrouching())
+	//	CrouchingTimeline.PlayFromStart();
+	//else
+	//	CrouchingTimeline.Reverse();
 }
 
 void UPandolfoComponent::Deactivate()
@@ -192,7 +192,7 @@ void UPandolfoComponent::Crouch()
 
 	if (!IsCrouched)
 	{
-		CrouchingTimeline.PlayFromStart();
+		/*CrouchingTimeline.PlayFromStart();*/
 
 		if (PanWolfCharacter->IsInsideHideBox())
 		{
@@ -203,7 +203,7 @@ void UPandolfoComponent::Crouch()
 
 	else
 	{
-		CrouchingTimeline.Reverse();
+	/*	CrouchingTimeline.Reverse();*/
 
 
 		if (PanWolfCharacter->IsInsideHideBox())
@@ -239,13 +239,14 @@ void UPandolfoComponent::PlayHardLandMontage()
 	PanWolfCharacter->SetMetaHumanHitFX(1.f);
 }
 
+
+
 void UPandolfoComponent::OnHardLandMontageEnded(UAnimMontage* Montage, bool bInterrupted)
 {
 	Super::OnHardLandMontageEnded(Montage, bInterrupted);
 
 	PanWolfCharacter->SetMetaHumanHitFX(0.f);
 }
-
 
 void UPandolfoComponent::HandleLand()
 {
@@ -460,7 +461,7 @@ void UPandolfoComponent::StartSliding()
 	if (MovementComponent->IsCrouching())
 	{
 		Capsule->SetCapsuleSize(35.f,40.f);
-		CrouchingTimeline.Reverse();
+		/*CrouchingTimeline.Reverse();*/
 	}
 		
 	MovementComponent->CrouchedHalfHeight = 40.f;
@@ -564,6 +565,8 @@ void UPandolfoComponent::PlayAssassinationMontage(UAnimMontage* Montage)
 	FOnMontageEnded AssassinationEndedDelegate;
 	AssassinationEndedDelegate.BindUObject(this, &UPandolfoComponent::OnAssassinationMontageEnded);
 	OwningPlayerAnimInstance->Montage_SetEndDelegate(AssassinationEndedDelegate, Montage);
+
+	TakeKnife(true, true);
 }
 
 void UPandolfoComponent::OnAssassinationMontageEnded(UAnimMontage* Montage, bool bInterrupted)
@@ -577,9 +580,15 @@ void UPandolfoComponent::OnAssassinationMontageEnded(UAnimMontage* Montage, bool
 		PandolfoState = EPandolfoState::EPS_Pandolfo;
 	}
 
+	if (Montage == AirAssassinMontage)
+	{
+		RiattachCamera();
+	}
+
+	TakeKnife(false, false);
 }
 
-void UPandolfoComponent::AssassinationFromHiding(ABaseEnemy* HidingAssassinatedEnemy)
+void UPandolfoComponent::AssassinationFromFlowerHiding(ABaseEnemy* HidingAssassinatedEnemy)
 {
 	AssassinableOverlapped = HidingAssassinatedEnemy;
 	Assassination();
@@ -592,49 +601,18 @@ void UPandolfoComponent::Assassination()
 	if (!AssassinableOverlapped && !AIR_AssassinableOverlapped) { PanWolfCharacter->Interact(); return; }
 	if (AIR_AssassinableOverlapped) AssassinableOverlapped = AIR_AssassinableOverlapped;
 
-	//UAnimInstance* OwningPlayerAnimInstance = CharacterOwner->GetMesh()->GetAnimInstance();
 	if (!OwningPlayerAnimInstance) return;
 	if (OwningPlayerAnimInstance->IsAnyMontagePlaying()) return;
 
 	if (!AIR_AssassinableOverlapped && AssassinableOverlapped)
-	{
-		
+	{	
 		PlayStealthAssassination();
 	}
 	else
 	{
-		PlayAirAssassination();
-		
+		PlayAirAssassination();		
 	}
 
-}
-
-void UPandolfoComponent::PlayAirAssassination()
-{
-	if (!AssassinableOverlapped) return;
-	AIR_AssassinableOverlapped = nullptr;
-
-	const FRotator NewRotation = FRotator(0.f, UKismetMathLibrary::FindLookAtRotation(CharacterOwner->GetActorLocation(), AssassinableOverlapped->GetActorLocation()).Yaw, 0.f);
-	FLatentActionInfo LatentInfo;
-	LatentInfo.CallbackTarget = this;
-	UKismetSystemLibrary::MoveComponentTo(CharacterOwner->GetCapsuleComponent(), CharacterOwner->GetActorLocation(), NewRotation, true, true, 0.2f, true, EMoveComponentAction::Move, LatentInfo);
-
-	PanWolfCharacter->GetFollowCamera()->DetachFromComponent(FDetachmentTransformRules::KeepWorldTransform);
-
-	const FRotator NewCameraRotation = FRotator(0.f, UKismetMathLibrary::FindLookAtRotation(AssassinableOverlapped->GetActorLocation(), CharacterOwner->GetActorLocation()).Yaw, 0.f);
-	const FVector V = UKismetMathLibrary::GetForwardVector(NewCameraRotation) * (-400.f);
-	const FVector NewCameraLocation = AssassinableOverlapped->GetActorLocation() + FVector(V.X, V.Y, -50.f);
-
-	PanWolfCharacter->GetFollowCamera()->SetWorldLocationAndRotation(NewCameraLocation, NewCameraRotation);
-	GetWorld()->GetTimerManager().SetTimer(AirAssassinationCamera_TimerHandle, [this]() {this->PanWolfCharacter->GetFollowCamera()->SetWorldRotation(UKismetMathLibrary::FindLookAtRotation(PanWolfCharacter->GetFollowCamera()->GetComponentLocation(), CharacterOwner->GetActorLocation())); }, 0.01f, true);
-
-	const FVector WarpLocation = AssassinableOverlapped->GetActorLocation();
-	const FRotator WarpRotator = FRotator(0.f, UKismetMathLibrary::FindLookAtRotation(CharacterOwner->GetActorLocation(), WarpLocation).Yaw, 0.f);
-	PanWolfCharacter->SetMotionWarpTarget(FName("AssasinationWarp"), WarpLocation, WarpRotator);
-
-	AssassinableOverlapped->SetCollisionBoxAssassination(ECollisionEnabled::NoCollision);
-	//OwningPlayerAnimInstance->Montage_Play(AirAssassinMontage);
-	PlayAssassinationMontage(AirAssassinMontage);
 }
 
 void UPandolfoComponent::PlayStealthAssassination()
@@ -656,42 +634,69 @@ void UPandolfoComponent::PlayStealthAssassination()
 	AssassinableOverlapped->GetAssassinableComponent()->Assassinated(AssassinationIndex, this);
 }
 
-void UPandolfoComponent::AirKill()
-{
-	if(AssassinableOverlapped)
-		AssassinableOverlapped->GetAssassinableComponent()->Assassinated(0,this, true);
-}
-
-void UPandolfoComponent::RiattachCamera()
-{
-	GetWorld()->GetTimerManager().ClearTimer(AirAssassinationCamera_TimerHandle);
-
-	PanWolfCharacter->GetFollowCamera()->AttachToComponent(CameraBoom, FAttachmentTransformRules::KeepWorldTransform);
-	FLatentActionInfo LatentInfo;
-	LatentInfo.CallbackTarget = this;
-	UKismetSystemLibrary::MoveComponentTo(PanWolfCharacter->GetFollowCamera(),FVector::ZeroVector, FRotator::ZeroRotator, true, true, 1.5f, true, EMoveComponentAction::Move, LatentInfo);
-
-}
-
 void UPandolfoComponent::TakeKnife(bool Take, bool IsReverseSocket)
 {
 	FName SocketName = IsReverseSocket ? FName("hand_Knife_Reverse_Socket") : FName("hand_Knife_Socket");
 	FName KnifeSocket = Take ? SocketName : FName("foot_Knife_Socket");
-	Knife->AttachToComponent(CharacterOwner->GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, KnifeSocket); 
+	Knife->AttachToComponent(CharacterOwner->GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, KnifeSocket);
+}
+
+//ABaseEnemy* UPandolfoComponent::GetFirstOverlappedAssassinableEnemy() 
+//{
+//	if (OverlappedAssassinableEnemies.Num() > 0)
+//	{
+//		return *OverlappedAssassinableEnemies.CreateConstIterator();  /**OverlappedAssassinableEnemies.CreateConstIterator().*/
+//	}
+//
+//	return nullptr;
+//}
+
+
+#pragma region AirAssassination
+
+void UPandolfoComponent::PlayAirAssassination()
+{
+	if (!AssassinableOverlapped) return;
+	AIR_AssassinableOverlapped = nullptr;
+
+	const FRotator NewRotation = FRotator(0.f, UKismetMathLibrary::FindLookAtRotation(CharacterOwner->GetActorLocation(), AssassinableOverlapped->GetActorLocation()).Yaw, 0.f);
+	FLatentActionInfo LatentInfo;
+	LatentInfo.CallbackTarget = this;
+	UKismetSystemLibrary::MoveComponentTo(CharacterOwner->GetCapsuleComponent(), CharacterOwner->GetActorLocation(), NewRotation, true, true, 0.2f, true, EMoveComponentAction::Move, LatentInfo);
+
+	PanWolfCharacter->GetFollowCamera()->DetachFromComponent(FDetachmentTransformRules::KeepWorldTransform);
+
+	const FRotator NewCameraRotation = FRotator(0.f, UKismetMathLibrary::FindLookAtRotation(AssassinableOverlapped->GetActorLocation(), CharacterOwner->GetActorLocation()).Yaw, 0.f);
+	const FVector V = UKismetMathLibrary::GetForwardVector(NewCameraRotation) * (-300.f);
+	const FVector NewCameraLocation = AssassinableOverlapped->GetActorLocation() + FVector(V.X, V.Y, 25.f); 
+
+	PanWolfCharacter->GetFollowCamera()->SetWorldLocationAndRotation(NewCameraLocation, NewCameraRotation);
+	GetWorld()->GetTimerManager().SetTimer(AirAssassinationCamera_TimerHandle, [this]() {this->PanWolfCharacter->GetFollowCamera()->SetWorldRotation(UKismetMathLibrary::FindLookAtRotation(PanWolfCharacter->GetFollowCamera()->GetComponentLocation(), CharacterOwner->GetActorLocation())); }, 0.01f, true);
+
+	const FVector WarpLocation = AssassinableOverlapped->GetActorLocation();
+	const FRotator WarpRotator = FRotator(0.f, UKismetMathLibrary::FindLookAtRotation(CharacterOwner->GetActorLocation(), WarpLocation).Yaw, 0.f);
+	PanWolfCharacter->SetMotionWarpTarget(FName("AssasinationWarp"), WarpLocation, WarpRotator);
+
+	AssassinableOverlapped->SetCollisionBoxAssassination(ECollisionEnabled::NoCollision);
+	//OwningPlayerAnimInstance->Montage_Play(AirAssassinMontage);
+	PlayAssassinationMontage(AirAssassinMontage);
+
+	AssassinableOverlapped->GetAssassinableComponent()->Assassinated(0, this, true);
 }
 
 void UPandolfoComponent::CheckCanAirAssassin()
 {
 	if (PandolfoState != EPandolfoState::EPS_Pandolfo) return;
 	if (!CharacterOwner || !CharacterOwner->GetMesh()) return;
-	//UAnimInstance* OwningPlayerAnimInstance = CharacterOwner->GetMesh()->GetAnimInstance();
-	if (!OwningPlayerAnimInstance) return;
-	if (OwningPlayerAnimInstance->IsAnyMontagePlaying()) return;
+
+	UAnimInstance* CurrentOwningPlayerAnimInstance = CharacterOwner->GetMesh()->GetAnimInstance();
+	if (!CurrentOwningPlayerAnimInstance) return;
+	if (CurrentOwningPlayerAnimInstance->IsAnyMontagePlaying()) return;
 
 	EDrawDebugTrace::Type DebugTrace = ShowDebugTrace ? EDrawDebugTrace::ForDuration : EDrawDebugTrace::None;
 
-	const FVector V = UKismetMathLibrary::GetForwardVector(CharacterOwner->GetControlRotation()) ;
-	const FVector LineForwardStart = CharacterOwner->GetActorLocation() ;
+	const FVector V = UKismetMathLibrary::GetForwardVector(CharacterOwner->GetControlRotation());
+	const FVector LineForwardStart = CharacterOwner->GetActorLocation();
 	const FVector LineForwardEnd = LineForwardStart + FVector(V.X, V.Y, 0.f) * 250.f;
 	FHitResult LineForwardHit;
 	UKismetSystemLibrary::LineTraceSingle(this, LineForwardStart, LineForwardEnd, ETraceTypeQuery::TraceTypeQuery1, false, TArray<AActor*>(), DebugTrace, LineForwardHit, true);
@@ -705,7 +710,7 @@ void UPandolfoComponent::CheckCanAirAssassin()
 		return;
 	}
 
-	const FVector LineDownEnd = LineForwardEnd + FVector(0.f,0.f,-300.f) ;
+	const FVector LineDownEnd = LineForwardEnd + FVector(0.f, 0.f, -300.f);
 	FHitResult LineDownHit;
 	UKismetSystemLibrary::LineTraceSingle(this, LineForwardEnd, LineDownEnd, ETraceTypeQuery::TraceTypeQuery1, false, TArray<AActor*>(), DebugTrace, LineDownHit, true);
 	if (LineDownHit.bBlockingHit)
@@ -724,13 +729,13 @@ void UPandolfoComponent::CheckCanAirAssassin()
 
 void UPandolfoComponent::DetectAirAssassinableEnemy()
 {
-	
+
 
 	const FVector V = UKismetMathLibrary::GetForwardVector(CharacterOwner->GetControlRotation());
-	const FVector ProjectileStart = CharacterOwner->GetActorLocation() + FVector(0.f,0.f,-CharacterOwner->GetCapsuleComponent()->GetScaledCapsuleHalfHeight()*3) + FVector(V.X, V.Y, 0.f) * 250.f;
-	const FVector ProjectileVelocity = FVector(V.X, V.Y, 0.f) * 100.f; 
+	const FVector ProjectileStart = CharacterOwner->GetActorLocation() + FVector(0.f, 0.f, -CharacterOwner->GetCapsuleComponent()->GetScaledCapsuleHalfHeight() * 3) + FVector(V.X, V.Y, 0.f) * 250.f;
+	const FVector ProjectileVelocity = FVector(V.X, V.Y, 0.f) * 70.f;
 
-	FPredictProjectilePathParams PredictParams(100.f, ProjectileStart, ProjectileVelocity, 10, EObjectTypeQuery::ObjectTypeQuery3, CharacterOwner);
+	FPredictProjectilePathParams PredictParams(150.f, ProjectileStart, ProjectileVelocity, 10, EObjectTypeQuery::ObjectTypeQuery3, CharacterOwner);
 	PredictParams.OverrideGravityZ = -20.f;
 	PredictParams.DrawDebugTime = 3.f;
 	PredictParams.SimFrequency = 0.4;
@@ -744,7 +749,7 @@ void UPandolfoComponent::DetectAirAssassinableEnemy()
 
 	if (PredictResult.HitResult.bBlockingHit)
 	{
-		const FVector LineStart = CharacterOwner->GetActorLocation() ;
+		const FVector LineStart = CharacterOwner->GetActorLocation();
 		//const FVector LineEnd = Hit.ImpactPoint;
 		const FVector LineEnd = PredictResult.HitResult.ImpactPoint;
 		FHitResult LineHit;
@@ -759,17 +764,30 @@ void UPandolfoComponent::DetectAirAssassinableEnemy()
 		{
 			AIR_AssassinableOverlapped->GetAssassinableComponent()->MarkAsTarget(false);
 		}
-		
+
 		AIR_AssassinableOverlapped = TemporaryOverlapped;
 		AIR_AssassinableOverlapped->GetAssassinableComponent()->MarkAsTarget(true);
 	}
-	
+
 	else if (AIR_AssassinableOverlapped)
 	{
 		AIR_AssassinableOverlapped->GetAssassinableComponent()->MarkAsTarget(false);
 		AIR_AssassinableOverlapped = nullptr;
 	}
 }
+
+void UPandolfoComponent::RiattachCamera()
+{
+	GetWorld()->GetTimerManager().ClearTimer(AirAssassinationCamera_TimerHandle);
+
+	PanWolfCharacter->GetFollowCamera()->AttachToComponent(CameraBoom, FAttachmentTransformRules::KeepWorldTransform);
+	FLatentActionInfo LatentInfo;
+	LatentInfo.CallbackTarget = this;
+	UKismetSystemLibrary::MoveComponentTo(PanWolfCharacter->GetFollowCamera(), FVector::ZeroVector, FRotator::ZeroRotator, true, true, 1.5f, true, EMoveComponentAction::Move, LatentInfo);
+
+}
+
+#pragma endregion
 
 #pragma endregion
 

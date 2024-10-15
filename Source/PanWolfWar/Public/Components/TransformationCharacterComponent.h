@@ -63,5 +63,8 @@ public:
 	FORCEINLINE float GetMaxWalkSpeed() const { return TransformationCharacterData.MaxWalkSpeed; }
 	FORCEINLINE float GetMaxWalkSpeedCrouched() const { return TransformationCharacterData.MaxWalkSpeedCrouched; }
 	FORCEINLINE float GetFallDamageDivisor() const { return TransformationCharacterData.FallDamageDivisor; }
+	FORCEINLINE float GetFootStepLoudness() const { return TransformationCharacterData.FootStepLoudness; }
+	FORCEINLINE float GetFootStepMaxRange() const { return TransformationCharacterData.FootStepMaxRange; }
+
 
 };
