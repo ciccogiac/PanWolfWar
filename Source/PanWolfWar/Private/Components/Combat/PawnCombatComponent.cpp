@@ -79,9 +79,9 @@ void UPawnCombatComponent::BoxCollisionTrace(EToggleDamageType ToggleDamageType)
 	TArray<FHitResult> HitResults;
 	TArray<TEnumAsByte<EObjectTypeQuery> > CombatObjectTypes;
 	CombatObjectTypes.Add(EObjectTypeQuery::ObjectTypeQuery3);
-	EDrawDebugTrace::Type DebugTraceType = ShowDebugTrace ? EDrawDebugTrace::ForOneFrame : EDrawDebugTrace::None;
+	EDrawDebugTrace::Type DebugTraceType = ShowDebugTrace ? EDrawDebugTrace::ForDuration : EDrawDebugTrace::None;
 
-	const bool bTraceHit = UKismetSystemLibrary::BoxTraceMultiForObjects(this,BoxLocation,BoxLocation + FVector(0.f,0.f,0.1f), BoxExtent, BoxRotation, CombatObjectTypes, false, AlreadyHitActor, DebugTraceType, HitResults, true);
+	const bool bTraceHit = UKismetSystemLibrary::BoxTraceMultiForObjects(this,BoxLocation,BoxLocation + FVector(0.f,0.f,0.2f), BoxExtent, BoxRotation, CombatObjectTypes, false, AlreadyHitActor, DebugTraceType, HitResults, true);
 	if (!bTraceHit) return;
 
 

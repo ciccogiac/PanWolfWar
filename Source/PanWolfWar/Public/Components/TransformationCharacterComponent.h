@@ -27,6 +27,8 @@ public:
 
 	virtual void PlayHardLandMontage();
 
+	float GetCombatDistanceRange(ECombatAttackRange CombatAttackRange);
+
 protected:
 	virtual void BeginPlay() override;
 
@@ -65,6 +67,5 @@ public:
 	FORCEINLINE float GetFallDamageDivisor() const { return TransformationCharacterData.FallDamageDivisor; }
 	FORCEINLINE float GetFootStepLoudness() const { return TransformationCharacterData.FootStepLoudness; }
 	FORCEINLINE float GetFootStepMaxRange() const { return TransformationCharacterData.FootStepMaxRange; }
-
 
 };

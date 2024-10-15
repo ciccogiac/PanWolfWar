@@ -48,4 +48,7 @@ public:
 	 virtual void AddEnemyAware(AActor* Enemy) = 0;
 	 UFUNCTION(BlueprintCallable)
 	 virtual void RemoveEnemyAware(AActor* Enemy) = 0;
+
+	 UFUNCTION(BlueprintCallable)
+	 virtual float GetCharacterCombatDistanceRange(ECombatAttackRange CombatAttackRange) = 0;
 };

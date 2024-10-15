@@ -100,6 +100,7 @@ public:
 
 	//CharacterInterface
 	ETransformationState GetCurrentTransformationState() const override;
+	virtual float GetCharacterCombatDistanceRange(ECombatAttackRange CombatAttackRange)  override;
 
 	void HandleTransformationChangedState();
 	ETransformationState GetCurrentTransformationState();

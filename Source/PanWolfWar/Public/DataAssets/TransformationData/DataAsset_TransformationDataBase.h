@@ -10,6 +10,24 @@
 class UInputMappingContext;
 
 USTRUCT(BlueprintType)
+struct FCombatDistanceRange
+{
+	GENERATED_BODY()
+
+public:
+
+	UPROPERTY(EditDefaultsOnly, Category = "CombatData")
+	float UnderAttackDistanceRange;
+
+	UPROPERTY(EditDefaultsOnly, Category = "CombatData")
+	float MeleeAttackDistanceRange;
+
+	UPROPERTY(EditDefaultsOnly, Category = "CombatData")
+	float MeleeAttackDistance;
+
+};
+
+USTRUCT(BlueprintType)
 struct FTransformationCharacterData
 {
 	GENERATED_BODY()
@@ -33,10 +51,11 @@ public:
 	float FootStepLoudness;
 	UPROPERTY(EditDefaultsOnly, Category = "TransformationData")
 	float FootStepMaxRange;
-
+	UPROPERTY(EditDefaultsOnly, Category = "TransformationData")
 	FVector CombatHandBoxExtent;
 
-	
+	UPROPERTY(EditDefaultsOnly, Category = "CombatData")
+	FCombatDistanceRange CombatDistanceRange;
 
 	UPROPERTY(EditDefaultsOnly, Category = "TransformationInput")
 	UInputMappingContext* TransformationCharacterMappingContext;

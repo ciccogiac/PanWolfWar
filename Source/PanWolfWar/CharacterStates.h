@@ -10,3 +10,11 @@ enum class ETransformationState : uint8
 	ETS_PanBird UMETA(DisplayName = "PanBird"),
 	ETS_None UMETA(DisplayName = "None"),
 };
+
+UENUM(BlueprintType)
+enum class ECombatAttackRange : uint8
+{
+	ECAR_UnderAttackDistanceRange UMETA(DisplayName = "UnderAttackDistanceRange"),
+	ECAR_MeleeAttackDistanceRange UMETA(DisplayName = "MeleeAttackDistanceRange"),
+	ECAR_MeleeAttackDistance UMETA(DisplayName = "MeleeAttackDistance")
+};

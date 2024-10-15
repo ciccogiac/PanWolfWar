@@ -178,3 +178,22 @@ void UTransformationCharacterComponent::OnHardLandMontageEnded(UAnimMontage* Mon
 	bIsHardLanding = false;
 	CharacterOwner->GetMesh()->SetScalarParameterValueOnMaterials(FName("HitFxSwitch"), 0.f);
 }
+
+float UTransformationCharacterComponent::GetCombatDistanceRange(ECombatAttackRange CombatAttackRange)
+{
+	switch (CombatAttackRange)
+	{
+	case ECombatAttackRange::ECAR_UnderAttackDistanceRange:
+		return TransformationCharacterData.CombatDistanceRange.UnderAttackDistanceRange;
+		break;
+	case ECombatAttackRange::ECAR_MeleeAttackDistanceRange:
+		return TransformationCharacterData.CombatDistanceRange.MeleeAttackDistanceRange;
+		break;
+	case ECombatAttackRange::ECAR_MeleeAttackDistance:
+		return TransformationCharacterData.CombatDistanceRange.MeleeAttackDistance;
+		break;
+	default:
+		break;
+	}
+	return 300.f;
+}

@@ -1011,3 +1011,13 @@ void APanWolfWarCharacter::FootStepEvent()
 		UAISense_Hearing::ReportNoiseEvent(GetWorld(), GetActorLocation(), CurrentTransformationCharacter->GetFootStepLoudness(), this, CurrentTransformationCharacter->GetFootStepMaxRange());
 	}
 }
+
+float APanWolfWarCharacter::GetCharacterCombatDistanceRange(ECombatAttackRange CombatAttackRange)
+{
+	UTransformationCharacterComponent* CurrentTransformationCharacter = GetCurrentTransformationCharacterComponent();
+	if (CurrentTransformationCharacter)
+	{
+		return CurrentTransformationCharacter->GetCombatDistanceRange(CombatAttackRange);
+	}
+	return 300.0f;
+}
