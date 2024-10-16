@@ -814,3 +814,8 @@ void UPandolFlowerComponent::OnHookMontageEnded(UAnimMontage* Montage, bool bInt
 }
 
 #pragma endregion
+
+void UPandolFlowerComponent::ClearAllTimer()
+{
+	GetWorld()->GetTimerManager().ClearTimer(Flower_AirAssassination_TimerHandle);
+}

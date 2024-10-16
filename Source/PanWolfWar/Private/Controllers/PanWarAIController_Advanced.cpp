@@ -156,6 +156,7 @@ void APanWarAIController_Advanced::OnEnemyPerceptionUpdated(AActor* Actor, FAISt
 
 void APanWarAIController_Advanced::IncrementAwareness(AActor* DetectedActor)
 {
+
 	if (!DetectedActor || !OwnerBaseEnemy) return;
 	if (Awareness >= 1) return;
 
@@ -172,6 +173,13 @@ void APanWarAIController_Advanced::IncrementAwareness(AActor* DetectedActor)
 	Awareness += AwarenessIncrementRate * DistanceFactor ;
 	Awareness = FMath::Clamp(Awareness, 0.0f, 1.0f); // Limita il valore tra 0 e 1
 	
+	Debug::Print(TEXT("DistanceFactor: ") + FString::SanitizeFloat(DistanceFactor));
+	if (DistanceFactor == 0.0f)
+	{
+		GetWorld()->GetTimerManager().ClearTimer(FoundTarget_TimerHandle);
+		EnemyPerceptionComponent->ForgetAll();
+		GetWorld()->GetTimerManager().SetTimer(LostTarget_TimerHandle, [this]() {this->DecrementAwareness(); }, LostTarget_TimerLoop, true);
+	}
 
 	OwnerBaseEnemy->UpdateCurrentEnemyAwareness(Awareness);
 	if (Awareness >= 1)

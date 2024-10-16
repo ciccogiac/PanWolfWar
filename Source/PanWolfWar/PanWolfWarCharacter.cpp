@@ -226,6 +226,22 @@ void APanWolfWarCharacter::BeginPlay()
 	}
 }
 
+void APanWolfWarCharacter::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+	Super::EndPlay(EndPlayReason);
+
+	if (PandolfoComponent)
+		PandolfoComponent->ClearAllTimer();
+
+	if (PandolFlowerComponent)
+		PandolFlowerComponent->ClearAllTimer();
+
+	if (PanWolfComponent)
+		PanWolfComponent->ClearAllTimer();
+
+	GetWorld()->GetTimerManager().ClearTimer(UnderAttack_TimerHandle);
+}
+
 #pragma endregion
 
 void APanWolfWarCharacter::SetTransformationCharacter(TObjectPtr<USkeletalMesh> SkeletalMeshAsset, TSubclassOf<UAnimInstance> Anim)

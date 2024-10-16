@@ -464,3 +464,8 @@ void UPanWolfComponent::OnWolfHitReactMontageEnded()
 }
 
 #pragma endregion
+
+void UPanWolfComponent::ClearAllTimer()
+{
+	GetWorld()->GetTimerManager().ClearTimer(PerfectBlock_TimerHandle);
+}

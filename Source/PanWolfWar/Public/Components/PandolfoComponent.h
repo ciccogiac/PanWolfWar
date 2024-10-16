@@ -54,7 +54,7 @@ public:
 	void Dodge();
 	void LightAttack();
 
-	void ClearAllTimer();
+	void ClearAllTimer() override;
 
 	void PlayAirAssassination();
 

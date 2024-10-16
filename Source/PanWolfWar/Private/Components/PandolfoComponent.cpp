@@ -833,6 +833,9 @@ void UPandolfoComponent::ExitKiteMode()
 void UPandolfoComponent::ClearAllTimer()
 {
 	GetWorld()->GetTimerManager().ClearTimer(AirAssassination_TimerHandle);
+	GetWorld()->GetTimerManager().ClearTimer(AirAssassinationCamera_TimerHandle);
 	GetWorld()->GetTimerManager().ClearTimer(Glide_TimerHandle);
+	GetWorld()->GetTimerManager().ClearTimer(KnifeEquipped_TimerHandle);
+	GetWorld()->GetTimerManager().ClearTimer(PredictJump_TimerHandle);
 }
 

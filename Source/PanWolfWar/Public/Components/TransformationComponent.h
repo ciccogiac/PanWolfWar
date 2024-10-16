@@ -106,5 +106,6 @@ public:
 	
 	FORCEINLINE ETransformationState GetCurrentTransformationState() const { return CurrentTransformationState; }
 	FORCEINLINE void SetFlowerConsuptionStopped(bool NewValue)  {  bFlowerConsuptionStopped = NewValue; }
-	
+	UFUNCTION(BlueprintCallable)
+	FORCEINLINE void SetPossibleTransformationState(TArray<ETransformationState> _PossibleTransformationState)  {  PossibleTransformationState = _PossibleTransformationState; }
 };

@@ -29,6 +29,8 @@ public:
 
 	float GetCombatDistanceRange(ECombatAttackRange CombatAttackRange);
 
+	virtual void ClearAllTimer() ;
+
 protected:
 	virtual void BeginPlay() override;
 

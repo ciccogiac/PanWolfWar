@@ -44,6 +44,8 @@ public:
 	void SuccesfulBlock(AActor* Attacker);
 	bool IsWolfValidBlock(AActor* InAttacker);
 
+	void ClearAllTimer() override;
+
 	UFUNCTION(BlueprintCallable)
 	void ReturnToBlockFromAttack();
 

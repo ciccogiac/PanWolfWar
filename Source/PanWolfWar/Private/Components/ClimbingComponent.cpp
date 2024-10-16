@@ -1408,7 +1408,7 @@ void UClimbingComponent::VaultMotionWarp(const FVector VaultStartPos, const FVec
 
 	Capsule->SetCapsuleHalfHeight(35.f);
 	PandolfoComponent->PandolfoState = EPandolfoState::EPS_Vaulting;
-	CameraBoom->bDoCollisionTest = false;
+	//CameraBoom->bDoCollisionTest = false;
 
 	FOnMontageEnded VaultMontageEndedDelegate;
 	VaultMontageEndedDelegate.BindUObject(this, &UClimbingComponent::OnVaultMontageEnded);
@@ -1420,7 +1420,7 @@ void UClimbingComponent::OnVaultMontageEnded(UAnimMontage* Montage, bool bInterr
 	if (!Montage) return;
 	
 	MovementComponent->SetMovementMode(MOVE_Walking);
-	CameraBoom->bDoCollisionTest = true;
+	//CameraBoom->bDoCollisionTest = true;
 	Capsule->SetCapsuleHalfHeight(PandolfoComponent->GetCapsuleHalfHeight());
 	PandolfoComponent->PandolfoState = EPandolfoState::EPS_Pandolfo;
 		

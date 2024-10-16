@@ -48,6 +48,8 @@ public:
 	void Dodge();
 	void LightAttack();
 
+	void ClearAllTimer() override;
+
 protected:
 	virtual void BeginPlay() override;
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
@@ -78,6 +80,7 @@ private:
 	void SetCharacterToFlowerHide(const FHitResult& hit);
 	void SetCameraToFlowerHide();
 	void ResetCameraFromFlowerHide();
+
 
 
 	#pragma region AnimNotifyFunctions

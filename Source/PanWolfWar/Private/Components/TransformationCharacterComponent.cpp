@@ -197,3 +197,7 @@ float UTransformationCharacterComponent::GetCombatDistanceRange(ECombatAttackRan
 	}
 	return 300.f;
 }
+
+void UTransformationCharacterComponent::ClearAllTimer()
+{
+}
