@@ -118,6 +118,12 @@ public:
 
 	void Interact();
 
+	UFUNCTION(BlueprintCallable)
+	void SetTargetHint(AActor* NewTargetHintActor);
+
+	UFUNCTION(BlueprintCallable)
+	void ResetTargetHint();
+
 #pragma endregion
 
 #pragma region ProtectedFunctions
@@ -147,6 +153,8 @@ private:
 	bool bIsUnderAttack = false;
 	bool bHitted = false;
 	bool bIsInsideHideBox = false;
+
+	AActor* TargetHintActor = nullptr;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = crouch, meta = (AllowPrivateAccess = "true"))
 	bool bIsForcedCrouch = false;
@@ -351,6 +359,12 @@ public:
 	FORCEINLINE TArray<AActor*> GetEnemyAware() { return EnemyAware; }
 	
 	FORCEINLINE bool IsHitted() { return bHitted; }
+
+
+	UFUNCTION(BlueprintCallable)
+	FORCEINLINE bool IsTargetHintSet() { return TargetHintActor!= nullptr; }
+
+
 #pragma endregion
 
 

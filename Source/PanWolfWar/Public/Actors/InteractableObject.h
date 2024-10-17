@@ -21,6 +21,7 @@ public:
 	AInteractableObject();
 
 	virtual bool Interact(ACharacter* _CharacterOwner = nullptr) ;
+
 	virtual void Move(const FInputActionValue& Value);
 
 protected:

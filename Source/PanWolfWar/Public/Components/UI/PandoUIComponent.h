@@ -5,6 +5,7 @@
 #include "PandoUIComponent.generated.h"
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnTransformationStateChangedDelegate, ETransformationState, NewState);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnTargetActorChangedDelegate, AActor*, NewTarget);
 
 UCLASS()
 class PANWOLFWAR_API UPandoUIComponent : public UPawnUIComponent
@@ -29,6 +30,9 @@ public:
 
 	UPROPERTY(BlueprintAssignable)
 	FOnTransformationStateChangedDelegate OnTransformationStateChangedDelegate;
+
+	UPROPERTY(BlueprintAssignable)
+	FOnTargetActorChangedDelegate OnTargetActorChangedDelegate;
 
 protected:
 	virtual void BeginPlay() override;

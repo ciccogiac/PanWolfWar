@@ -210,6 +210,7 @@ void APanWolfWarCharacter::BeginPlay()
 				// Aggiungilo allo schermo
 				Attributes->InitializeAttributeUI(PandoUIComponent);
 				TransformationComponent->InitializeTransformationUI(PandoUIComponent);
+				PandoUIComponent->OnTargetActorChangedDelegate.Broadcast(TargetHintActor);
 				PanWarOverlay->AddToViewport();
 			}
 		}
@@ -1015,6 +1016,20 @@ UTransformationCharacterComponent* APanWolfWarCharacter::GetCurrentTransformatio
 void APanWolfWarCharacter::Interact()
 {
 	InteractComponent->Interact();
+}
+
+void APanWolfWarCharacter::SetTargetHint(AActor* NewTargetHintActor)
+{
+	TargetHintActor = NewTargetHintActor;
+	if (PandoUIComponent)
+		PandoUIComponent->OnTargetActorChangedDelegate.Broadcast(TargetHintActor);
+}
+
+void APanWolfWarCharacter::ResetTargetHint()
+{
+	TargetHintActor = nullptr;
+	if (PandoUIComponent)
+		PandoUIComponent->OnTargetActorChangedDelegate.Broadcast(TargetHintActor);
 }
 
 void APanWolfWarCharacter::FootStepEvent()
