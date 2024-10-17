@@ -59,7 +59,7 @@ struct FEnemyInitStats
 	}
 };
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnEnemyDeath);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnEnemyDeath, ABaseEnemy*, Enemy);
 
 UCLASS()
 class PANWOLFWAR_API ABaseEnemy : public ACharacter, public ICombatInterface, public IHitInterface , public IPawnUIInterface
@@ -69,6 +69,7 @@ class PANWOLFWAR_API ABaseEnemy : public ACharacter, public ICombatInterface, pu
 #pragma region Functions
 
 public:
+	UPROPERTY(BlueprintAssignable, Category = "Events")
 	FOnEnemyDeath OnEnemyDeath;
 
 	ABaseEnemy();

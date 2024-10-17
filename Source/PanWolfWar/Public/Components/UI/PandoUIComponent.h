@@ -6,6 +6,7 @@
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnTransformationStateChangedDelegate, ETransformationState, NewState);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnTargetActorChangedDelegate, AActor*, NewTarget);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnNewHintDelegate, FText, HintText);
 
 UCLASS()
 class PANWOLFWAR_API UPandoUIComponent : public UPawnUIComponent
@@ -33,6 +34,12 @@ public:
 
 	UPROPERTY(BlueprintAssignable)
 	FOnTargetActorChangedDelegate OnTargetActorChangedDelegate;
+
+	UPROPERTY(BlueprintAssignable)
+	FOnNewHintDelegate OnNewHintDelegate;
+
+	UPROPERTY(BlueprintAssignable)
+	FOnVisibilityChangedDelegate OnHintCompletedDelegate;	
 
 protected:
 	virtual void BeginPlay() override;

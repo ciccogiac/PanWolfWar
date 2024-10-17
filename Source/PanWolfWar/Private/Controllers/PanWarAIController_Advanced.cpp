@@ -50,7 +50,7 @@ void APanWarAIController_Advanced::OnPossess(APawn* InPawn)
 
 }
 
-void APanWarAIController_Advanced::OnPossessedPawnDeath()
+void APanWarAIController_Advanced::OnPossessedPawnDeath(ABaseEnemy* Enemy)
 {
 	if (EnemyPerceptionComponent)
 	{
@@ -173,7 +173,7 @@ void APanWarAIController_Advanced::IncrementAwareness(AActor* DetectedActor)
 	Awareness += AwarenessIncrementRate * DistanceFactor ;
 	Awareness = FMath::Clamp(Awareness, 0.0f, 1.0f); // Limita il valore tra 0 e 1
 	
-	Debug::Print(TEXT("DistanceFactor: ") + FString::SanitizeFloat(DistanceFactor));
+	//Debug::Print(TEXT("DistanceFactor: ") + FString::SanitizeFloat(DistanceFactor));
 	if (DistanceFactor == 0.0f)
 	{
 		GetWorld()->GetTimerManager().ClearTimer(FoundTarget_TimerHandle);

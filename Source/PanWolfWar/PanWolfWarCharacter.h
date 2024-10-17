@@ -118,12 +118,6 @@ public:
 
 	void Interact();
 
-	UFUNCTION(BlueprintCallable)
-	void SetTargetHint(AActor* NewTargetHintActor);
-
-	UFUNCTION(BlueprintCallable)
-	void ResetTargetHint();
-
 #pragma endregion
 
 #pragma region ProtectedFunctions
@@ -154,7 +148,6 @@ private:
 	bool bHitted = false;
 	bool bIsInsideHideBox = false;
 
-	AActor* TargetHintActor = nullptr;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = crouch, meta = (AllowPrivateAccess = "true"))
 	bool bIsForcedCrouch = false;
@@ -275,8 +268,6 @@ private:
 	UPROPERTY(EditDefaultsOnly, Category = Combat)
 	UAnimMontage* PandolFlower_HitReactMontage;
 
-	//UPROPERTY(EditDefaultsOnly, Category = Combat)
-	//UAnimMontage* PanWolf_HitReactMontage;
 
 	UPROPERTY(EditDefaultsOnly, Category = Combat)
 	UAnimMontage* PanBird_HitReactMontage;
@@ -344,7 +335,6 @@ public:
 	FORCEINLINE UPanBirdComponent* GetPanBirdComponent() const { return PanBirdComponent; }
 
 	FORCEINLINE UNiagaraComponent* GetNiagaraTransformation() { return NiagaraTransformation; }
-	//FORCEINLINE UNiagaraComponent* GetNiagaraTransformationEffect() { return NiagaraApplyTransformationEffect; }
 
 
 	FORCEINLINE virtual bool IsHiding() const override { return bIsHiding; }
@@ -359,10 +349,6 @@ public:
 	FORCEINLINE TArray<AActor*> GetEnemyAware() { return EnemyAware; }
 	
 	FORCEINLINE bool IsHitted() { return bHitted; }
-
-
-	UFUNCTION(BlueprintCallable)
-	FORCEINLINE bool IsTargetHintSet() { return TargetHintActor!= nullptr; }
 
 
 #pragma endregion

@@ -17,6 +17,8 @@
 #include <NiagaraFunctionLibrary.h>
 #include "Components/TransformationComponent.h"
 
+#include "Actors/MissionManager.h"
+
 #include "PanWolfWar/DebugHelper.h"
 
 #pragma region EngineFunctions
@@ -593,7 +595,8 @@ void ABaseEnemy::InitializeEnemyDeath()
 {
 	bDied = true;
 	Tags.Add(FName("Dead"));
-	OnEnemyDeath.Broadcast();
+	OnEnemyDeath.Broadcast(this);
+
 }
 
 void ABaseEnemy::HandleEnemyDeath()

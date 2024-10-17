@@ -50,6 +50,7 @@
 #include "Widgets/PanWarWidgetBase.h"
 
 #include "Perception/AISense_Hearing.h"
+#include "Actors/MissionManager.h"
 
 DEFINE_LOG_CATEGORY(LogTemplateCharacter);
 
@@ -210,7 +211,11 @@ void APanWolfWarCharacter::BeginPlay()
 				// Aggiungilo allo schermo
 				Attributes->InitializeAttributeUI(PandoUIComponent);
 				TransformationComponent->InitializeTransformationUI(PandoUIComponent);
-				PandoUIComponent->OnTargetActorChangedDelegate.Broadcast(TargetHintActor);
+
+				PandoUIComponent->OnTargetActorChangedDelegate.Broadcast(nullptr);
+				PandoUIComponent->OnHintCompletedDelegate.Broadcast(true);
+				PandoUIComponent->OnNewHintDelegate.Broadcast(FText::GetEmpty());
+
 				PanWarOverlay->AddToViewport();
 			}
 		}
@@ -225,6 +230,13 @@ void APanWolfWarCharacter::BeginPlay()
 	{
 		TransformationComponent->SelectDesiredTransformation(ETransformationState::ETS_Pandolfo);
 	}
+
+	AMissionManager* MissionManager = Cast<AMissionManager>(UGameplayStatics::GetActorOfClass(GetWorld(), AMissionManager::StaticClass()));
+	if (MissionManager)
+	{
+		MissionManager->LoadMission(); 
+	}
+
 }
 
 void APanWolfWarCharacter::EndPlay(const EEndPlayReason::Type EndPlayReason)
@@ -1016,20 +1028,6 @@ UTransformationCharacterComponent* APanWolfWarCharacter::GetCurrentTransformatio
 void APanWolfWarCharacter::Interact()
 {
 	InteractComponent->Interact();
-}
-
-void APanWolfWarCharacter::SetTargetHint(AActor* NewTargetHintActor)
-{
-	TargetHintActor = NewTargetHintActor;
-	if (PandoUIComponent)
-		PandoUIComponent->OnTargetActorChangedDelegate.Broadcast(TargetHintActor);
-}
-
-void APanWolfWarCharacter::ResetTargetHint()
-{
-	TargetHintActor = nullptr;
-	if (PandoUIComponent)
-		PandoUIComponent->OnTargetActorChangedDelegate.Broadcast(TargetHintActor);
 }
 
 void APanWolfWarCharacter::FootStepEvent()

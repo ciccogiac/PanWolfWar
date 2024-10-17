@@ -18,7 +18,7 @@ public:
 
 	virtual void OnPossess(APawn* InPawn) override;
 	UFUNCTION()
-	void OnPossessedPawnDeath();
+	void OnPossessedPawnDeath(ABaseEnemy* Enemy);
 
 protected:
 
