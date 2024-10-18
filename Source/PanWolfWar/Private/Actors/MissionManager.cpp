@@ -4,6 +4,7 @@
 #include "Enemy/BaseEnemy.h"
 #include "Kismet/GameplayStatics.h"
 #include "Components/UI/PandoUIComponent.h"
+#include "Actors/MissionTargetReachable.h"
 
 #include "PanWolfWar/DebugHelper.h"
 
@@ -67,7 +68,11 @@ void AMissionManager::LoadKillEnemiesMission(FMissionValues& Mission)
 
 	for (ABaseEnemy* Enemy : CurrentEnemiesToKill)
 	{
-		if (IsValid(Enemy)) { Enemy->OnEnemyDeath.AddDynamic(this, &AMissionManager::OnEnemyDeathHandler); }
+		if (IsValid(Enemy)) 
+		{
+			Enemy->OnEnemyDeath.AddDynamic(this, &AMissionManager::OnEnemyDeathHandler);
+			if (PandoUIComponent) PandoUIComponent->OnEnemyActorTargetDelegate.Broadcast(Enemy);
+		}
 		else { CurrentEnemiesToKill.Remove(Enemy); }		
 	}
 
@@ -89,6 +94,7 @@ void AMissionManager::OnEnemyDeathHandler(ABaseEnemy* Enemy)
 	if (CurrentEnemiesToKill.Contains(Enemy))
 	{
 		CurrentEnemiesToKill.Remove(Enemy);
+		if (PandoUIComponent) PandoUIComponent->OnEnemyActorTargetDelegate.Broadcast(Enemy);
 	}
 
 	if (CurrentEnemiesToKill.IsEmpty())
@@ -105,8 +111,36 @@ void AMissionManager::OnEnemyDeathHandler(ABaseEnemy* Enemy)
 void AMissionManager::LoadReachLocationMission(FMissionValues& Mission)
 {
 
+	if (Mission.MissionTargetReachable && Mission.MissionTargetReachable->IsCharacterInside())
+	{
+		Mission.MissionTargetReachable->BP_OnTargetReached();
+		PandoUIComponent->OnTargetActorChangedDelegate.Broadcast(nullptr);
+		CurrentMission++;
+		LoadMission();
+		return;
+	}
+
 	if (PandoUIComponent)
-		PandoUIComponent->OnTargetActorChangedDelegate.Broadcast(Mission.MissionTargetActor);
+		PandoUIComponent->OnTargetActorChangedDelegate.Broadcast(Mission.MissionTargetReachable);
+
+	Mission.MissionTargetReachable->BP_OnTargetMissionActivated();
+}
+
+void AMissionManager::MissionTargetReached(AMissionTargetReachable* MissionTargetReachable)
+{
+	if (CurrentMissionType != EMissionType::EMT_ReachLocation) return;
+	if (Missions.IsEmpty()) return;
+	if (!Missions.IsValidIndex(CurrentMission)) return;
+
+	AMissionTargetReachable* CurrentMissionTargetReachable = Missions[CurrentMission].MissionTargetReachable;
+
+	if (CurrentMissionTargetReachable == MissionTargetReachable)
+	{
+		CurrentMissionTargetReachable->BP_OnTargetReached();
+		PandoUIComponent->OnTargetActorChangedDelegate.Broadcast(nullptr);
+		CurrentMission++;
+		LoadMission();
+	}
 }
 
 #pragma endregion

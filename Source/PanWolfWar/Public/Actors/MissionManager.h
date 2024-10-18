@@ -7,6 +7,7 @@
 class ABaseEnemy;
 class APanWolfWarCharacter;
 class UPandoUIComponent;
+class AMissionTargetReachable;
 
 UENUM(BlueprintType)
 enum class EMissionType : uint8
@@ -29,7 +30,7 @@ public:
 	TArray<ABaseEnemy*> EnemiesToKill;
 
 	UPROPERTY(EditInstanceOnly, Category = "Mission" , meta = (AllowPrivateAccess = "true"))
-	AActor* MissionTargetActor;
+	AMissionTargetReachable* MissionTargetReachable;
 
 	UPROPERTY(EditInstanceOnly, Category = "Mission", meta = (AllowPrivateAccess = "true"))
 	FText MissionText;
@@ -45,6 +46,8 @@ public:
 	AMissionManager();
 
 	void LoadMission();
+
+	void MissionTargetReached(AMissionTargetReachable* MissionTargetReachable);
 
 protected:
 	virtual void BeginPlay() override;

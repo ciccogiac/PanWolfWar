@@ -12,7 +12,7 @@ UCLASS()
 class PANWOLFWAR_API UPandoUIComponent : public UPawnUIComponent
 {
 	GENERATED_BODY()
-
+	
 public:
 	UPROPERTY(BlueprintAssignable)
 	FOnPercentChangedDelegate OnCurrentBeerPercentChanged;
@@ -39,7 +39,10 @@ public:
 	FOnNewHintDelegate OnNewHintDelegate;
 
 	UPROPERTY(BlueprintAssignable)
-	FOnVisibilityChangedDelegate OnHintCompletedDelegate;	
+	FOnVisibilityChangedDelegate OnHintCompletedDelegate;
+
+	UPROPERTY(BlueprintAssignable)
+	FOnTargetActorChangedDelegate OnEnemyActorTargetDelegate;
 
 protected:
 	virtual void BeginPlay() override;
