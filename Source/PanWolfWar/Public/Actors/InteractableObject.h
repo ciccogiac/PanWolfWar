@@ -12,6 +12,8 @@ class UCapsuleComponent;
 struct FInputActionValue;
 class IInteractInterface;
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnObjectInteracted, AInteractableObject*, InteractableObject);
+
 UCLASS()
 class PANWOLFWAR_API AInteractableObject : public AActor
 {
@@ -24,16 +26,25 @@ public:
 
 	virtual void Move(const FInputActionValue& Value);
 
+	UPROPERTY(BlueprintAssignable, Category = "Events")
+	FOnObjectInteracted OnObjectInteracted;
+
 protected:
 	virtual void BeginPlay() override;
 
+	UFUNCTION(BlueprintImplementableEvent)
+	void BP_Interact();
+
 	void InitializeBoxComponents();
+
 	FVector2D Get8DirectionVector(const FVector2D& InputVector);
 
 	ACharacter* CharacterOwner;
 
 	USceneComponent* InteractWidget;
 	IInteractInterface* InteractInterface;
+
+
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Interact Params", meta = (AllowPrivateAccess = "true"))
 	ETransformationObjectTypes TransformationObjectType = ETransformationObjectTypes::ETOT_Pandolfo_Object;

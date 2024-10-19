@@ -5,6 +5,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "Components/UI/PandoUIComponent.h"
 #include "Actors/MissionTargetReachable.h"
+#include "Actors/InteractableObject.h"
 
 #include "PanWolfWar/DebugHelper.h"
 
@@ -53,6 +54,11 @@ void AMissionManager::LoadMission()
 	case EMissionType::EMT_ReachLocation:
 		CurrentMissionType = EMissionType::EMT_ReachLocation;
 		LoadReachLocationMission(Mission);
+		break;
+
+	case EMissionType::EMT_InteractableObject:
+		CurrentMissionType = EMissionType::EMT_InteractableObject;
+		LoadInteractableObjectMission(Mission);
 		break;
 
 	default:
@@ -137,6 +143,41 @@ void AMissionManager::MissionTargetReached(AMissionTargetReachable* MissionTarge
 	if (CurrentMissionTargetReachable == MissionTargetReachable)
 	{
 		CurrentMissionTargetReachable->BP_OnTargetReached();
+		PandoUIComponent->OnTargetActorChangedDelegate.Broadcast(nullptr);
+		CurrentMission++;
+		LoadMission();
+	}
+}
+
+#pragma endregion
+
+#pragma region InteractableObjectMission
+
+void AMissionManager::LoadInteractableObjectMission(FMissionValues& Mission)
+{
+	AInteractableObject* MissionInteractableObject = Mission.MissionInteractableObject;
+
+
+	if (MissionInteractableObject)
+	{
+		MissionInteractableObject->OnObjectInteracted.AddDynamic(this, &AMissionManager::OnObjectInteracted);
+	}
+
+	if (PandoUIComponent)
+		PandoUIComponent->OnTargetActorChangedDelegate.Broadcast(Mission.MissionInteractableObject);
+
+}
+
+void AMissionManager::OnObjectInteracted(AInteractableObject* InteractableObject)
+{
+	if (CurrentMissionType != EMissionType::EMT_InteractableObject) return;
+	if (Missions.IsEmpty()) return;
+	if (!Missions.IsValidIndex(CurrentMission)) return;
+
+	AInteractableObject* CurrentMissionInteractableObject = Missions[CurrentMission].MissionInteractableObject;
+
+	if (CurrentMissionInteractableObject == InteractableObject)
+	{
 		PandoUIComponent->OnTargetActorChangedDelegate.Broadcast(nullptr);
 		CurrentMission++;
 		LoadMission();

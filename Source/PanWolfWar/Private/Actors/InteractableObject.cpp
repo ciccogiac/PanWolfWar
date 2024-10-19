@@ -136,6 +136,8 @@ FVector2D AInteractableObject::Get8DirectionVector(const FVector2D& InputVector)
 bool AInteractableObject::Interact(ACharacter* _CharacterOwner)
 {
 	CharacterOwner = _CharacterOwner;
+	OnObjectInteracted.Broadcast(this);
+	BP_Interact();
 	return true;
 }
 

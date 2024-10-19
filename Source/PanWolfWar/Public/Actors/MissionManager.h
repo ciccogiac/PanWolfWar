@@ -8,12 +8,14 @@ class ABaseEnemy;
 class APanWolfWarCharacter;
 class UPandoUIComponent;
 class AMissionTargetReachable;
+class AInteractableObject;
 
 UENUM(BlueprintType)
 enum class EMissionType : uint8
 {
 	EMT_KillEnemies UMETA(DisplayName = "KillEnemies"),
-	EMT_ReachLocation UMETA(DisplayName = "ReachLocation")
+	EMT_ReachLocation UMETA(DisplayName = "ReachLocation"),
+	EMT_InteractableObject UMETA(DisplayName = "InteractableObject")
 };
 
 USTRUCT(BlueprintType)
@@ -31,6 +33,9 @@ public:
 
 	UPROPERTY(EditInstanceOnly, Category = "Mission" , meta = (AllowPrivateAccess = "true"))
 	AMissionTargetReachable* MissionTargetReachable;
+
+	UPROPERTY(EditInstanceOnly, Category = "Mission", meta = (AllowPrivateAccess = "true"))
+	AInteractableObject* MissionInteractableObject;
 
 	UPROPERTY(EditInstanceOnly, Category = "Mission", meta = (AllowPrivateAccess = "true"))
 	FText MissionText;
@@ -56,9 +61,15 @@ private:
 
 	void LoadKillEnemiesMission(FMissionValues& Mission);
 	void LoadReachLocationMission(FMissionValues& Mission);
+	void LoadInteractableObjectMission(FMissionValues& Mission);
 
 	UFUNCTION()
 	void OnEnemyDeathHandler(ABaseEnemy* Enemy);
+
+	UFUNCTION()
+	void OnObjectInteracted(AInteractableObject* InteractableObject);
+
+	
 
 private:
 	APanWolfWarCharacter* PanWolfCharacter;
