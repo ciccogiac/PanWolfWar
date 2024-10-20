@@ -21,10 +21,14 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void CancelAllTimer();
 
+	UFUNCTION(BlueprintImplementableEvent)
+	void PlayerDie();
+
 protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Game Settings")
 	EPanWarGameDifficulty CurrentGameDifficulty;
 
 public:
 	FORCEINLINE EPanWarGameDifficulty GetCurrentGameDifficulty() const { return CurrentGameDifficulty; }
+
 };

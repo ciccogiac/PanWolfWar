@@ -51,7 +51,22 @@ protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	TArray<FPanWarGameLevelSet> GameLevelSets;
 
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	UDataTable* TutorialDataTable;
+
+	TSet<FName> AlreadySeenTutorial;
+
+
 public:
 	UFUNCTION(BlueprintPure)
 	TSoftObjectPtr<UWorld> GetGameLevelByEnum(EPanWarLevel InEnumLevel) const;
+
+	UDataTable* GetTutorialDataTable();
+
+public:
+
+	UFUNCTION(BlueprintCallable)
+	FORCEINLINE bool IsTutorialAlreadySeen(FName TutorialName) const { return AlreadySeenTutorial.Contains(TutorialName); }
+	UFUNCTION(BlueprintCallable)
+	FORCEINLINE void MarkTutorialSeen(FName TutorialName)  {  AlreadySeenTutorial.Add(TutorialName); }
 };

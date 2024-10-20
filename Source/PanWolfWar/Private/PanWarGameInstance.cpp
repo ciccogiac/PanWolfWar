@@ -41,3 +41,8 @@ TSoftObjectPtr<UWorld> UPanWarGameInstance::GetGameLevelByEnum(EPanWarLevel InEn
 
 	return TSoftObjectPtr<UWorld>();
 }
+
+UDataTable* UPanWarGameInstance::GetTutorialDataTable()
+{
+	return TutorialDataTable;
+}

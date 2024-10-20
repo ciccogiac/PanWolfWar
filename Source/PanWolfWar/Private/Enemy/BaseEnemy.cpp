@@ -165,6 +165,11 @@ void ABaseEnemy::BeginPlay()
 
 }
 
+void ABaseEnemy::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+	GetWorld()->GetTimerManager().ClearAllTimersForObject(this);
+}
+
 #pragma endregion
 
 #pragma region initialization

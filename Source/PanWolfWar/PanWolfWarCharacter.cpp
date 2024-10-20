@@ -253,6 +253,8 @@ void APanWolfWarCharacter::EndPlay(const EEndPlayReason::Type EndPlayReason)
 		PanWolfComponent->ClearAllTimer();
 
 	GetWorld()->GetTimerManager().ClearTimer(UnderAttack_TimerHandle);
+
+	GetWorld()->GetTimerManager().ClearAllTimersForObject(this);
 }
 
 #pragma endregion
@@ -893,23 +895,33 @@ void APanWolfWarCharacter::Die()
 	GetMesh()->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
 	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 
-	AGameModeBase* GameModeBase = UGameplayStatics::GetGameMode(this);
-	if (GameModeBase)
-	{
-		APanWarSurvivalGameMode* PanWarSurvivalGameMode = Cast<APanWarSurvivalGameMode>(GameModeBase);
-		if(PanWarSurvivalGameMode)
-			PanWarSurvivalGameMode->OnSurvivalGameModeChanged(EPanWarSurvivalGameModeState::PlayerDied);
-	}
 
 	if (APlayerController* PlayerController = GetLocalViewingPlayerController())
 	{
 		PlayerController->SetInputMode(FInputModeUIOnly());
 		PlayerController->bShowMouseCursor = true;
 	}
+
+	AGameModeBase* GameModeBase = UGameplayStatics::GetGameMode(this);
+	if (GameModeBase)
+	{
+
+		APanWarSurvivalGameMode* PanWarSurvivalGameMode = Cast<APanWarSurvivalGameMode>(GameModeBase);
+		if(PanWarSurvivalGameMode)
+			PanWarSurvivalGameMode->OnSurvivalGameModeChanged(EPanWarSurvivalGameModeState::PlayerDied);
+		else
+		{
+			APanWarBaseGameMode* PanWarBaseGameMode = Cast<APanWarBaseGameMode>(GameModeBase);
+			if (PanWarBaseGameMode)
+				PanWarBaseGameMode->PlayerDie();
+		}
+
+	}
+
 	
 
-	FTimerHandle Die_TimerHandle;
-	GetWorld()->GetTimerManager().SetTimer(Die_TimerHandle, [this]() {this->Destroy(); }, 5.f, false);
+	/*FTimerHandle Die_TimerHandle;
+	GetWorld()->GetTimerManager().SetTimer(Die_TimerHandle, [this]() {this->Destroy(); }, 5.f, false);*/
 }
 
 float APanWolfWarCharacter::GetDefensePower()
