@@ -41,6 +41,12 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "PanWar|FunctionLibrary")
 	static bool TryLoadSavedGameDifficulty(EPanWarGameDifficulty& OutSavedDifficulty);
 
+	UFUNCTION(BlueprintCallable, Category = "PanWar|FunctionLibrary")
+	static void SaveCurrentGameLevel(EPanWarLevel InCurrentGameLevelToSave);
+
+	UFUNCTION(BlueprintCallable, Category = "PanWar|FunctionLibrary")
+	static bool TryLoadSavedCurrentGameLevel(EPanWarLevel& OutSavedCurrentGameLevel);
+
 	UFUNCTION(BlueprintCallable, Category = "PanWar|FunctionLibrary", meta = (Latent, WorldContext = "WorldContextObject", LatentInfo = "LatentInfo", ExpandEnumAsExecs = "CountDownInput|CountDownOutput", TotalTime = "1.0", UpdateInterval = "0.1"))
 	static void CountDown(const UObject* WorldContextObject, float TotalTime, float UpdateInterval,
 		float& OutRemainingTime, EPanWarCountDownActionInput CountDownInput,

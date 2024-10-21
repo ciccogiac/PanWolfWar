@@ -26,6 +26,8 @@ class PANWOLFWAR_API UTransformationComponent : public UActorComponent
 public:	
 	UTransformationComponent();
 
+	void ClearAllTimer();
+
 	void SelectPandolfoTransformation();
 	void SelectFlowerTransformation();
 	void SelectWolfTransformation();

@@ -213,7 +213,7 @@ void APanWolfWarCharacter::BeginPlay()
 				TransformationComponent->InitializeTransformationUI(PandoUIComponent);
 
 				PandoUIComponent->OnTargetActorChangedDelegate.Broadcast(nullptr);
-				PandoUIComponent->OnHintCompletedDelegate.Broadcast(true);
+				PandoUIComponent->OnMissionCompletedDelegate.Broadcast(false);
 				PandoUIComponent->OnNewHintDelegate.Broadcast(FText::GetEmpty());
 
 				PanWarOverlay->AddToViewport();
@@ -251,6 +251,9 @@ void APanWolfWarCharacter::EndPlay(const EEndPlayReason::Type EndPlayReason)
 
 	if (PanWolfComponent)
 		PanWolfComponent->ClearAllTimer();
+
+	if (TransformationComponent)
+		TransformationComponent->ClearAllTimer();
 
 	GetWorld()->GetTimerManager().ClearTimer(UnderAttack_TimerHandle);
 

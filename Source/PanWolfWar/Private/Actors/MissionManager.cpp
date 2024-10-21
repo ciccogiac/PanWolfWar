@@ -29,6 +29,11 @@ void AMissionManager::BeginPlay()
 
 }
 
+void AMissionManager::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+	GetWorld()->GetTimerManager().ClearTimer(MissionCompleted_TimerHandle);
+}
+
 #pragma endregion
 
 void AMissionManager::LoadMission()
@@ -66,6 +71,14 @@ void AMissionManager::LoadMission()
 	}
 }
 
+void AMissionManager::MissionCompleted()
+{
+	PandoUIComponent->OnTargetActorChangedDelegate.Broadcast(nullptr);
+	PandoUIComponent->OnMissionCompletedDelegate.Broadcast(true);
+	CurrentMission++;
+	GetWorld()->GetTimerManager().SetTimer(MissionCompleted_TimerHandle, [this]() {this->LoadMission(); }, 2.f, false);
+}
+
 #pragma region KillEnemiesMission
 
 void AMissionManager::LoadKillEnemiesMission(FMissionValues& Mission)
@@ -84,8 +97,7 @@ void AMissionManager::LoadKillEnemiesMission(FMissionValues& Mission)
 
 	if (CurrentEnemiesToKill.IsEmpty())
 	{
-		CurrentMission++;
-		LoadMission();
+		MissionCompleted();
 	}
 }
 
@@ -105,8 +117,7 @@ void AMissionManager::OnEnemyDeathHandler(ABaseEnemy* Enemy)
 
 	if (CurrentEnemiesToKill.IsEmpty())
 	{
-		CurrentMission++;
-		LoadMission();  
+		MissionCompleted();
 	}
 }
 
@@ -120,9 +131,7 @@ void AMissionManager::LoadReachLocationMission(FMissionValues& Mission)
 	if (Mission.MissionTargetReachable && Mission.MissionTargetReachable->IsCharacterInside())
 	{
 		Mission.MissionTargetReachable->BP_OnTargetReached();
-		PandoUIComponent->OnTargetActorChangedDelegate.Broadcast(nullptr);
-		CurrentMission++;
-		LoadMission();
+		MissionCompleted();
 		return;
 	}
 
@@ -143,9 +152,7 @@ void AMissionManager::MissionTargetReached(AMissionTargetReachable* MissionTarge
 	if (CurrentMissionTargetReachable == MissionTargetReachable)
 	{
 		CurrentMissionTargetReachable->BP_OnTargetReached();
-		PandoUIComponent->OnTargetActorChangedDelegate.Broadcast(nullptr);
-		CurrentMission++;
-		LoadMission();
+		MissionCompleted();
 	}
 }
 
@@ -178,9 +185,7 @@ void AMissionManager::OnObjectInteracted(AInteractableObject* InteractableObject
 
 	if (CurrentMissionInteractableObject == InteractableObject)
 	{
-		PandoUIComponent->OnTargetActorChangedDelegate.Broadcast(nullptr);
-		CurrentMission++;
-		LoadMission();
+		MissionCompleted();
 	}
 }
 

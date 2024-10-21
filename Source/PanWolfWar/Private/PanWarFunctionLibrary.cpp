@@ -114,17 +114,38 @@ int32 UPanWarFunctionLibrary::GetCurrentGameDifficulty(AActor* CallerReference)
 
 void UPanWarFunctionLibrary::SaveCurrentGameDifficulty(EPanWarGameDifficulty InDifficultyToSave)
 {
-    USaveGame* SaveGameObject = UGameplayStatics::CreateSaveGameObject(UPanWarSaveGame::StaticClass());
+    // Prima, prova a caricare il gioco salvato esistente
+    UPanWarSaveGame* PanWarSaveGameObject = Cast<UPanWarSaveGame>(UGameplayStatics::LoadGameFromSlot(FString("SaveGame.Slot.1"), 0));
 
-    if (UPanWarSaveGame* PanWarSaveGameObject = Cast<UPanWarSaveGame>(SaveGameObject))
+    // Se il salvataggio non esiste, creane uno nuovo
+    if (!PanWarSaveGameObject)
     {
-        PanWarSaveGameObject->SavedCurrentGameDifficulty = InDifficultyToSave;
-
-       /* const bool bWasSaved = UGameplayStatics::SaveGameToSlot(PanWarSaveGameObject, WarriorGameplayTags::GameData_SaveGame_Slot_1.GetTag().ToString(), 0);*/
-        const bool bWasSaved = UGameplayStatics::SaveGameToSlot(PanWarSaveGameObject, FString("SaveGame.Slot.1"), 0);
-
-       /* Debug::Print(bWasSaved ? TEXT("Difficulty Saved") : TEXT("Difficulty NOT Saved"));*/
+        PanWarSaveGameObject = Cast<UPanWarSaveGame>(UGameplayStatics::CreateSaveGameObject(UPanWarSaveGame::StaticClass()));
     }
+
+    // Aggiorna il livello, mantenendo gli altri dati intatti (ad esempio, la difficoltà)
+    PanWarSaveGameObject->SavedCurrentGameDifficulty = InDifficultyToSave;
+
+    // Ora salva il gioco
+    UGameplayStatics::SaveGameToSlot(PanWarSaveGameObject, FString("SaveGame.Slot.1"), 0);
+}
+
+void UPanWarFunctionLibrary::SaveCurrentGameLevel(EPanWarLevel InCurrentGameLevelToSave)
+{
+    // Prima, prova a caricare il gioco salvato esistente
+    UPanWarSaveGame* PanWarSaveGameObject = Cast<UPanWarSaveGame>(UGameplayStatics::LoadGameFromSlot(FString("SaveGame.Slot.1"), 0));
+
+    // Se il salvataggio non esiste, creane uno nuovo
+    if (!PanWarSaveGameObject)
+    {
+        PanWarSaveGameObject = Cast<UPanWarSaveGame>(UGameplayStatics::CreateSaveGameObject(UPanWarSaveGame::StaticClass()));
+    }
+
+    // Aggiorna il livello, mantenendo gli altri dati intatti (ad esempio, la difficoltà)
+    PanWarSaveGameObject->CurrentGameLevel = InCurrentGameLevelToSave;
+
+    // Ora salva il gioco
+    UGameplayStatics::SaveGameToSlot(PanWarSaveGameObject, FString("SaveGame.Slot.1"), 0);
 }
 
 bool UPanWarFunctionLibrary::TryLoadSavedGameDifficulty(EPanWarGameDifficulty& OutSavedDifficulty)
@@ -141,6 +162,23 @@ bool UPanWarFunctionLibrary::TryLoadSavedGameDifficulty(EPanWarGameDifficulty& O
 
           /*  Debug::Print(TEXT("Loading Successful"), FColor::Green);*/
 
+            return true;
+        }
+    } 
+
+    return false;
+}
+
+bool UPanWarFunctionLibrary::TryLoadSavedCurrentGameLevel(EPanWarLevel& OutSavedCurrentGameLevel)
+{
+    if (UGameplayStatics::DoesSaveGameExist(FString("SaveGame.Slot.1"), 0))
+    {
+        /* USaveGame* SaveGameObject = UGameplayStatics::LoadGameFromSlot(WarriorGameplayTags::GameData_SaveGame_Slot_1.GetTag().ToString(), 0);*/
+        USaveGame* SaveGameObject = UGameplayStatics::LoadGameFromSlot(FString("SaveGame.Slot.1"), 0);
+
+        if (UPanWarSaveGame* PanWarSaveGameObject = Cast<UPanWarSaveGame>(SaveGameObject))
+        {
+            OutSavedCurrentGameLevel = PanWarSaveGameObject->CurrentGameLevel;
             return true;
         }
     }

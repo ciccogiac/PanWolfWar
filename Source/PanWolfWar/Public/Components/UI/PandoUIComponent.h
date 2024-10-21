@@ -39,7 +39,7 @@ public:
 	FOnNewHintDelegate OnNewHintDelegate;
 
 	UPROPERTY(BlueprintAssignable)
-	FOnVisibilityChangedDelegate OnHintCompletedDelegate;
+	FOnVisibilityChangedDelegate OnMissionCompletedDelegate;
 
 	UPROPERTY(BlueprintAssignable)
 	FOnTargetActorChangedDelegate OnEnemyActorTargetDelegate;

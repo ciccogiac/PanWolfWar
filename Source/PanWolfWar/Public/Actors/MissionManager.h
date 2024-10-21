@@ -56,8 +56,11 @@ public:
 
 protected:
 	virtual void BeginPlay() override;
+	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 
 private:
+
+	void MissionCompleted();
 
 	void LoadKillEnemiesMission(FMissionValues& Mission);
 	void LoadReachLocationMission(FMissionValues& Mission);
@@ -80,4 +83,6 @@ private:
 
 	int32 CurrentMission = 0;
 	EMissionType CurrentMissionType;
+
+	FTimerHandle MissionCompleted_TimerHandle;
 };

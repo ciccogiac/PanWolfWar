@@ -1,18 +1,10 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
 #pragma once
 
 #include "CoreMinimal.h"
 #include "Engine/GameInstance.h"
 #include "PanWarGameInstance.generated.h"
 
-UENUM(BlueprintType)
-enum class EPanWarLevel: uint8
-{
-	MainMenuMap,
-	SurvivalGameModeMap,
-	Level_1
-};
+
 
 USTRUCT(BlueprintType)
 struct FPanWarGameLevelSet
@@ -33,9 +25,7 @@ struct FPanWarGameLevelSet
 
 };
 
-/**
- * 
- */
+
 UCLASS()
 class PANWOLFWAR_API UPanWarGameInstance : public UGameInstance
 {
@@ -69,4 +59,6 @@ public:
 	FORCEINLINE bool IsTutorialAlreadySeen(FName TutorialName) const { return AlreadySeenTutorial.Contains(TutorialName); }
 	UFUNCTION(BlueprintCallable)
 	FORCEINLINE void MarkTutorialSeen(FName TutorialName)  {  AlreadySeenTutorial.Add(TutorialName); }
+	UFUNCTION(BlueprintCallable)
+	FORCEINLINE void ResetTutorialSeen() { AlreadySeenTutorial.Empty(); }
 };

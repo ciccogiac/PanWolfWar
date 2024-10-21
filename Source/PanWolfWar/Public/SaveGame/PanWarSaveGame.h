@@ -7,6 +7,7 @@
 #include "PanWarTypes/PanWarEnumTypes.h"
 #include "PanWarSaveGame.generated.h"
 
+
 /**
  * 
  */
@@ -17,6 +18,8 @@ class PANWOLFWAR_API UPanWarSaveGame : public USaveGame
 
 public:
 	UPROPERTY(BlueprintReadOnly)
-	EPanWarGameDifficulty SavedCurrentGameDifficulty;
+	EPanWarGameDifficulty SavedCurrentGameDifficulty = EPanWarGameDifficulty::Normal;
 	
+	UPROPERTY(BlueprintReadOnly)
+	EPanWarLevel CurrentGameLevel = EPanWarLevel::Level_1;
 };

@@ -27,6 +27,13 @@ UTransformationComponent::UTransformationComponent()
 
 }
 
+void UTransformationComponent::ClearAllTimer()
+{
+	GetWorld()->GetTimerManager().ClearTimer(Transformation_TimerHandle);
+	GetWorld()->GetTimerManager().ClearTimer(RegenFlower_TimerHandle);
+	GetWorld()->GetTimerManager().ClearTimer(RegenBird_TimerHandle);
+}
+
 void UTransformationComponent::BeginPlay()
 {
 	Super::BeginPlay();
