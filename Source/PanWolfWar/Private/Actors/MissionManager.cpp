@@ -123,10 +123,11 @@ void AMissionManager::OnEnemyDeathHandler(ABaseEnemy* Enemy)
 
 #pragma endregion
 
-#pragma region ReachLocationMission
+#pragma region ReachLocationMission 
 
 void AMissionManager::LoadReachLocationMission(FMissionValues& Mission)
 {
+	Mission.MissionTargetReachable->BP_OnTargetMissionActivated();
 
 	if (Mission.MissionTargetReachable && Mission.MissionTargetReachable->IsCharacterInside())
 	{
@@ -138,7 +139,7 @@ void AMissionManager::LoadReachLocationMission(FMissionValues& Mission)
 	if (PandoUIComponent)
 		PandoUIComponent->OnTargetActorChangedDelegate.Broadcast(Mission.MissionTargetReachable);
 
-	Mission.MissionTargetReachable->BP_OnTargetMissionActivated();
+
 }
 
 void AMissionManager::MissionTargetReached(AMissionTargetReachable* MissionTargetReachable)

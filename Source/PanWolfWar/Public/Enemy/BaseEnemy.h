@@ -191,6 +191,10 @@ protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Debug", meta = (AllowPrivateAccess = "true"))
 	bool ShowDebugTrace = false;
 
+	UPROPERTY(EditAnywhere, Category = Block)
+	int32 EnemyZone = 0;
+
+
 #pragma region Initialization
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Stats", meta = (AllowPrivateAccess = "true"))
@@ -380,6 +384,8 @@ public:
 	FORCEINLINE virtual UEnemyUIComponent* GetEnemyUIComponent() const override { return EnemyUIComponent; }
 	//~ End IPawnUIInterface Interface
 
+	FORCEINLINE int32 GetEnemyZone() const { return EnemyZone; }
+	
 #pragma endregion
 
 };

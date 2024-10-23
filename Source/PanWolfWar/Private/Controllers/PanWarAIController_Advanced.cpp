@@ -268,6 +268,8 @@ void APanWarAIController_Advanced::NotifyNearbyAllies(AActor* DetectedActor)
 			if (EnemyController)
 			{
 				if (EnemyController->OwnerBaseEnemy->IsEnemyAware()) continue;
+				if (EnemyController->OwnerBaseEnemy->GetEnemyZone() != OwnerBaseEnemy->GetEnemyZone()) continue;
+
 				UE_LOG(LogTemp, Warning, TEXT("%s sta avvisando %s della presenza del bersaglio!"), *GetPawn()->GetName(), *EnemyController->GetName());
 				EnemyController->SetNewTargetActor(DetectedActor);
 			}
