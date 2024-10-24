@@ -64,6 +64,11 @@ void UAttributeComponent::AddHealth(float healthToAdd)
 	}
 }
 
+bool UAttributeComponent::IsHealthFull()
+{
+	return Health == MaxHealth;
+}
+
 #pragma endregion
 
 #pragma region Wolf

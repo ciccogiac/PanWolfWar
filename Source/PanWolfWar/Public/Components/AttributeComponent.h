@@ -20,6 +20,8 @@ public:
 	bool IsAlive();
 	void AddHealth(float healthToAdd);
 	void ReceiveDamage(float Damage);
+	UFUNCTION(BlueprintCallable)
+	bool IsHealthFull();
 
 	void AddBeers(int32 NumberOfBeers);
 	bool IsBeerInventoryFull();

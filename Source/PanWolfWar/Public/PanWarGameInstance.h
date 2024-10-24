@@ -46,12 +46,15 @@ protected:
 
 	TSet<FName> AlreadySeenTutorial;
 
+	int32 CurrentLevelBattle_WaveCount = 1;
 
 public:
 	UFUNCTION(BlueprintPure)
 	TSoftObjectPtr<UWorld> GetGameLevelByEnum(EPanWarLevel InEnumLevel) const;
 
 	UDataTable* GetTutorialDataTable();
+
+
 
 public:
 
@@ -61,4 +64,10 @@ public:
 	FORCEINLINE void MarkTutorialSeen(FName TutorialName)  {  AlreadySeenTutorial.Add(TutorialName); }
 	UFUNCTION(BlueprintCallable)
 	FORCEINLINE void ResetTutorialSeen() { AlreadySeenTutorial.Empty(); }
+
+	UFUNCTION(BlueprintCallable)
+	void SetCurrentLevelBattle_WaveCount(int32 WaveCount) { CurrentLevelBattle_WaveCount = WaveCount; };
+
+	UFUNCTION(BlueprintCallable)
+	int32 GetCurrentLevelBattle_WaveCount() const { return CurrentLevelBattle_WaveCount; };
 };

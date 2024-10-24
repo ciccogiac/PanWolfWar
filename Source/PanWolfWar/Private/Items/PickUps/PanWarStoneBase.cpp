@@ -8,7 +8,7 @@ void APanWarStoneBase::OnPickUpCollisionSphereBeginOverlap(UPrimitiveComponent* 
 	if (OtherActor->Implements<UInteractInterface>())
 	{
 		IInteractInterface* InteractInterface = Cast<IInteractInterface>(OtherActor);
-		if (InteractInterface)
+		if (InteractInterface && BP_OnStoneCheck(OtherActor))
 		{
 			InteractInterface->ConsumeStone(StoneValue, StoneType);
 			BP_OnStoneConsumed();

@@ -117,4 +117,8 @@ public:
 	void RegisterSpawnedEnemies(const TArray<ABaseEnemy*>& InEnemiesToRegister);
 	
 	FORCEINLINE void OnSurvivalGameModeChanged(EPanWarSurvivalGameModeState NewState) { OnSurvivalGameModeStateChanged.Broadcast(NewState); };
+
+	UFUNCTION(BlueprintCallable)
+	void SetCurrentWaveCount(int32 WaveCount) { CurrentWaveCount = WaveCount; };
+	
 };

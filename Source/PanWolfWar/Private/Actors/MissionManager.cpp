@@ -163,6 +163,8 @@ void AMissionManager::MissionTargetReached(AMissionTargetReachable* MissionTarge
 
 void AMissionManager::LoadInteractableObjectMission(FMissionValues& Mission)
 {
+	if (!Mission.MissionInteractableObject) return;
+
 	AInteractableObject* MissionInteractableObject = Mission.MissionInteractableObject;
 
 

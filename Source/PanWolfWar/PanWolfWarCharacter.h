@@ -118,6 +118,9 @@ public:
 
 	void Interact();
 
+	UFUNCTION(BlueprintCallable)
+	void EnterBattleMode();
+
 #pragma endregion
 
 #pragma region ProtectedFunctions

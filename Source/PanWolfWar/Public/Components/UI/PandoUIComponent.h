@@ -44,6 +44,15 @@ public:
 	UPROPERTY(BlueprintAssignable)
 	FOnTargetActorChangedDelegate OnEnemyActorTargetDelegate;
 
+	UPROPERTY(BlueprintAssignable)
+	FOnVisibilityChangedDelegate OnCompassVisibilityChanged;
+
+	UPROPERTY(BlueprintAssignable)
+	FOnVisibilityChangedDelegate OnFlowerWidgetVisibilityChanged;
+
+	UPROPERTY(BlueprintAssignable)
+	FOnVisibilityChangedDelegate OnWolfWidgetVisibilityChanged;
+
 protected:
 	virtual void BeginPlay() override;
 

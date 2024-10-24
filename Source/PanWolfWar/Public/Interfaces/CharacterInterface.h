@@ -29,6 +29,7 @@ class PANWOLFWAR_API ICharacterInterface
 	GENERATED_BODY()
 
 public:
+	 UFUNCTION(BlueprintCallable)
 	 virtual UAttributeComponent* GetAttributeComponent() const = 0;
 	 virtual UTransformationComponent* GetTransformationComponent()  const = 0;
 	 virtual UPandolfoComponent* GetPandolfoComponent() const = 0;

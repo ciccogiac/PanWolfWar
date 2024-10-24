@@ -46,6 +46,9 @@ public:
 
 	void InitializeTransformationUI(UPandoUIComponent* _PandoUIComponent);
 
+	UFUNCTION(BlueprintCallable)
+	void SetPossibleTransformationState(TArray<ETransformationState> _PossibleTransformationState); 
+
 
 	UPROPERTY(BlueprintAssignable, Category = "Transformation")
 	FOnTransformationStateChanged OnTransformationStateChanged;
@@ -61,6 +64,8 @@ private:
 	//void ConsumingBeer();
 
 	void ConsumingTransformation(ETransformationState TransfomingState);
+
+	void SetTransformationWidgetVisibility();
 
 #pragma region Variables
 
@@ -108,6 +113,5 @@ public:
 	
 	FORCEINLINE ETransformationState GetCurrentTransformationState() const { return CurrentTransformationState; }
 	FORCEINLINE void SetFlowerConsuptionStopped(bool NewValue)  {  bFlowerConsuptionStopped = NewValue; }
-	UFUNCTION(BlueprintCallable)
-	FORCEINLINE void SetPossibleTransformationState(TArray<ETransformationState> _PossibleTransformationState)  {  PossibleTransformationState = _PossibleTransformationState; }
+	
 };

@@ -62,8 +62,31 @@ void UTransformationComponent::InitializeTransformationUI(UPandoUIComponent* _Pa
 	{
 		PandoUIComponent->OnFlowerIconVisibilityChanged.Broadcast(false);
 		PandoUIComponent->OnBirdIconVisibilityChanged.Broadcast(false);
+		SetTransformationWidgetVisibility();
 	}
 
+}
+
+void UTransformationComponent::SetPossibleTransformationState(TArray<ETransformationState> _PossibleTransformationState)
+{
+	PossibleTransformationState = _PossibleTransformationState;
+	SetTransformationWidgetVisibility();
+}
+
+void UTransformationComponent::SetTransformationWidgetVisibility()
+{
+	if (PandoUIComponent)
+	{
+		if (PossibleTransformationState.Contains(ETransformationState::ETS_PanFlower))
+			PandoUIComponent->OnFlowerWidgetVisibilityChanged.Broadcast(true);
+		else
+			PandoUIComponent->OnFlowerWidgetVisibilityChanged.Broadcast(false);
+
+		if (PossibleTransformationState.Contains(ETransformationState::ETS_PanWolf))
+			PandoUIComponent->OnWolfWidgetVisibilityChanged.Broadcast(true);
+		else
+			PandoUIComponent->OnWolfWidgetVisibilityChanged.Broadcast(false);
+	}
 }
 
 #pragma region SelectingTransformation

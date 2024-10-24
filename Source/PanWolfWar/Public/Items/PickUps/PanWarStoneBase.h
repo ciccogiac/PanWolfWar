@@ -21,6 +21,9 @@ protected:
 	UFUNCTION(BlueprintImplementableEvent, meta = (DisplayName = "On Stone Consumed"))
 	void BP_OnStoneConsumed();
 
+	UFUNCTION(BlueprintImplementableEvent, meta = (DisplayName = "On Stone Check"))
+	bool BP_OnStoneCheck(AActor* OtherActor);
+
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Stone Params", meta = (AllowPrivateAccess = "true"))
 	float StoneValue = 1.f;
 

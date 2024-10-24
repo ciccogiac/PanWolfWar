@@ -1045,6 +1045,12 @@ void APanWolfWarCharacter::Interact()
 	InteractComponent->Interact();
 }
 
+void APanWolfWarCharacter::EnterBattleMode()
+{
+	if (PandoUIComponent)
+		PandoUIComponent->OnCompassVisibilityChanged.Broadcast(false);
+}
+
 void APanWolfWarCharacter::FootStepEvent()
 {
 	UTransformationCharacterComponent* CurrentTransformationCharacter = GetCurrentTransformationCharacterComponent();
