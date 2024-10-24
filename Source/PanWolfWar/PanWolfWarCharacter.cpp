@@ -673,12 +673,12 @@ void APanWolfWarCharacter::SetIsHiding(bool Value)
 
 	if (bIsHiding)
 	{
-		GetMesh()->SetScalarParameterValueOnMaterials(FName("HideFxSwitch"), 10.f);
+		GetMesh()->SetScalarParameterValueOnMaterials(FName("HideFxSwitch"), 0.2f);
 		HidingAssassinBoxComponent->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
 
 		if (PandolfoComponent->IsActive())
 		{
-			SetMetaHumanHideFX(10.f);
+			SetMetaHumanHideFX(1.f);
 		}
 
 		TransformationComponent->SetFlowerConsuptionStopped(true);
@@ -699,7 +699,6 @@ void APanWolfWarCharacter::SetIsHiding(bool Value)
 		
 
 }
-
 
 void APanWolfWarCharacter::AddEnemyAware(AActor* Enemy)
 {	
@@ -806,10 +805,11 @@ void APanWolfWarCharacter::SetMetaHumanHitFX(float bVisible)
 
 void APanWolfWarCharacter::SetMetaHumanHideFX(float bVisible)
 {
-	Torso->SetScalarParameterValueOnMaterials(FName("HideFxSwitch"), bVisible);
-	Feets->SetScalarParameterValueOnMaterials(FName("HideFxSwitch"), bVisible);
-	Face->SetScalarParameterValueOnMaterials(FName("HideFxSwitch"), bVisible);
-	Legs->SetScalarParameterValueOnMaterials(FName("HideFxSwitch"), bVisible);
+	float Value = bVisible ? 0.15f : 0.f;
+	Torso->SetScalarParameterValueOnMaterials(FName("HideFxSwitch"), Value);
+	Feets->SetScalarParameterValueOnMaterials(FName("HideFxSwitch"), Value);
+	Face->SetScalarParameterValueOnMaterials(FName("HideFxSwitch"), Value);
+	Legs->SetScalarParameterValueOnMaterials(FName("HideFxSwitch"), Value);
 }
 
 void APanWolfWarCharacter::OnHitReactMontageEnded(UAnimMontage* Montage, bool bInterrupted)

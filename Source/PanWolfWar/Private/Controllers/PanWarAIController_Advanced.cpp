@@ -267,6 +267,7 @@ void APanWarAIController_Advanced::NotifyNearbyAllies(AActor* DetectedActor)
 			APanWarAIController_Advanced* EnemyController = Cast<APanWarAIController_Advanced>(EnemyHit.GetActor()->GetInstigatorController());
 			if (EnemyController)
 			{
+				if (!EnemyController->OwnerBaseEnemy->IsCombatActorAlive()) continue;
 				if (EnemyController->OwnerBaseEnemy->IsEnemyAware()) continue;
 				if (EnemyController->OwnerBaseEnemy->GetEnemyZone() != OwnerBaseEnemy->GetEnemyZone()) continue;
 

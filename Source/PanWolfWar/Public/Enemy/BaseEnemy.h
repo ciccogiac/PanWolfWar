@@ -238,17 +238,11 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Combat", meta = (AllowPrivateAccess = "true"))
 	UWidgetComponent* EnemyCombatBaseWidgetComponent;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Combat", meta = (AllowPrivateAccess = "true"))
-	UWidgetComponent* EnemyAwarenessBarWidgetComponent;
-
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components", meta = (AllowPrivateAccess = "true"))
 	UEnemyAttributeComponent* EnemyAttributeComponent;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Combat | Assassination", meta = (AllowPrivateAccess = "true"))
 	class UBoxComponent* AssassinationBoxComponent;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Combat | Assassination", meta = (AllowPrivateAccess = "true"))
-	class UWidgetComponent* AssassinationWidgetComponent;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Combat | Assassination", meta = (AllowPrivateAccess = "true"))
 	USkeletalMeshComponent* Assassination_Preview_Mesh;

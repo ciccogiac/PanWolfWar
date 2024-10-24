@@ -35,15 +35,6 @@ ABaseEnemy::ABaseEnemy()
 	EnemyAttributeComponent = CreateDefaultSubobject<UEnemyAttributeComponent>("EnemyAttributeComponent");
 	AssassinableComponent = CreateDefaultSubobject<UAssassinableComponent>("AssassinableComponent");
 
-	/*EnemyHealthBarWidgetComponent = CreateDefaultSubobject<UWidgetComponent>(TEXT("EnemyHealthBarWidgetComponent"));
-	EnemyHealthBarWidgetComponent->SetupAttachment(GetMesh());*/
-
-	EnemyAwarenessBarWidgetComponent = CreateDefaultSubobject<UWidgetComponent>(TEXT("EnemyAwarenessBarWidgetComponent"));
-	EnemyAwarenessBarWidgetComponent->SetupAttachment(GetMesh()); 
-
-	/*EnemyAttackWarningWidgetComponent = CreateDefaultSubobject<UWidgetComponent>(TEXT("EnemyAttackWarningWidgetComponent"));
-	EnemyAttackWarningWidgetComponent->SetupAttachment(GetMesh());*/
-
 	EnemyCombatBaseWidgetComponent = CreateDefaultSubobject<UWidgetComponent>(TEXT("EnemyCombatBaseWidgetComponent"));
 	EnemyCombatBaseWidgetComponent->SetupAttachment(GetMesh());
 
@@ -65,10 +56,6 @@ ABaseEnemy::ABaseEnemy()
 	AssassinationBoxComponent->bHiddenInGame = true;
 	AssassinationBoxComponent->SetLineThickness(2.f);
 	AssassinationBoxComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-
-	AssassinationWidgetComponent = CreateDefaultSubobject<UWidgetComponent>(*FString::Printf(TEXT("AssassinationWidgetComponent")));
-	AssassinationWidgetComponent->SetupAttachment(GetRootComponent());
-	AssassinationWidgetComponent->SetVisibility(false);
 
 	Assassination_Preview_Mesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("Assassination_Preview_Mesh"));
 	Assassination_Preview_Mesh->SetupAttachment(GetMesh());
@@ -118,17 +105,12 @@ void ABaseEnemy::BeginPlay()
 
 	InitEnemyStats();
 
-
-	if (UPanWarWidgetBase* AwarenessWidget = Cast<UPanWarWidgetBase>(EnemyAwarenessBarWidgetComponent->GetUserWidgetObject()))
-	{
-		AwarenessWidget->InitEnemyCreatedWidget(this);
-		EnemyUIComponent->OnCurrentAwarenessChanged.Broadcast(0.f);
-	}
-
 	if (UPanWarWidgetBase* CombatBaseWidget = Cast<UPanWarWidgetBase>(EnemyCombatBaseWidgetComponent->GetUserWidgetObject()))
 	{
 		CombatBaseWidget->InitEnemyCreatedWidget(this);
 		EnemyUIComponent->OnCurrentHealthChanged.Broadcast(EnemyAttributeComponent->GetHealthPercent());
+		EnemyUIComponent->OnCurrentAwarenessChanged.Broadcast(0.f);
+		EnemyUIComponent->OnAssassinationIconChanged.Broadcast(false);
 	}
 
 	if (bEnableHandToHandCombat && EnemyCombatComponent)
@@ -195,7 +177,6 @@ void ABaseEnemy::EnableAssassination()
 	if (bEnableAssassination)
 	{
 		AssassinationBoxComponent->SetVisibility(true);
-		AssassinationWidgetComponent->SetVisibility(true);
 		Assassination_Preview_Mesh->SetVisibility(true);
 		SetCollisionBoxAssassination(ECollisionEnabled::QueryOnly);
 		Tags.Add(FName("Assassinable"));
@@ -203,7 +184,6 @@ void ABaseEnemy::EnableAssassination()
 	else
 	{
 		AssassinationBoxComponent->SetVisibility(false);
-		AssassinationWidgetComponent->SetVisibility(false);
 		Assassination_Preview_Mesh->SetVisibility(false);
 		SetCollisionBoxAssassination(ECollisionEnabled::NoCollision);
 		Tags.Remove(FName("Assassinable"));
@@ -631,7 +611,8 @@ void ABaseEnemy::HandleEnemyDeath()
 
 void ABaseEnemy::SetAssassinationWidgetVisibility(bool bNewVisibility)
 {
-	AssassinationWidgetComponent->SetVisibility(bNewVisibility);
+	if (EnemyUIComponent)
+		EnemyUIComponent->OnAssassinationIconChanged.Broadcast(bNewVisibility);
 }
 
 void ABaseEnemy::SetCollisionBoxAssassination(ECollisionEnabled::Type NewCollision)
@@ -644,20 +625,7 @@ void ABaseEnemy::SetCollisionBoxAssassination(ECollisionEnabled::Type NewCollisi
 
 void ABaseEnemy::SetEnemyAware(bool NewVisibility)
 {
-	/*Debug::Print(TEXT("ChangeVisibility"));*/
 	bSeen = NewVisibility;
-	//PlayerVisibleWidget->SetVisibility(NewVisibility);
-
-	//if (bSeen && !bDied)
-	//{
-
-	//	EnemyHealthBarWidgetComponent->SetVisibility(true);
-	//}
-	//else
-	//{
-	//	EnemyHealthBarWidgetComponent->SetVisibility(false);
-	//}
-		
 }
 
 void ABaseEnemy::UpdateCurrentEnemyAwareness(float Percent)

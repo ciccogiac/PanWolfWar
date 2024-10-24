@@ -26,7 +26,8 @@ public:
 	UPROPERTY(BlueprintAssignable)
 	FOnActionUIDelegate OnAttackingCanceled;
 
-	
+	UPROPERTY(BlueprintAssignable)
+	FOnVisibilityChangedDelegate OnAssassinationIconChanged;
 
 	UFUNCTION(BlueprintCallable)
 	void RegisterEnemyDrawnWidget(UPanWarWidgetBase* InWidgetToRegister);
