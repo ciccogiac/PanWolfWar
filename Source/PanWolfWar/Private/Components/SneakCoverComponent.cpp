@@ -201,7 +201,6 @@ void USneakCoverComponent::CoverMove(const FInputActionValue& Value)
 		const FHitResult hit = DoWalltrace(40.f, CoverDirection);
 		if (!hit.bBlockingHit)
 		{
-			Debug::Print(TEXT("Esco"));
 			ExitCover();
 			return;
 		}
@@ -213,7 +212,7 @@ void USneakCoverComponent::CoverMove(const FInputActionValue& Value)
 		const FVector CrouchStart = CharacterOwner->GetActorLocation() + CharacterOwner->GetActorForwardVector() * 17.5f;
 		FHitResult Crouchhit;
 		EDrawDebugTrace::Type DebugTrace = ShowDebugTrace ? EDrawDebugTrace::ForOneFrame : EDrawDebugTrace::None;
-		const FVector FloorStart = CrouchStart + CharacterOwner->GetActorRightVector() * CoverDirection * 30.f ;
+		const FVector FloorStart = CrouchStart + CharacterOwner->GetActorRightVector() * CoverDirection * 75.f ;
 		const FVector FloorEnd = FloorStart - CharacterOwner->GetActorUpVector() * (Capsule->GetScaledCapsuleHalfHeight() + 25.f);
 		UKismetSystemLibrary::SphereTraceSingle(this, FloorStart, FloorEnd,15.f, ETraceTypeQuery::TraceTypeQuery1, false, TArray<AActor*>(), DebugTrace, Crouchhit, true);
 		if (!Crouchhit.bBlockingHit)

@@ -1054,7 +1054,7 @@ void UClimbingComponent::PlayStartClimbFromTopMontage(UAnimMontage* MontageToPla
 	StartClimbFromTopMontageEndedDelegate.BindUObject(this, &UClimbingComponent::OnStartClimbFromTopMontageEnded);
 	OwningPlayerAnimInstance->Montage_SetEndDelegate(StartClimbFromTopMontageEndedDelegate, MontageToPlay);
 
-	CameraBoom->bDoCollisionTest = false;
+	//CameraBoom->bDoCollisionTest = false;
 }
 
 void UClimbingComponent::OnStartClimbFromTopMontageEnded(UAnimMontage* Montage, bool bInterrupted)
@@ -1062,7 +1062,7 @@ void UClimbingComponent::OnStartClimbFromTopMontageEnded(UAnimMontage* Montage, 
 	if (!Montage) return;
 
 	MovementComponent->StopMovementImmediately();
-	CameraBoom->bDoCollisionTest = true;
+	//CameraBoom->bDoCollisionTest = true;
 }
 
 void UClimbingComponent::PlayClimbMontage(UAnimMontage* MontageToPlay)
