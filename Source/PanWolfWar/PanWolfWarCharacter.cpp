@@ -122,23 +122,6 @@ APanWolfWarCharacter::APanWolfWarCharacter()
 	PandolFlowerComponent = CreateDefaultSubobject<UPandolFlowerComponent>(TEXT("PandolFlowerComponent"));
 	PanBirdComponent = CreateDefaultSubobject<UPanBirdComponent>(TEXT("PanBirdComponent"));
 
-	PlayerHidingWidget = CreateDefaultSubobject<UWidgetComponent>(TEXT("PlayerHidingWidget"));
-	if (PlayerHidingWidget)
-	{
-		PlayerHidingWidget->SetWidgetSpace(EWidgetSpace::Screen);
-		PlayerHidingWidget->SetVisibility(false);
-		PlayerHidingWidget->SetupAttachment(GetRootComponent());
-	}
-
-
-	PlayerSeenWidget = CreateDefaultSubobject<UWidgetComponent>(TEXT("PlayerSeenWidget"));
-	if (PlayerSeenWidget)
-	{
-		PlayerSeenWidget->SetWidgetSpace(EWidgetSpace::Screen);
-		PlayerSeenWidget->SetVisibility(false);
-		PlayerSeenWidget->SetupAttachment(GetRootComponent());
-	}
-
 	/** MetaHuman */
 
 	Torso = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("Torso"));
@@ -215,6 +198,7 @@ void APanWolfWarCharacter::BeginPlay()
 				PandoUIComponent->OnTargetActorChangedDelegate.Broadcast(nullptr);
 				PandoUIComponent->OnMissionCompletedDelegate.Broadcast(false);
 				PandoUIComponent->OnNewHintDelegate.Broadcast(FText::GetEmpty());
+				PandoUIComponent->OnHidingStateChangedDelegate.Broadcast(HidingState);
 
 				PanWarOverlay->AddToViewport();
 			}
@@ -663,16 +647,15 @@ void APanWolfWarCharacter::SetIsInsideHideBox(bool Value, bool ForceCrouch)
 
 void APanWolfWarCharacter::SetIsHiding(bool Value)
 {
-	if (Value && !EnemyAware.IsEmpty())
+	if (HidingState == EHidingState::EHS_Seen)
 		return;
 	if (Value && PanWolfComponent->IsActive())
 		return;
 
-	bIsHiding = Value;
-	PlayerHidingWidget->SetVisibility(bIsHiding);
 
-	if (bIsHiding)
+	if (Value)
 	{
+		HidingState = EHidingState::EHS_Hiding;
 		GetMesh()->SetScalarParameterValueOnMaterials(FName("HideFxSwitch"), 0.2f);
 		HidingAssassinBoxComponent->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
 
@@ -686,6 +669,7 @@ void APanWolfWarCharacter::SetIsHiding(bool Value)
 		
 	else
 	{
+		HidingState = EHidingState::EHS_Default;
 		GetMesh()->SetScalarParameterValueOnMaterials(FName("HideFxSwitch"), 0.f);
 		HidingAssassinBoxComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 
@@ -696,7 +680,9 @@ void APanWolfWarCharacter::SetIsHiding(bool Value)
 
 		TransformationComponent->SetFlowerConsuptionStopped(false);
 	}
-		
+
+	if (PandoUIComponent)
+		PandoUIComponent->OnHidingStateChangedDelegate.Broadcast(HidingState);
 
 }
 
@@ -707,7 +693,9 @@ void APanWolfWarCharacter::AddEnemyAware(AActor* Enemy)
 	EnemyAware.AddUnique(Enemy);
 	if (EnemyAware.Num() == 1)
 	{
-		PlayerSeenWidget->SetVisibility(true);
+		HidingState = EHidingState::EHS_Seen;
+		if (PandoUIComponent)
+			PandoUIComponent->OnHidingStateChangedDelegate.Broadcast(HidingState);
 	}
 		
 }
@@ -719,7 +707,11 @@ void APanWolfWarCharacter::RemoveEnemyAware(AActor* Enemy)
 	EnemyAware.Remove(Enemy);
 	if (EnemyAware.IsEmpty())
 	{
-		PlayerSeenWidget->SetVisibility(false);
+		if(HidingState!= EHidingState::EHS_Hiding)
+			HidingState = EHidingState::EHS_Default;
+
+		if (PandoUIComponent)
+			PandoUIComponent->OnHidingStateChangedDelegate.Broadcast(HidingState);
 	}
 }
 		

@@ -22,7 +22,7 @@ void UAttributeComponent::InitializeAttributeUI(UPandoUIComponent* _PandoUICompo
 
 	if (PandoUIComponent)
 	{
-		PandoUIComponent->OnCurrentHealthChanged.Broadcast(0.f);
+		PandoUIComponent->OnCurrentHealthChanged.Broadcast(1.f);
 		PandoUIComponent->OnCurrentBeerCounterChanged.Broadcast(Beers);
 		Beers > 0 ? PandoUIComponent->OnCurrentBeerPercentChanged.Broadcast(1.f) : PandoUIComponent->OnCurrentBeerPercentChanged.Broadcast(0.f);
 		PandoUIComponent->OnCurrentFlowerPercentChanged.Broadcast(FlowerStamina);
@@ -39,7 +39,7 @@ void UAttributeComponent::ReceiveDamage(float Damage)
 
 	if (PandoUIComponent)
 	{
-		PandoUIComponent->OnCurrentHealthChanged.Broadcast(1 - GetHealthPercent());
+		PandoUIComponent->OnCurrentHealthChanged.Broadcast(GetHealthPercent());
 	}
 }
 
@@ -60,7 +60,7 @@ void UAttributeComponent::AddHealth(float healthToAdd)
 
 	if (PandoUIComponent)
 	{
-		PandoUIComponent->OnCurrentHealthChanged.Broadcast(1 - GetHealthPercent());
+		PandoUIComponent->OnCurrentHealthChanged.Broadcast(GetHealthPercent());
 	}
 }
 

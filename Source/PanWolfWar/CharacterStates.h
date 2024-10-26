@@ -18,3 +18,11 @@ enum class ECombatAttackRange : uint8
 	ECAR_MeleeAttackDistanceRange UMETA(DisplayName = "MeleeAttackDistanceRange"),
 	ECAR_MeleeAttackDistance UMETA(DisplayName = "MeleeAttackDistance")
 };
+
+UENUM(BlueprintType)
+enum class EHidingState : uint8
+{
+	EHS_Default UMETA(DisplayName = "Default"),
+	EHS_Hiding UMETA(DisplayName = "Hiding"),
+	EHS_Seen UMETA(DisplayName = "Seen")
+};

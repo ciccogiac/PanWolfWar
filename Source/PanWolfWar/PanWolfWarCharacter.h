@@ -145,12 +145,12 @@ protected:
 #pragma region PrivateVariables
 
 private:
-	bool bIsHiding = false;
 	bool bIsInvulnerable = false;
 	bool bIsUnderAttack = false;
 	bool bHitted = false;
 	bool bIsInsideHideBox = false;
 
+	EHidingState HidingState = EHidingState::EHS_Default;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = crouch, meta = (AllowPrivateAccess = "true"))
 	bool bIsForcedCrouch = false;
@@ -173,12 +173,6 @@ private:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Assassination Components", meta = (AllowPrivateAccess = "true"))
 	class UBoxComponent* HidingAssassinBoxComponent;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Hiding Widget", meta = (AllowPrivateAccess = "true"))
-	class UWidgetComponent* PlayerHidingWidget;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Hiding Widget", meta = (AllowPrivateAccess = "true"))
-	class UWidgetComponent* PlayerSeenWidget;
 
 	/** Niagara Transformation */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
@@ -340,7 +334,7 @@ public:
 	FORCEINLINE UNiagaraComponent* GetNiagaraTransformation() { return NiagaraTransformation; }
 
 
-	FORCEINLINE virtual bool IsHiding() const override { return bIsHiding; }
+	FORCEINLINE virtual bool IsHiding() const override { return HidingState == EHidingState::EHS_Hiding; }
 	FORCEINLINE bool IsInsideHideBox() const  { return bIsInsideHideBox; }
 	FORCEINLINE bool IsForcedCrouch() const { return bIsForcedCrouch; }
 
