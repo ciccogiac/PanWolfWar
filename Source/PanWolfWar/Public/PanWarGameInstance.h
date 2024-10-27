@@ -2,7 +2,9 @@
 
 #include "CoreMinimal.h"
 #include "Engine/GameInstance.h"
+#include <PanWarTypes/PanWarEnumTypes.h>
 #include "PanWarGameInstance.generated.h"
+
 
 
 
@@ -48,13 +50,19 @@ protected:
 
 	int32 CurrentLevelBattle_WaveCount = 1;
 
+	ELanguage GameLanguage;
+
 public:
 	UFUNCTION(BlueprintPure)
 	TSoftObjectPtr<UWorld> GetGameLevelByEnum(EPanWarLevel InEnumLevel) const;
 
 	UDataTable* GetTutorialDataTable();
 
+	UFUNCTION(BlueprintPure)
+	ELanguage GetGameLanguage();
 
+	UFUNCTION(BlueprintCallable)
+	void SetGameLanguage(ELanguage Language);
 
 public:
 

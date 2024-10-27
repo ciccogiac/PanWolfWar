@@ -2,6 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
+#include "PanWarTypes/PanWarEnumTypes.h"
 #include "MissionManager.generated.h"
 
 class ABaseEnemy;
@@ -38,7 +39,7 @@ public:
 	AInteractableObject* MissionInteractableObject;
 
 	UPROPERTY(EditInstanceOnly, Category = "Mission", meta = (AllowPrivateAccess = "true"))
-	FText MissionText;
+	TMap<ELanguage, FText> MissionLanguagesText;
 };
 
 
@@ -60,6 +61,7 @@ protected:
 
 private:
 
+	void LoadMissionText(FMissionValues& Mission);
 	void MissionCompleted();
 
 	void LoadKillEnemiesMission(FMissionValues& Mission);
@@ -85,4 +87,6 @@ private:
 	EMissionType CurrentMissionType;
 
 	FTimerHandle MissionCompleted_TimerHandle;
+
+	ELanguage Language;
 };

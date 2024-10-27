@@ -42,6 +42,12 @@ public:
 	static bool TryLoadSavedGameDifficulty(EPanWarGameDifficulty& OutSavedDifficulty);
 
 	UFUNCTION(BlueprintCallable, Category = "PanWar|FunctionLibrary")
+	static void SaveCurrentGameLanguage(ELanguage InLanguageToSave);
+
+	UFUNCTION(BlueprintCallable, Category = "PanWar|FunctionLibrary")
+	static bool TryLoadSavedGameLanguage(ELanguage& OutSavedLanguage);
+
+	UFUNCTION(BlueprintCallable, Category = "PanWar|FunctionLibrary")
 	static void SaveCurrentGameLevel(EPanWarLevel InCurrentGameLevelToSave);
 
 	UFUNCTION(BlueprintCallable, Category = "PanWar|FunctionLibrary")

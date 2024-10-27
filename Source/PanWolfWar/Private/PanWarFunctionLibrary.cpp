@@ -169,6 +169,45 @@ bool UPanWarFunctionLibrary::TryLoadSavedGameDifficulty(EPanWarGameDifficulty& O
     return false;
 }
 
+void UPanWarFunctionLibrary::SaveCurrentGameLanguage(ELanguage InLanguageToSave)
+{
+    // Prima, prova a caricare il gioco salvato esistente
+    UPanWarSaveGame* PanWarSaveGameObject = Cast<UPanWarSaveGame>(UGameplayStatics::LoadGameFromSlot(FString("SaveGame.Slot.1"), 0));
+
+    // Se il salvataggio non esiste, creane uno nuovo
+    if (!PanWarSaveGameObject)
+    {
+        PanWarSaveGameObject = Cast<UPanWarSaveGame>(UGameplayStatics::CreateSaveGameObject(UPanWarSaveGame::StaticClass()));
+    }
+
+    // Aggiorna il livello, mantenendo gli altri dati intatti (ad esempio, la difficoltà)
+    PanWarSaveGameObject->CurrentLanguage = InLanguageToSave;
+
+    // Ora salva il gioco
+    UGameplayStatics::SaveGameToSlot(PanWarSaveGameObject, FString("SaveGame.Slot.1"), 0);
+}
+
+bool UPanWarFunctionLibrary::TryLoadSavedGameLanguage(ELanguage& OutSavedLanguage)
+{
+    /* if (UGameplayStatics::DoesSaveGameExist(WarriorGameplayTags::GameData_SaveGame_Slot_1.GetTag().ToString(), 0))*/
+    if (UGameplayStatics::DoesSaveGameExist(FString("SaveGame.Slot.1"), 0))
+    {
+        /* USaveGame* SaveGameObject = UGameplayStatics::LoadGameFromSlot(WarriorGameplayTags::GameData_SaveGame_Slot_1.GetTag().ToString(), 0);*/
+        USaveGame* SaveGameObject = UGameplayStatics::LoadGameFromSlot(FString("SaveGame.Slot.1"), 0);
+
+        if (UPanWarSaveGame* PanWarSaveGameObject = Cast<UPanWarSaveGame>(SaveGameObject))
+        {
+            OutSavedLanguage = PanWarSaveGameObject->CurrentLanguage;
+
+            /*  Debug::Print(TEXT("Loading Successful"), FColor::Green);*/
+
+            return true;
+        }
+    }
+
+    return false;
+}
+
 bool UPanWarFunctionLibrary::TryLoadSavedCurrentGameLevel(EPanWarLevel& OutSavedCurrentGameLevel)
 {
     if (UGameplayStatics::DoesSaveGameExist(FString("SaveGame.Slot.1"), 0))

@@ -36,6 +36,7 @@ class UTransformationCharacterComponent;
 class UPanWarWidgetBase;
 
 class UDataAsset_TransformationDataBase;
+class UBoxComponent;
 
 DECLARE_LOG_CATEGORY_EXTERN(LogTemplateCharacter, Log, All);
 
@@ -171,8 +172,8 @@ private:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
 	UCameraComponent* FollowCamera;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Assassination Components", meta = (AllowPrivateAccess = "true"))
-	class UBoxComponent* HidingAssassinBoxComponent;
+	//UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Assassination Components", meta = (AllowPrivateAccess = "true"))
+	//class UBoxComponent* HidingAssassinBoxComponent;
 
 	/** Niagara Transformation */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))

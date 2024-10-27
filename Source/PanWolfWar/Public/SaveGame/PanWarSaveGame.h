@@ -22,4 +22,7 @@ public:
 	
 	UPROPERTY(BlueprintReadOnly)
 	EPanWarLevel CurrentGameLevel = EPanWarLevel::Level_1;
+
+	UPROPERTY(BlueprintReadOnly)
+	ELanguage CurrentLanguage = ELanguage::EL_English;
 };

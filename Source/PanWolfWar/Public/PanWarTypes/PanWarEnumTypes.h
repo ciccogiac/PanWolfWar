@@ -10,6 +10,13 @@ enum class EPanWarGameDifficulty : uint8
 };
 
 UENUM(BlueprintType)
+enum class ELanguage : uint8
+{
+	EL_Italian ,
+	EL_English 
+};
+
+UENUM(BlueprintType)
 enum class EPanWarLevel : uint8
 {
 	MainMenuMap,

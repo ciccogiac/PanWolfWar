@@ -83,8 +83,8 @@ void UPandolfoComponent::Activate(bool bReset)
 
 	if (PanWolfCharacter->IsHiding())
 	{
-		CharacterOwner->GetMesh()->SetScalarParameterValueOnMaterials(FName("HideFxSwitch"), 10.f);
-		PanWolfCharacter->SetMetaHumanHideFX(10.f);
+		CharacterOwner->GetMesh()->SetScalarParameterValueOnMaterials(FName("HideFxSwitch"), 0.2f);
+		PanWolfCharacter->SetMetaHumanHideFX(1.f);
 	}
 
 	if (PanWolfCharacter->IsInsideHideBox() && PanWolfCharacter->IsForcedCrouch() && !PanWolfCharacter->IsHiding())

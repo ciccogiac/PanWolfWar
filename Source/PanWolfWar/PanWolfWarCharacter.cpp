@@ -93,11 +93,11 @@ APanWolfWarCharacter::APanWolfWarCharacter()
 	FollowCamera->SetupAttachment(CameraBoom, USpringArmComponent::SocketName); // Attach the camera to the end of the boom and let the boom adjust to match the controller orientation
 	FollowCamera->bUsePawnControlRotation = false; // Camera does not rotate relative to arm
 
-	HidingAssassinBoxComponent = CreateDefaultSubobject<UBoxComponent>(TEXT("HidingAssassinBox"));
-	HidingAssassinBoxComponent->SetupAttachment(RootComponent);
-	HidingAssassinBoxComponent->bHiddenInGame = true;
-	HidingAssassinBoxComponent->SetLineThickness(2.f);
-	HidingAssassinBoxComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	//HidingAssassinBoxComponent = CreateDefaultSubobject<UBoxComponent>(TEXT("HidingAssassinBox"));
+	//HidingAssassinBoxComponent->SetupAttachment(RootComponent);
+	//HidingAssassinBoxComponent->bHiddenInGame = true;
+	//HidingAssassinBoxComponent->SetLineThickness(2.f);
+	//HidingAssassinBoxComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 
 	// Create a Niagara Components
 	NiagaraTransformation = CreateDefaultSubobject<UNiagaraComponent>(TEXT("NiagaraTransformation"));
@@ -657,7 +657,7 @@ void APanWolfWarCharacter::SetIsHiding(bool Value)
 	{
 		HidingState = EHidingState::EHS_Hiding;
 		GetMesh()->SetScalarParameterValueOnMaterials(FName("HideFxSwitch"), 0.2f);
-		HidingAssassinBoxComponent->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+		//HidingAssassinBoxComponent->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
 
 		if (PandolfoComponent->IsActive())
 		{
@@ -671,7 +671,7 @@ void APanWolfWarCharacter::SetIsHiding(bool Value)
 	{
 		HidingState = EHidingState::EHS_Default;
 		GetMesh()->SetScalarParameterValueOnMaterials(FName("HideFxSwitch"), 0.f);
-		HidingAssassinBoxComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+		//HidingAssassinBoxComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 
 		if (PandolfoComponent->IsActive())
 		{

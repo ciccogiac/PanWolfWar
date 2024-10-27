@@ -43,3 +43,13 @@ UDataTable* UPanWarGameInstance::GetTutorialDataTable()
 {
 	return TutorialDataTable;
 }
+
+ELanguage UPanWarGameInstance::GetGameLanguage()
+{
+	return GameLanguage;
+}
+
+void UPanWarGameInstance::SetGameLanguage(ELanguage Language)
+{
+	GameLanguage = Language;
+}

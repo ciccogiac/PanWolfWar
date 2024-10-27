@@ -6,6 +6,8 @@
 #include "Components/UI/PandoUIComponent.h"
 #include "Actors/MissionTargetReachable.h"
 #include "Actors/InteractableObject.h"
+#include "PanWarFunctionLibrary.h"
+#include "PanWarGameInstance.h"
 
 #include "PanWolfWar/DebugHelper.h"
 
@@ -27,6 +29,12 @@ void AMissionManager::BeginPlay()
 	   PandoUIComponent = PanWolfCharacter->GetPandoUIComponent();
    }
 
+   UPanWarGameInstance* PanWarGameInstance = UPanWarFunctionLibrary::GetPanWarGameInstance(this);
+   if (PanWarGameInstance)
+   {
+	   Language = PanWarGameInstance->GetGameLanguage();
+   }
+
 }
 
 void AMissionManager::EndPlay(const EEndPlayReason::Type EndPlayReason)
@@ -45,8 +53,7 @@ void AMissionManager::LoadMission()
 	FMissionValues& Mission = Missions[CurrentMission];
 	EMissionType MissionType = Mission.MissionType;
 
-	if (PandoUIComponent)
-		PandoUIComponent->OnNewHintDelegate.Broadcast(Mission.MissionText);
+	LoadMissionText(Mission);
 
 
 	switch (MissionType)
@@ -69,6 +76,16 @@ void AMissionManager::LoadMission()
 	default:
 		break;
 	}
+}
+
+void AMissionManager::LoadMissionText(FMissionValues& Mission)
+{
+	
+	FText* LanguageMissionText = Mission.MissionLanguagesText.Find(Language);
+	if (!LanguageMissionText) return;
+
+	if (PandoUIComponent)
+		PandoUIComponent->OnNewHintDelegate.Broadcast(*LanguageMissionText);
 }
 
 void AMissionManager::MissionCompleted()

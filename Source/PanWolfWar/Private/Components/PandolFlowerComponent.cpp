@@ -91,7 +91,7 @@ void UPandolFlowerComponent::Activate(bool bReset)
 	}
 
 	if (PanWolfCharacter->IsHiding())
-		CharacterOwner->GetMesh()->SetScalarParameterValueOnMaterials(FName("HideFxSwitch"), 10.f);
+		CharacterOwner->GetMesh()->SetScalarParameterValueOnMaterials(FName("HideFxSwitch"), 0.2f);
 
 	if (PanWolfCharacter->IsInsideHideBox() && PanWolfCharacter->IsForcedCrouch() && !PanWolfCharacter->IsHiding())
 	{
