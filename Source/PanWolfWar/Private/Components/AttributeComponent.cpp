@@ -9,6 +9,20 @@ UAttributeComponent::UAttributeComponent()
 	PrimaryComponentTick.bCanEverTick = false;
 }
 
+void UAttributeComponent::SetWolfStats(float InWolfStamina, int N_Beers)
+{
+	BeerConsuming = InWolfStamina;
+	BeerConsumingMAX = InWolfStamina;
+	Beers = N_Beers;
+	MaxBeers = N_Beers;
+}
+
+void UAttributeComponent::SetFlowerStats(float InFlowerStamina)
+{
+	FlowerStamina = InFlowerStamina;
+	MaxFlowerStamina = InFlowerStamina;
+}
+
 void UAttributeComponent::BeginPlay()
 {
 	Super::BeginPlay();

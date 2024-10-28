@@ -16,6 +16,12 @@ class PANWOLFWAR_API UAttributeComponent : public UActorComponent
 public:	
 	UAttributeComponent();
 
+	UFUNCTION(BlueprintCallable)
+	void SetWolfStats(float InWolfStamina,int N_Beers);
+
+	UFUNCTION(BlueprintCallable)
+	void SetFlowerStats(float InFlowerStamina);
+
 	float GetHealthPercent();
 	bool IsAlive();
 	void AddHealth(float healthToAdd);

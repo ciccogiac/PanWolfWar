@@ -51,6 +51,7 @@ protected:
 	int32 CurrentLevelBattle_WaveCount = 1;
 
 	ELanguage GameLanguage;
+	EPanWarLevel CurrentLevel;
 
 public:
 	UFUNCTION(BlueprintPure)
@@ -78,4 +79,11 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	int32 GetCurrentLevelBattle_WaveCount() const { return CurrentLevelBattle_WaveCount; };
+
+	UFUNCTION(BlueprintCallable)
+	void SetCurrentLevel(EPanWarLevel InLevel) { CurrentLevel = InLevel; };
+
+	UFUNCTION(BlueprintCallable)
+	EPanWarLevel GetCurrentLevel() const { return CurrentLevel; };
+
 };
