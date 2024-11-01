@@ -25,10 +25,12 @@ public:
 	void PlayerDie();
 
 protected:
+
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Game Settings")
 	EPanWarGameDifficulty CurrentGameDifficulty;
 
 public:
 	FORCEINLINE EPanWarGameDifficulty GetCurrentGameDifficulty() const { return CurrentGameDifficulty; }
-
+	UFUNCTION(BlueprintCallable)
+	FORCEINLINE void SetCurrentGameDifficulty(EPanWarGameDifficulty PanWarGameDifficulty) { CurrentGameDifficulty = PanWarGameDifficulty; }
 };

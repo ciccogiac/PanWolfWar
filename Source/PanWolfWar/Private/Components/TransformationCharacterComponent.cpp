@@ -65,6 +65,8 @@ void UTransformationCharacterComponent::Activate(bool bReset)
 
 	PanWolfCharacter->SetCollisionHandBoxExtent(TransformationCharacterData.CombatHandBoxExtent);
 
+	bIsHardLanding = false;
+
 }
 
 void UTransformationCharacterComponent::Deactivate()

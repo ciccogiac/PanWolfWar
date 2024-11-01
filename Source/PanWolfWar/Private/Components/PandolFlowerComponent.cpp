@@ -775,6 +775,12 @@ void UPandolFlowerComponent::LightAttack()
 {
 	if (!CombatComponent || PandolFlowerState != EPandolFlowerState::EPFS_PandolFlower) return;
 
+	MovementComponent->bWantsToCrouch = false;
+	if (PanWolfCharacter->IsInsideHideBox())
+	{
+		PanWolfCharacter->SetIsHiding(false);
+	}
+
 	CombatComponent->PerformAttack(EAttackType::EAT_LightAttack);
 }
 

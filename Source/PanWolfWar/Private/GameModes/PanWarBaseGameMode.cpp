@@ -2,6 +2,7 @@
 
 
 #include "GameModes/PanWarBaseGameMode.h"
+#include "GameFramework/GameUserSettings.h"
 
 APanWarBaseGameMode::APanWarBaseGameMode()
 {

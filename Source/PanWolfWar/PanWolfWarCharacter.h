@@ -296,6 +296,12 @@ private:
 
 	#pragma endregion
 
+	UPROPERTY(EditAnywhere, Category = Category = "Mission")
+	USoundBase* MissionCompletedSound;
+
+	UPROPERTY(EditAnywhere, Category = Category = "Mission")
+	USoundBase* EnemyAwareSound;
+
 #pragma endregion
 
 #pragma region PrivateFunctions
@@ -348,6 +354,7 @@ public:
 	
 	FORCEINLINE bool IsHitted() { return bHitted; }
 
+	FORCEINLINE USoundBase* GetMissionCompletedSound() { return MissionCompletedSound; }
 
 #pragma endregion
 

@@ -224,6 +224,13 @@ void UPandolfoComponent::LightAttack()
 	TakeKnife(true);
 	GetWorld()->GetTimerManager().SetTimer(KnifeEquipped_TimerHandle, [this]() {this->TakeKnife(false); }, KnifeTime, false);
 
+
+	MovementComponent->bWantsToCrouch = false;
+	if (PanWolfCharacter->IsInsideHideBox())
+	{
+		PanWolfCharacter->SetIsHiding(false);
+	}
+
 	CombatComponent->PerformAttack(EAttackType::EAT_LightAttack);
 }
 

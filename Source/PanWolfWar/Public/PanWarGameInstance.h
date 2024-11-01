@@ -53,6 +53,8 @@ protected:
 	ELanguage GameLanguage;
 	EPanWarLevel CurrentLevel;
 
+	EPanWarGameDifficulty SurvivalModeGameDifficulty;
+
 public:
 	UFUNCTION(BlueprintPure)
 	TSoftObjectPtr<UWorld> GetGameLevelByEnum(EPanWarLevel InEnumLevel) const;
@@ -85,5 +87,10 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	EPanWarLevel GetCurrentLevel() const { return CurrentLevel; };
+
+	UFUNCTION(BlueprintCallable)
+	EPanWarGameDifficulty GetSurvivalModeGameDifficulty() const { return SurvivalModeGameDifficulty; };
+	UFUNCTION(BlueprintCallable)
+	void SetSurvivalModeGameDifficulty(EPanWarGameDifficulty PanWarGameDifficulty) { SurvivalModeGameDifficulty = PanWarGameDifficulty; };
 
 };

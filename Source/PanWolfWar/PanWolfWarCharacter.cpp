@@ -526,13 +526,11 @@ void APanWolfWarCharacter::StartDodge()
 {
 	if (TargetingComponent->IsTargeting())
 	{	
-		//TargetingComponent->Deactivate();
 		TargetingComponent->SetIsDodging(true);
-		/*TargetingComponent->DisableLock();*/
 	}
 
 	OriginalCapsuleRadius = GetCapsuleComponent()->GetScaledCapsuleRadius();
-	float CapsuleMultiplier = PanWolfComponent->IsActive() ? 0.3f :1.f;
+	float CapsuleMultiplier = PanWolfComponent->IsActive() ? 0.3f :0.4f;
 	float NewCapsuleRadius = OriginalCapsuleRadius * CapsuleMultiplier;
 	GetCapsuleComponent()->SetCapsuleRadius(NewCapsuleRadius);
 }
@@ -545,7 +543,9 @@ void APanWolfWarCharacter::EndDodge()
 	if(!PandoCombatComponent->IsAttacking())
 		PandoCombatComponent->ResetAttack();
 
-	if (TargetingComponent->IsTargeting())
+	/*if (TargetingComponent->IsTargeting())
+		TargetingComponent->SetIsDodging(false);*/
+	if (TargetingComponent)
 		TargetingComponent->SetIsDodging(false);
 		//TargetingComponent->Activate();
 	if (PanWolfComponent->IsActive() && PanWolfComponent->IsBlockingCharged())
@@ -696,6 +696,12 @@ void APanWolfWarCharacter::AddEnemyAware(AActor* Enemy)
 		HidingState = EHidingState::EHS_Seen;
 		if (PandoUIComponent)
 			PandoUIComponent->OnHidingStateChangedDelegate.Broadcast(HidingState);
+
+		if (EnemyAwareSound)
+		{
+			UGameplayStatics::PlaySoundAtLocation(this, EnemyAwareSound, GetActorLocation());
+
+		}
 	}
 		
 }

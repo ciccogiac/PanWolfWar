@@ -61,6 +61,12 @@ protected:
 	virtual void BeginPlay() override;
 	virtual void Tick(float DeltaTime) override;
 
+	void HandleWaveCompleted(float DeltaTime);
+
+	void HandleSpawningNewWave(float DeltaTime);
+
+	void HandleWaitSpawnNewWave(float DeltaTime);
+
 private:
 	UFUNCTION(BlueprintCallable)
 	void SetCurrentSurvivalGameModeState(EPanWarSurvivalGameModeState InState);

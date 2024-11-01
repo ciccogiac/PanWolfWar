@@ -74,7 +74,8 @@ private:
 	UFUNCTION()
 	void OnObjectInteracted(AInteractableObject* InteractableObject);
 
-	
+	void PlayMissionCompletedSound();
+
 
 private:
 	APanWolfWarCharacter* PanWolfCharacter;
@@ -89,4 +90,6 @@ private:
 	FTimerHandle MissionCompleted_TimerHandle;
 
 	ELanguage Language;
+
+	USoundBase* MissionCompletedSound;
 };

@@ -42,59 +42,75 @@ void APanWarSurvivalGameMode::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-	if (CurrentSurvivalGameModeState == EPanWarSurvivalGameModeState::WaitSpawnNewWave)
+	switch (CurrentSurvivalGameModeState)
 	{
-		TimePassedSinceStart += DeltaTime;
 
-		if (TimePassedSinceStart >= SpawnNewWaveWaitTime)
-		{
-			TimePassedSinceStart = 0.f;
+	case EPanWarSurvivalGameModeState::WaitSpawnNewWave:
+		HandleWaitSpawnNewWave(DeltaTime);
+		break;
 
-			SetCurrentSurvivalGameModeState(EPanWarSurvivalGameModeState::SpawningNewWave);
-		}
+	case EPanWarSurvivalGameModeState::SpawningNewWave:
+		HandleSpawningNewWave(DeltaTime);
+		break;
+
+	case EPanWarSurvivalGameModeState::WaveCompleted:
+		HandleWaveCompleted(DeltaTime);
+		break;
+
+	default:
+		break;
 	}
 
-	if (CurrentSurvivalGameModeState == EPanWarSurvivalGameModeState::SpawningNewWave)
+}
+
+void APanWarSurvivalGameMode::HandleWaveCompleted(float DeltaTime)
+{
+	TimePassedSinceStart += DeltaTime;
+	if (TimePassedSinceStart >= WaveCompletedWaitTime)
 	{
-		TimePassedSinceStart += DeltaTime;
+		TimePassedSinceStart = 0.f;
 
-		if (TimePassedSinceStart >= SpawnEnemiesDelayTime)
+		CurrentWaveCount++;
+
+		if (HasFinishedAllWaves())
 		{
-			CurrentSpawnedEnemiesCounter += TrySpawnWaveEnemies();
-
-			TimePassedSinceStart = 0.f;
-
-			SetCurrentSurvivalGameModeState(EPanWarSurvivalGameModeState::InProgress);
+			SetCurrentSurvivalGameModeState(EPanWarSurvivalGameModeState::AllWavesDone);
+		}
+		else
+		{
+			SetCurrentSurvivalGameModeState(EPanWarSurvivalGameModeState::WaitSpawnNewWave);
+			PreLoadNextWaveEnemies();
 		}
 	}
+}
 
-	if (CurrentSurvivalGameModeState == EPanWarSurvivalGameModeState::WaveCompleted)
+void APanWarSurvivalGameMode::HandleSpawningNewWave(float DeltaTime)
+{
+	TimePassedSinceStart += DeltaTime;
+	if (TimePassedSinceStart >= SpawnEnemiesDelayTime)
 	{
-		TimePassedSinceStart += DeltaTime;
+		CurrentSpawnedEnemiesCounter += TrySpawnWaveEnemies();
 
-		if (TimePassedSinceStart >= WaveCompletedWaitTime)
-		{
-			TimePassedSinceStart = 0.f;
+		TimePassedSinceStart = 0.f;
 
-			CurrentWaveCount++;
+		SetCurrentSurvivalGameModeState(EPanWarSurvivalGameModeState::InProgress);
+	}
+}
 
-			if (HasFinishedAllWaves())
-			{
-				SetCurrentSurvivalGameModeState(EPanWarSurvivalGameModeState::AllWavesDone);
-			}
-			else
-			{
-				SetCurrentSurvivalGameModeState(EPanWarSurvivalGameModeState::WaitSpawnNewWave);
-				PreLoadNextWaveEnemies();
-			}
-		}
+void APanWarSurvivalGameMode::HandleWaitSpawnNewWave(float DeltaTime)
+{
+	TimePassedSinceStart += DeltaTime;
+	if (TimePassedSinceStart >= SpawnNewWaveWaitTime)
+	{
+		TimePassedSinceStart = 0.f;
+
+		SetCurrentSurvivalGameModeState(EPanWarSurvivalGameModeState::SpawningNewWave);
 	}
 }
 
 void APanWarSurvivalGameMode::SetCurrentSurvivalGameModeState(EPanWarSurvivalGameModeState InState)
 {
 	CurrentSurvivalGameModeState = InState;
-
 	OnSurvivalGameModeStateChanged.Broadcast(CurrentSurvivalGameModeState);
 }
 

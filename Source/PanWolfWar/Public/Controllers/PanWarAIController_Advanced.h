@@ -28,6 +28,8 @@ protected:
 	UFUNCTION(BlueprintCallable)
 	void NotifyNearbyAllies(AActor* DetectedActor);
 
+	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
+
 private:
 
 	void IncrementAwareness(AActor* DetectedActor);

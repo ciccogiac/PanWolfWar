@@ -241,7 +241,7 @@ void APanWarAIController_Advanced::SetBlackboardTargetActor(AActor* Actor)
 void APanWarAIController_Advanced::NotifyNearbyAllies(AActor* DetectedActor)
 {
 
-	if (!OwnerBaseEnemy || !DetectedActor) return;
+	if (!OwnerBaseEnemy || !DetectedActor || !this) return;
 
 	const FVector Start = OwnerBaseEnemy->GetActorLocation();
 	const FVector End = Start + OwnerBaseEnemy->GetActorForwardVector();
@@ -277,4 +277,11 @@ void APanWarAIController_Advanced::NotifyNearbyAllies(AActor* DetectedActor)
 		}
 
 	}
+}
+
+void APanWarAIController_Advanced::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+	GetWorld()->GetTimerManager().ClearTimer(FoundTarget_TimerHandle);
+	GetWorld()->GetTimerManager().ClearTimer(LostTarget_TimerHandle);
+	GetWorld()->GetTimerManager().ClearAllTimersForObject(this);
 }

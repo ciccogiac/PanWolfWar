@@ -27,6 +27,7 @@ void AMissionManager::BeginPlay()
    if (PanWolfCharacter)
    {
 	   PandoUIComponent = PanWolfCharacter->GetPandoUIComponent();
+	   MissionCompletedSound = PanWolfCharacter->GetMissionCompletedSound();
    }
 
    UPanWarGameInstance* PanWarGameInstance = UPanWarFunctionLibrary::GetPanWarGameInstance(this);
@@ -76,6 +77,7 @@ void AMissionManager::LoadMission()
 	default:
 		break;
 	}
+
 }
 
 void AMissionManager::LoadMissionText(FMissionValues& Mission)
@@ -94,6 +96,9 @@ void AMissionManager::MissionCompleted()
 	PandoUIComponent->OnMissionCompletedDelegate.Broadcast(true);
 	CurrentMission++;
 	GetWorld()->GetTimerManager().SetTimer(MissionCompleted_TimerHandle, [this]() {this->LoadMission(); }, 2.f, false);
+
+	PlayMissionCompletedSound();
+
 }
 
 #pragma region KillEnemiesMission
@@ -209,7 +214,19 @@ void AMissionManager::OnObjectInteracted(AInteractableObject* InteractableObject
 	}
 }
 
+
+
 #pragma endregion
+
+void AMissionManager::PlayMissionCompletedSound()
+{
+	if (PanWolfCharacter && MissionCompletedSound)
+	{
+		UGameplayStatics::PlaySoundAtLocation(this, MissionCompletedSound, PanWolfCharacter->GetActorLocation());
+
+	}
+}
+
 
 
 	
