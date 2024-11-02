@@ -87,7 +87,7 @@ void APanWarSurvivalGameMode::HandleWaveCompleted(float DeltaTime)
 void APanWarSurvivalGameMode::HandleSpawningNewWave(float DeltaTime)
 {
 	TimePassedSinceStart += DeltaTime;
-	if (TimePassedSinceStart >= SpawnEnemiesDelayTime)
+	if (TimePassedSinceStart >= SpawnEnemiesDelayTime && PreLoadedEnemyClassMap.Num() >= GetCurrentWaveSpawnerTableRow()->EnemyWaveSpawnerDefinitions.Num())
 	{
 		CurrentSpawnedEnemiesCounter += TrySpawnWaveEnemies();
 

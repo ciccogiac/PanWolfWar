@@ -287,7 +287,7 @@ void UPandolFlowerComponent::Hook()
 	if (bIsHardLanding) return;
 	if (!GrapplePointRef) return;
 	if (PandolFlowerState == EPandolFlowerState::EPFS_Dodging || PandolFlowerState == EPandolFlowerState::EPFS_Hooking) return;
-	if (TransformationComponent && PandolfoComponent && PandolfoComponent->IsAssassinableEnemy()) return;
+	//if (TransformationComponent && PandolfoComponent && PandolfoComponent->IsAssassinableEnemy()) return;
 	//if (PandolFlowerState == EPandolFlowerState::EPFS_Dodging ) return;
 
 	const float DistanceFromGrapplePoint = (CharacterOwner->GetActorLocation() - GrapplePointRef->GetActorLocation()).Length();
